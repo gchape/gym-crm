@@ -1,7 +1,10 @@
 package tech.provokedynamic.gymcrm.entity;
 
 import tech.provokedynamic.gymcrm.model.Specialization;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
+@JsonDeserialize(builder = Trainer.Builder.class)
 public final class Trainer extends User implements Entity {
     private final long id;
     private final Specialization specialization;
@@ -24,6 +27,7 @@ public final class Trainer extends User implements Entity {
         return specialization;
     }
 
+    @JsonPOJOBuilder(withPrefix = "")
     public static class Builder extends User.Builder<Builder> {
         private long id;
         private Specialization specialization;

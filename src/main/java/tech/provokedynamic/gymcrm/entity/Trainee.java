@@ -1,9 +1,12 @@
 package tech.provokedynamic.gymcrm.entity;
 
 import tech.provokedynamic.gymcrm.model.Address;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.time.LocalDate;
 
+@JsonDeserialize(builder = Trainee.Builder.class)
 public final class Trainee extends User implements Entity {
     private final long id;
     private final Address address;
@@ -32,6 +35,7 @@ public final class Trainee extends User implements Entity {
         return id;
     }
 
+    @JsonPOJOBuilder(withPrefix = "")
     public static class Builder extends User.Builder<Builder> {
         private LocalDate dateOfBirth;
         private Address address;

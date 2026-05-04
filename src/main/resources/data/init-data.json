@@ -13,8 +13,7 @@
         "city": "New York",
         "country": "USA",
         "postalCode": "10001"
-      },
-      "userId": 1
+      }
     },
     {
       "id": 2,
@@ -29,8 +28,7 @@
         "city": "Los Angeles",
         "country": "USA",
         "postalCode": "90001"
-      },
-      "userId": 2
+      }
     },
     {
       "id": 3,
@@ -45,8 +43,7 @@
         "city": "Chicago",
         "country": "USA",
         "postalCode": "60601"
-      },
-      "userId": 3
+      }
     }
   ],
   "trainers": [
@@ -57,8 +54,7 @@
       "username": "Mike.Johnson",
       "password": "Hq4wEm6bVs",
       "isActive": true,
-      "specialization": "STRENGTH_TRAINING",
-      "userId": 4
+      "specialization": "STRENGTH_TRAINING"
     },
     {
       "id": 2,
@@ -67,8 +63,7 @@
       "username": "Sarah.Williams",
       "password": "Lp9dFn3kYt",
       "isActive": true,
-      "specialization": "YOGA",
-      "userId": 5
+      "specialization": "YOGA"
     },
     {
       "id": 3,
@@ -77,8 +72,7 @@
       "username": "Mike.Johnson1",
       "password": "Xr2gCu7hWo",
       "isActive": true,
-      "specialization": "CARDIO",
-      "userId": 6
+      "specialization": "CARDIO"
     }
   ],
   "trainings": [

@@ -6,7 +6,7 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 
 ## Tech Stack
 
-- **Java 25**
+- **Java 21**
 - **Spring Boot** (Spring Core, Spring AOP)
 - **Jackson 3** (`tools.jackson`) for JSON deserialization
 - **Jakarta Bean Validation** with Hibernate Validator
@@ -19,10 +19,10 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 
 ```
 ┌─────────────────────────────────────────────┐
-│                   GymFacade                  │
-└────────────┬────────────┬───────────────────┘
-             │            │
-     ┌───────▼──┐  ┌──────▼──┐  ┌─────────────┐
+│                   GymFacade                 │
+└────────────┬────────────┬───────────┬───────┘
+             │            │           │
+     ┌───────▼──┐  ┌──────▼──┐  ┌─────▼───────┐
      │ Trainee  │  │ Trainer │  │  Training   │
      │ Service  │  │ Service │  │   Service   │
      └───────┬──┘  └──────┬──┘  └──────┬──────┘
@@ -38,6 +38,12 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
                    │ Storage      │
                    │ (single map) │
                    └──────────────┘
+                         ▲
+                  ┌──────┴──────┐
+                  │  Storage    │
+                  │ Initializer │
+                  │ (on startup)│
+                  └─────────────┘
 ```
 
 ---
@@ -54,7 +60,8 @@ src/
 │   │   │   └── ValidationAspect.java         # AOP aspect for @Validate
 │   │   ├── component/
 │   │   │   ├── CredentialGenerator.java      # username + password generation
-│   │   │   └── InMemoryStorage.java          # shared ConcurrentHashMap storage
+│   │   │   ├── InMemoryStorage.java          # shared ConcurrentHashMap storage
+│   │   │   └── StorageInitializer.java       # loads init-data.json on startup
 │   │   ├── config/
 │   │   │   └── JacksonConfig.java            # JsonMapper bean with JavaTimeModule
 │   │   ├── dao/
@@ -92,8 +99,10 @@ src/
 │   │   └── validation/
 │   │       └── BeanValidator.java            # enum singleton validator
 │   └── resources/
-│       ├── application.yaml                  # dev/prod profiles
-│       └── logback.xml                       # dev + prod log profiles
+│       ├── application.yaml                  # dev/prod profiles + storage path
+│       ├── logback.xml                       # dev + prod log profiles
+│       └── data/
+│           └── init-data.json               # seed data loaded on startup
 ```
 
 ---
@@ -189,6 +198,20 @@ trainer:1  → Trainer
 training:1 → Training
 ```
 
+### Initialization
+
+On application startup, `StorageInitializer` reads `init-data.json` via `@PostConstruct` and populates the storage map.
+The file path is configured via `application.yaml`:
+
+```yaml
+storage:
+  data:
+    path: classpath:data/init-data.json
+```
+
+Jackson 3 deserializes entities using `@JsonDeserialize(builder = ...)` on `Trainee` and `Trainer`, and `@JsonProperty`
+on `Training` record components.
+
 ---
 
 ## Validation
@@ -201,7 +224,7 @@ Single-layer validation via AOP:
 - **`BeanValidator`** — enum singleton wrapping Jakarta `Validator`, usable outside Spring context
 
 Entity builders are public due to Java's lack of cross-package encapsulation without JPMS. The service layer is the
-enforced entry point — direct builder usage bypasses validation intentionally left as a known limitation.
+enforced entry point — direct builder usage bypasses validation, intentionally left as a known limitation.
 
 ---
 
@@ -244,14 +267,10 @@ Per task requirements:
 - `BeanValidator` enum singleton
 - `@Validate` annotation + `ValidationAspect`
 - `GymFacade` with constructor injection
-- `JacksonConfig` with `JsonMapper`
+- `JacksonConfig` with `JsonMapper` + `JavaTimeModule`
+- `StorageInitializer` with `@PostConstruct` loading from `init-data.json`
+- Property placeholder for file path via `application.yaml`
 - Logback with dev/prod profiles
-
----
-
-## In Progress 🔧
-
-- Storage initialization — load seed data from file on startup via `@PostConstruct`
 
 ---
 
@@ -259,8 +278,6 @@ Per task requirements:
 
 ### Required by task
 
-- [ ] **Storage initialization** — `StorageInitializer` with `@PostConstruct`, reads `init-data.json`
-- [ ] **Property placeholder** — configure file path via `application.yaml`
 - [ ] **Unit tests** — cover all service and DAO methods with JUnit 5 + Mockito
 
 ### Technical debt
@@ -268,9 +285,10 @@ Per task requirements:
 - [ ] Merge `Specialization` and `TrainingType` — they are identical enums
 - [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
 - [ ] `Storage.get()` returns raw entity instead of `Optional` — risk of null pointer
-- [ ] `TrainerRequest` missing `implements Request`
+- [ ] `TrainerRequest` `Update` constructor is `protected` — should be `public`
 - [ ] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
-- [ ] `Trainer` constructor should be `private` not `public`
+- [ ] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
+- [ ] Remove `System.out.println(storage)` from `StorageInitializer`
 
 ### Future enhancements
 
@@ -279,3 +297,8 @@ Per task requirements:
 - [ ] Add `findByUsername()` to Trainee/Trainer services
 - [ ] Add `isActive` toggle (activate/deactivate trainee or trainer)
 - [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
+- [ ] Replace in-memory storage with a real database (Spring Data JPA + PostgreSQL)
+- [ ] REST API layer (Spring MVC)
+- [ ] Authentication & authorization (Spring Security)
+- [ ] API documentation (Springdoc OpenAPI)
+- [ ] Docker + docker-compose setup
