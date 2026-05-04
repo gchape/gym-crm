@@ -6,9 +6,9 @@ import tech.provokedynamic.gymcrm.entity.Training;
 import tech.provokedynamic.gymcrm.storage.Storage;
 
 @Repository
-public class TrainingDaoImpl extends AbstractDao<Training> {
+public class TrainingDao extends AbstractDao<Training> {
 
-    protected TrainingDaoImpl(Storage<Entity> storage) {
+    protected TrainingDao(Storage<Entity> storage) {
         super(storage, "training");
     }
 }
