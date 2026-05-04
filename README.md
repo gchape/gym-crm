@@ -1,0 +1,258 @@
+# Gym CRM System
+
+A Spring-based CRM module for managing gym trainees, trainers, and training sessions.
+
+---
+
+## Tech Stack
+
+- **Java 25**
+- **Spring Boot** (Spring Core, Spring AOP)
+- **Jakarta Bean Validation** with Hibernate Validator
+- **Logback** with dev/prod profiles
+- **JUnit 5 + Mockito** (planned)
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│                   GymFacade                  │
+└────────────┬────────────┬───────────────────┘
+             │            │
+     ┌───────▼──┐  ┌──────▼──┐  ┌─────────────┐
+     │ Trainee  │  │ Trainer │  │  Training   │
+     │ Service  │  │ Service │  │   Service   │
+     └───────┬──┘  └──────┬──┘  └──────┬──────┘
+             │            │            │
+     ┌───────▼──┐  ┌──────▼──┐  ┌─────▼───────┐
+     │ Trainee  │  │ Trainer │  │  Training   │
+     │   DAO    │  │   DAO   │  │    DAO      │
+     └───────┬──┘  └──────┬──┘  └──────┬──────┘
+             │            │            │
+             └────────────▼────────────┘
+                   ┌──────────────┐
+                   │ InMemory     │
+                   │ Storage      │
+                   │ (single map) │
+                   └──────────────┘
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── main/
+│   ├── java/tech/provokedynamic/gymcrm/
+│   │   ├── annotations/
+│   │   │   └── Validate.java                 # method-level validation trigger
+│   │   ├── aspect/
+│   │   │   └── ValidationAspect.java         # AOP aspect for @Validate
+│   │   ├── component/
+│   │   │   ├── CredentialGenerator.java      # username + password generation
+│   │   │   └── InMemoryStorage.java          # shared ConcurrentHashMap storage
+│   │   ├── config/
+│   │   │   └── JacksonConfig.java            # JsonMapper bean
+│   │   ├── dao/
+│   │   │   ├── AbstractDao.java              # generic CRUD via Storage
+│   │   │   ├── CrudDao.java                  # generic CRUD interface
+│   │   │   ├── TraineeDao.java
+│   │   │   ├── TrainerDao.java
+│   │   │   └── TrainingDao.java
+│   │   ├── dto/
+│   │   │   ├── Request.java                  # sealed marker interface
+│   │   │   ├── CreateTraineeRequest.java
+│   │   │   ├── CreateTrainerRequest.java
+│   │   │   └── CreateTrainingRequest.java
+│   │   ├── entity/
+│   │   │   ├── Entity.java                   # sealed interface
+│   │   │   ├── User.java                     # base class with generic builder
+│   │   │   ├── Trainee.java                  # extends User, implements Entity
+│   │   │   ├── Trainer.java                  # extends User, implements Entity
+│   │   │   └── Training.java                 # record, implements Entity
+│   │   ├── facade/
+│   │   │   └── GymFacade.java                # single entry point, constructor injection
+│   │   ├── model/
+│   │   │   ├── Address.java                  # record
+│   │   │   ├── Specialization.java           # enum
+│   │   │   └── TrainingType.java             # enum (same values as Specialization)
+│   │   ├── service/
+│   │   │   ├── TraineeService.java           # interface
+│   │   │   ├── TrainerService.java           # interface
+│   │   │   ├── TrainingService.java          # interface
+│   │   │   ├── TraineeServiceImpl.java
+│   │   │   ├── TrainerServiceImpl.java
+│   │   │   └── TrainingServiceImpl.java
+│   │   ├── storage/
+│   │   │   └── Storage.java                  # storage interface
+│   │   └── validation/
+│   │       └── BeanValidator.java            # enum singleton validator
+│   └── resources/
+│       ├── application.yaml                  # dev/prod profiles
+│       └── logback.xml                       # dev + prod log profiles
+```
+
+---
+
+## Domain Model
+
+### User (base class)
+
+| Field     | Type    | Notes                           |
+|-----------|---------|---------------------------------|
+| firstName | String  | required                        |
+| lastName  | String  | required                        |
+| username  | String  | auto-generated: `First.Last`    |
+| password  | String  | auto-generated: 10 random chars |
+| isActive  | boolean | defaults to true                |
+
+### Trainee extends User
+
+| Field       | Type      | Notes                         |
+|-------------|-----------|-------------------------------|
+| id          | long      | auto-generated                |
+| dateOfBirth | LocalDate | optional, must be past        |
+| address     | Address   | optional, cascades validation |
+
+### Trainer extends User
+
+| Field          | Type           | Notes          |
+|----------------|----------------|----------------|
+| id             | long           | auto-generated |
+| specialization | Specialization | required       |
+
+### Training (record)
+
+| Field            | Type         | Notes                     |
+|------------------|--------------|---------------------------|
+| traineeId        | long         | required, positive        |
+| trainerId        | long         | required, positive        |
+| trainingName     | String       | required                  |
+| trainingType     | TrainingType | required                  |
+| trainingDate     | LocalDate    | required, today or future |
+| trainingDuration | Duration     | required, min 30 minutes  |
+
+### Address (record)
+
+| Field      | Type   | Notes       |
+|------------|--------|-------------|
+| street     | String | required    |
+| city       | String | required    |
+| country    | String | required    |
+| postalCode | String | 4-10 digits |
+
+---
+
+## Username & Password Rules
+
+- **Username**: `firstName.lastName` (e.g. `John.Smith`)
+- **Duplicate names**: suffix with serial number (e.g. `John.Smith1`, `John.Smith2`)
+- **Password**: randomly generated 10-character alphanumeric string
+
+---
+
+## Storage
+
+Single shared `ConcurrentHashMap` bean (`InMemoryStorage`) used by all DAOs. Entities are separated by namespace key
+prefix:
+
+```
+trainee:1  → Trainee
+trainee:2  → Trainee
+trainer:1  → Trainer
+training:1 → Training
+```
+
+---
+
+## Validation
+
+Two-layer validation strategy:
+
+- **AOP** (`@Validate` + `ValidationAspect`) — intercepts service methods and validates `Request` arguments before
+  execution
+- **Builder** (`BeanValidator.INSTANCE`) — validates entity invariants on `build()` inside `Trainee.Builder` and
+  `Trainer.Builder`
+
+`BeanValidator` is an enum singleton so it's safely usable outside the Spring context (e.g. in builders).
+
+---
+
+## Configuration
+
+Logback profiles:
+
+- **dev**: DEBUG level, logs to console + file
+- **prod**: INFO/WARN level, logs to file only
+
+Activate with:
+
+```
+-Dspring.profiles.active=dev
+```
+
+---
+
+## Injection Strategy
+
+Per task requirements:
+
+- **Constructor injection**: DAO → Service (required dependencies)
+- **Setter injection**: `CredentialGenerator` → Service (auxiliary dependency)
+- **Constructor injection**: Services → Facade
+
+---
+
+## Completed ✅
+
+- Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`)
+- Generic builder pattern with validation on `build()`
+- Sealed `Entity` and `Request` interfaces
+- `InMemoryStorage` with namespace support
+- `AbstractDao` with generic CRUD
+- `TraineeDao`, `TrainerDao`, `TrainingDao`
+- `TraineeService`, `TrainerService`, `TrainingService` with interfaces
+- `CredentialGenerator` (username + password generation)
+- `BeanValidator` enum singleton
+- `@Validate` annotation + `ValidationAspect`
+- `GymFacade` with constructor injection
+- `JacksonConfig` with `JsonMapper`
+- Logback with dev/prod profiles
+- Request DTOs (`CreateTraineeRequest`, `CreateTrainerRequest`, `CreateTrainingRequest`)
+
+---
+
+## In Progress 🔧
+
+- Storage initialization — load seed data from file on startup via `@PostConstruct`
+
+---
+
+## TODO 📋
+
+### Required by task
+
+- [ ] **Storage initialization** — `StorageInitializer` with `@PostConstruct`, reads `init-data.json`
+- [ ] **Property placeholder** — configure file path via `application.yaml`
+- [ ] **Unit tests** — cover all service and DAO methods with JUnit 5 + Mockito
+
+### Technical debt
+
+- [ ] Merge `Specialization` and `TrainingType` — they are identical enums
+- [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
+- [ ] `Storage.get()` returns raw entity instead of `Optional` — risk of null pointer
+
+### Future enhancements
+
+- [ ] Add pagination to `findAll()` methods
+- [ ] Add `findByUsername()` to Trainee/Trainer services
+- [ ] Add `isActive` toggle (activate/deactivate trainee or trainer)
+- [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
+- [ ] Replace in-memory storage with a real database (Spring Data JPA + PostgreSQL)
+- [ ] REST API layer (Spring MVC)
+- [ ] Authentication & authorization (Spring Security)
+- [ ] API documentation (Springdoc OpenAPI)
+- [ ] Docker + docker-compose setup
