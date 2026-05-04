@@ -1,3 +1,23 @@
 spring:
   application:
     name: gym-crm
+  profiles:
+    active: dev
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+storage:
+  data:
+    path: classpath:data/init-data.json
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: prod

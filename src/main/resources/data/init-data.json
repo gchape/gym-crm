@@ -1,0 +1,113 @@
+{
+  "trainees": [
+    {
+      "id": 1,
+      "firstName": "John",
+      "lastName": "Smith",
+      "username": "John.Smith",
+      "password": "aB3xKp9mZq",
+      "isActive": true,
+      "dateOfBirth": "1990-05-15",
+      "address": {
+        "street": "123 Main St",
+        "city": "New York",
+        "country": "USA",
+        "postalCode": "10001"
+      },
+      "userId": 1
+    },
+    {
+      "id": 2,
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "username": "Jane.Doe",
+      "password": "mK7nQw2pLx",
+      "isActive": true,
+      "dateOfBirth": "1995-08-22",
+      "address": {
+        "street": "456 Oak Ave",
+        "city": "Los Angeles",
+        "country": "USA",
+        "postalCode": "90001"
+      },
+      "userId": 2
+    },
+    {
+      "id": 3,
+      "firstName": "John",
+      "lastName": "Smith",
+      "username": "John.Smith1",
+      "password": "Tz5vRj8cNy",
+      "isActive": true,
+      "dateOfBirth": "1988-03-10",
+      "address": {
+        "street": "789 Pine Rd",
+        "city": "Chicago",
+        "country": "USA",
+        "postalCode": "60601"
+      },
+      "userId": 3
+    }
+  ],
+  "trainers": [
+    {
+      "id": 1,
+      "firstName": "Mike",
+      "lastName": "Johnson",
+      "username": "Mike.Johnson",
+      "password": "Hq4wEm6bVs",
+      "isActive": true,
+      "specialization": "STRENGTH_TRAINING",
+      "userId": 4
+    },
+    {
+      "id": 2,
+      "firstName": "Sarah",
+      "lastName": "Williams",
+      "username": "Sarah.Williams",
+      "password": "Lp9dFn3kYt",
+      "isActive": true,
+      "specialization": "YOGA",
+      "userId": 5
+    },
+    {
+      "id": 3,
+      "firstName": "Mike",
+      "lastName": "Johnson",
+      "username": "Mike.Johnson1",
+      "password": "Xr2gCu7hWo",
+      "isActive": true,
+      "specialization": "CARDIO",
+      "userId": 6
+    }
+  ],
+  "trainings": [
+    {
+      "id": 1,
+      "traineeId": 1,
+      "trainerId": 1,
+      "trainingName": "Morning Strength Session",
+      "trainingType": "STRENGTH_TRAINING",
+      "trainingDate": "2026-05-10",
+      "trainingDuration": "PT1H30M"
+    },
+    {
+      "id": 2,
+      "traineeId": 2,
+      "trainerId": 2,
+      "trainingName": "Evening Yoga",
+      "trainingType": "YOGA",
+      "trainingDate": "2026-05-11",
+      "trainingDuration": "PT1H"
+    },
+    {
+      "id": 3,
+      "traineeId": 3,
+      "trainerId": 3,
+      "trainingName": "Cardio Blast",
+      "trainingType": "CARDIO",
+      "trainingDate": "2026-05-12",
+      "trainingDuration": "PT45M"
+    }
+  ]
+}
