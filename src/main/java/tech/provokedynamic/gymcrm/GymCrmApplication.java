@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguratio
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
 @SpringBootConfiguration(proxyBeanMethods = false)
 @EnableAutoConfiguration(exclude = {
@@ -20,11 +21,14 @@ import org.springframework.context.annotation.ComponentScan;
         TaskSchedulingAutoConfiguration.class,
         SpringApplicationAdminJmxAutoConfiguration.class,
 })
+@EnableAspectJAutoProxy
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrm.dao",
         "tech.provokedynamic.gymcrm.config",
         "tech.provokedynamic.gymcrm.service",
         "tech.provokedynamic.gymcrm.component",
+        "tech.provokedynamic.gymcrm.facade",
+        "tech.provokedynamic.gymcrm.aspect",
 })
 public class GymCrmApplication {
     static void main(String[] args) {
