@@ -6,7 +6,7 @@ public final class Trainer extends User implements Entity {
     private final long id;
     private final Specialization specialization;
 
-    public Trainer(Builder builder) {
+    private Trainer(Builder builder) {
         super(builder);
         this.id = builder.id;
         this.specialization = builder.specialization;
