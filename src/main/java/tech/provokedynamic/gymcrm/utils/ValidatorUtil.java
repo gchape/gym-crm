@@ -1,19 +1,23 @@
-package tech.provokedynamic.gymcrm.component;
+package tech.provokedynamic.gymcrm.utils;
 
 import jakarta.validation.*;
+import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 
 import java.io.Closeable;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public enum EntityValidator implements Closeable {
+public enum ValidatorUtil implements Closeable {
     INSTANCE;
 
     private final Validator validator;
+
     private final ValidatorFactory validatorFactory;
 
-    EntityValidator() {
-        this.validatorFactory = Validation.buildDefaultValidatorFactory();
+    ValidatorUtil() {
+        this.validatorFactory = Validation.byDefaultProvider()
+                .configure()
+                .messageInterpolator(new ParameterMessageInterpolator())
+                .buildValidatorFactory();
         this.validator = validatorFactory.getValidator();
     }
 
@@ -22,7 +26,8 @@ public enum EntityValidator implements Closeable {
         if (!violations.isEmpty()) {
             String message = violations.stream()
                     .map(ConstraintViolation::getMessage)
-                    .collect(Collectors.joining(", "));
+                    .findAny()
+                    .get();
             throw new ConstraintViolationException(message, violations);
         }
     }
