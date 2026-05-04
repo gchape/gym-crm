@@ -1,16 +1,19 @@
-package tech.provokedynamic.gymcrm.component;
+package tech.provokedynamic.gymcrm.storage;
 
 import tech.provokedynamic.gymcrm.entity.Entity;
 
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.BiFunction;
 
-public interface Storage<K extends CharSequence, V extends Entity> {
-    void put(K namespace, long id, V entity);
+public interface Storage<T extends Entity> {
+    String KEY_FORMAT = "%s:%d";
+    BiFunction<String, Long, String> toKeyFn = KEY_FORMAT::formatted;
 
-    Optional<V> get(K namespace, long id);
+    void put(String namespace, long id, T entity);
 
-    void delete(K namespace, long id);
+    T get(String namespace, long id);
 
-    Map<K, V> getNamespace(K namespace);
+    void delete(String namespace, long id);
+
+    Map<String, T> getNamespace(String namespace);
 }

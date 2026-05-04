@@ -1,7 +1,8 @@
-package tech.provokedynamic.gymcrm.storage;
+package tech.provokedynamic.gymcrm.component;
 
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.entity.Entity;
+import tech.provokedynamic.gymcrm.storage.Storage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
