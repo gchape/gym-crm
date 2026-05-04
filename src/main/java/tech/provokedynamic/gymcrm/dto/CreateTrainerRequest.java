@@ -1,4 +1,17 @@
 package tech.provokedynamic.gymcrm.dto;
 
-public class CreateTrainerRequest {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import tech.provokedynamic.gymcrm.model.Specialization;
+
+public record CreateTrainerRequest(
+        @NotBlank(message = "First name is required")
+        String firstName,
+
+        @NotBlank(message = "Last name is required")
+        String lastName,
+
+        @NotNull(message = "Specialization is required")
+        Specialization specialization
+) {
 }
