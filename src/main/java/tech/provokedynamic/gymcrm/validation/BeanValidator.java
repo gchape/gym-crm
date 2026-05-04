@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.utils;
+package tech.provokedynamic.gymcrm.validation;
 
 import jakarta.validation.*;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
