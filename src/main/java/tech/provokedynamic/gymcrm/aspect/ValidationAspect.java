@@ -13,7 +13,6 @@ import tech.provokedynamic.gymcrm.validation.BeanValidator;
 @Aspect
 @Component
 public class ValidationAspect {
-
     private static final Logger log = LoggerFactory.getLogger(ValidationAspect.class);
 
     @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotations.Validate)")

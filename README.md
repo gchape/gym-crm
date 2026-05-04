@@ -6,7 +6,7 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 
 ## Tech Stack
 
-- **Java 21**
+- **Java 25**
 - **Spring Boot** (Spring Core, Spring AOP)
 - **Jackson 3** (`tools.jackson`) for JSON deserialization
 - **Jakarta Bean Validation** with Hibernate Validator
@@ -267,7 +267,7 @@ Per task requirements:
 - `BeanValidator` enum singleton
 - `@Validate` annotation + `ValidationAspect`
 - `GymFacade` with constructor injection
-- `JacksonConfig` with `JsonMapper` + `JavaTimeModule`
+- `JacksonConfig` with `JsonMapper`
 - `StorageInitializer` with `@PostConstruct` loading from `init-data.json`
 - Property placeholder for file path via `application.yaml`
 - Logback with dev/prod profiles
@@ -295,10 +295,4 @@ Per task requirements:
 - [ ] JPMS (`module-info.java`) for true cross-package encapsulation
 - [ ] Add pagination to `findAll()` methods
 - [ ] Add `findByUsername()` to Trainee/Trainer services
-- [ ] Add `isActive` toggle (activate/deactivate trainee or trainer)
 - [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
-- [ ] Replace in-memory storage with a real database (Spring Data JPA + PostgreSQL)
-- [ ] REST API layer (Spring MVC)
-- [ ] Authentication & authorization (Spring Security)
-- [ ] API documentation (Springdoc OpenAPI)
-- [ ] Docker + docker-compose setup
