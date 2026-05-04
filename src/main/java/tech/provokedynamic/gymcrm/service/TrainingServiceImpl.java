@@ -1,4 +1,54 @@
 package tech.provokedynamic.gymcrm.service;
 
-public class TrainingServiceImpl {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import tech.provokedynamic.gymcrm.dao.TrainingDao;
+import tech.provokedynamic.gymcrm.dto.CreateTrainingRequest;
+import tech.provokedynamic.gymcrm.entity.Training;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Service
+public class TrainingServiceImpl implements TrainingService {
+    private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
+    
+    private static final AtomicLong ID = new AtomicLong(1);
+
+    private final TrainingDao trainingDao;
+
+    public TrainingServiceImpl(TrainingDao trainingDao) {
+        this.trainingDao = trainingDao;
+    }
+
+    @Override
+    public Training create(CreateTrainingRequest request) {
+        long id = ID.getAndIncrement();
+
+        Training training = new Training(
+                request.traineeId(),
+                request.trainerId(),
+                request.trainingName(),
+                request.trainingType(),
+                request.trainingDate(),
+                request.trainingDuration()
+        );
+
+        log.debug("Creating training: {}", request.trainingName());
+        return trainingDao.save(id, training);
+    }
+
+    @Override
+    public Optional<Training> findById(long id) {
+        log.debug("Finding training with id: {}", id);
+        return trainingDao.findById(id);
+    }
+
+    @Override
+    public List<Training> findAll() {
+        log.debug("Finding all trainings");
+        return trainingDao.findAll();
+    }
 }

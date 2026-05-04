@@ -1,14 +1,15 @@
 package tech.provokedynamic.gymcrm.service;
 
+import tech.provokedynamic.gymcrm.dto.CreateTraineeRequest;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface TraineeService {
-    Trainee create(Trainee trainee);
+    Trainee create(CreateTraineeRequest request);
 
-    Trainee update(long id, Trainee trainee);
+    Trainee update(long id, CreateTraineeRequest request);
 
     void delete(long id);
 
