@@ -1,9 +1,9 @@
 package tech.provokedynamic.gymcrm.facade;
 
 import org.springframework.stereotype.Component;
-import tech.provokedynamic.gymcrm.dto.CreateTraineeRequest;
-import tech.provokedynamic.gymcrm.dto.CreateTrainerRequest;
-import tech.provokedynamic.gymcrm.dto.CreateTrainingRequest;
+import tech.provokedynamic.gymcrm.dto.TraineeRequest;
+import tech.provokedynamic.gymcrm.dto.TrainerRequest;
+import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -28,11 +28,11 @@ public class GymFacade {
         this.trainingService = trainingService;
     }
 
-    public Trainee createTrainee(CreateTraineeRequest request) {
+    public Trainee createTrainee(TraineeRequest.Create request) {
         return traineeService.create(request);
     }
 
-    public Trainee updateTrainee(long id, CreateTraineeRequest request) {
+    public Trainee updateTrainee(long id, TraineeRequest.Update request) {
         return traineeService.update(id, request);
     }
 
@@ -48,11 +48,11 @@ public class GymFacade {
         return traineeService.findAll();
     }
 
-    public Trainer createTrainer(CreateTrainerRequest request) {
+    public Trainer createTrainer(TrainerRequest.Create request) {
         return trainerService.create(request);
     }
 
-    public Trainer updateTrainer(long id, CreateTrainerRequest request) {
+    public Trainer updateTrainer(long id, TrainerRequest.Update request) {
         return trainerService.update(id, request);
     }
 
@@ -64,7 +64,7 @@ public class GymFacade {
         return trainerService.findAll();
     }
 
-    public Training createTraining(CreateTrainingRequest request) {
+    public Training createTraining(TrainingRequest.Create request) {
         return trainingService.create(request);
     }
 
