@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
-import tech.provokedynamic.gymcrm.dto.CreateTrainingRequest;
+import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.entity.Training;
 
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
-    
+
     private static final AtomicLong ID = new AtomicLong(1);
 
     private final TrainingDao trainingDao;
@@ -24,19 +24,19 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
-    public Training create(CreateTrainingRequest request) {
+    public Training create(TrainingRequest.Create request) {
         long id = ID.getAndIncrement();
 
         Training training = new Training(
-                request.traineeId(),
-                request.trainerId(),
-                request.trainingName(),
-                request.trainingType(),
-                request.trainingDate(),
-                request.trainingDuration()
+                request.getTraineeId(),
+                request.getTrainerId(),
+                request.getTrainingName(),
+                request.getTrainingType(),
+                request.getTrainingDate(),
+                request.getTrainingDuration()
         );
 
-        log.debug("Creating training: {}", request.trainingName());
+        log.debug("Creating training: {}", request.getTrainingName());
         return trainingDao.save(id, training);
     }
 

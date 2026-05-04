@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
-import tech.provokedynamic.gymcrm.dto.CreateTraineeRequest;
+import tech.provokedynamic.gymcrm.dto.TraineeRequest;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.util.List;
@@ -32,25 +32,25 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public Trainee create(CreateTraineeRequest request) {
+    public Trainee create(TraineeRequest.Create request) {
         long id = ID.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
-                request.firstName(),
-                request.lastName(),
+                request.getFirstName(),
+                request.getLastName(),
                 traineeDao.findAll()
         );
         String password = credentialGenerator.generatePassword();
 
         Trainee toSave = Trainee.builder()
                 .id(id)
-                .firstName(request.firstName())
-                .lastName(request.lastName())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
-                .dateOfBirth(request.dateOfBirth())
-                .address(request.address())
+                .dateOfBirth(request.getDateOfBirth())
+                .address(request.getAddress())
                 .build();
 
         log.debug("Creating trainee with username: {}", username);
@@ -58,19 +58,19 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public Trainee update(long id, CreateTraineeRequest request) {
+    public Trainee update(long id, TraineeRequest.Update request) {
         Trainee existing = traineeDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id));
 
         Trainee updated = Trainee.builder()
                 .id(id)
-                .firstName(request.firstName())
-                .lastName(request.lastName())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .username(existing.getUsername())
                 .password(existing.getPassword())
-                .isActive(existing.isActive())
-                .dateOfBirth(request.dateOfBirth())
-                .address(request.address())
+                .isActive(request.isActive())
+                .dateOfBirth(request.getDateOfBirth())
+                .address(request.getAddress())
                 .build();
 
         log.debug("Updating trainee with id: {}", id);

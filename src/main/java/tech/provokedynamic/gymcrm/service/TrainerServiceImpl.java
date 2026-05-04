@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dto.CreateTrainerRequest;
+import tech.provokedynamic.gymcrm.dto.TrainerRequest;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 
 import java.util.List;
@@ -32,24 +32,24 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Trainer create(CreateTrainerRequest request) {
+    public Trainer create(TrainerRequest.Create request) {
         long id = ID.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
-                request.firstName(),
-                request.lastName(),
+                request.getFirstName(),
+                request.getLastName(),
                 trainerDao.findAll()
         );
         String password = credentialGenerator.generatePassword();
 
         Trainer toSave = Trainer.builder()
                 .id(id)
-                .firstName(request.firstName())
-                .lastName(request.lastName())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
-                .specialization(request.specialization())
+                .specialization(request.getSpecialization())
                 .build();
 
         log.debug("Creating trainer with username: {}", username);
@@ -57,18 +57,18 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Trainer update(long id, CreateTrainerRequest request) {
+    public Trainer update(long id, TrainerRequest.Update request) {
         Trainer existing = trainerDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id));
 
         Trainer updated = Trainer.builder()
                 .id(id)
-                .firstName(request.firstName())
-                .lastName(request.lastName())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
                 .username(existing.getUsername())
                 .password(existing.getPassword())
                 .isActive(existing.isActive())
-                .specialization(request.specialization())
+                .specialization(request.getSpecialization())
                 .build();
 
         log.debug("Updating trainer with id: {}", id);
