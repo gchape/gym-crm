@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.component;
+package tech.provokedynamic.gymcrm.facade;
 
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dto.CreateTraineeRequest;
