@@ -13,5 +13,5 @@ public record CreateTrainerRequest(
 
         @NotNull(message = "Specialization is required")
         Specialization specialization
-) {
+) implements Request {
 }

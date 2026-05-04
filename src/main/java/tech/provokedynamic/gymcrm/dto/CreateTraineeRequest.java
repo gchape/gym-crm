@@ -19,5 +19,5 @@ public record CreateTraineeRequest(
 
         @Valid
         Address address
-) {
+) implements Request {
 }

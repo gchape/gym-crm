@@ -1,4 +1,4 @@
 package tech.provokedynamic.gymcrm.dto;
 
-public interface Request {
+public sealed interface Request permits CreateTraineeRequest, CreateTrainingRequest, CreateTrainerRequest {
 }

@@ -30,5 +30,5 @@ public record CreateTrainingRequest(
         @NotNull(message = "Training duration is required")
         @DurationMin(days = 0, hours = 0, minutes = 30, message = "Training must be at least 30 minutes")
         Duration trainingDuration
-) {
+) implements Request {
 }
