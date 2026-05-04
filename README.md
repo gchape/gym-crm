@@ -8,6 +8,7 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 
 - **Java 25**
 - **Spring Boot** (Spring Core, Spring AOP)
+- **Jackson 3** (`tools.jackson`) for JSON deserialization
 - **Jakarta Bean Validation** with Hibernate Validator
 - **Logback** with dev/prod profiles
 - **JUnit 5 + Mockito** (planned)
@@ -55,7 +56,7 @@ src/
 │   │   │   ├── CredentialGenerator.java      # username + password generation
 │   │   │   └── InMemoryStorage.java          # shared ConcurrentHashMap storage
 │   │   ├── config/
-│   │   │   └── JacksonConfig.java            # JsonMapper bean
+│   │   │   └── JacksonConfig.java            # JsonMapper bean with JavaTimeModule
 │   │   ├── dao/
 │   │   │   ├── AbstractDao.java              # generic CRUD via Storage
 │   │   │   ├── CrudDao.java                  # generic CRUD interface
@@ -63,10 +64,10 @@ src/
 │   │   │   ├── TrainerDao.java
 │   │   │   └── TrainingDao.java
 │   │   ├── dto/
-│   │   │   ├── Request.java                  # sealed marker interface
-│   │   │   ├── CreateTraineeRequest.java
-│   │   │   ├── CreateTrainerRequest.java
-│   │   │   └── CreateTrainingRequest.java
+│   │   │   ├── Request.java                  # marker interface
+│   │   │   ├── TraineeRequest.java           # abstract base + Create/Update nested classes
+│   │   │   ├── TrainerRequest.java           # abstract base + Create/Update nested classes
+│   │   │   └── TrainingRequest.java          # abstract base + Create nested class
 │   │   ├── entity/
 │   │   │   ├── Entity.java                   # sealed interface
 │   │   │   ├── User.java                     # base class with generic builder
@@ -146,6 +147,28 @@ src/
 
 ---
 
+## Request DTOs
+
+Each request type uses an abstract base class with nested `Create` and `Update` static classes to share validation and
+separate concerns:
+
+```
+TraineeRequest
+├── Create(firstName, lastName, dateOfBirth, address)
+└── Update(firstName, lastName, dateOfBirth, address, isActive)
+
+TrainerRequest
+├── Create(firstName, lastName, specialization)
+└── Update(firstName, lastName, specialization, isActive)
+
+TrainingRequest
+└── Create(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration)
+```
+
+Validation annotations live on the base class fields — no duplication between `Create` and `Update`.
+
+---
+
 ## Username & Password Rules
 
 - **Username**: `firstName.lastName` (e.g. `John.Smith`)
@@ -170,14 +193,15 @@ training:1 → Training
 
 ## Validation
 
-Two-layer validation strategy:
+Single-layer validation via AOP:
 
-- **AOP** (`@Validate` + `ValidationAspect`) — intercepts service methods and validates `Request` arguments before
-  execution
-- **Builder** (`BeanValidator.INSTANCE`) — validates entity invariants on `build()` inside `Trainee.Builder` and
-  `Trainer.Builder`
+- **`@Validate`** — placed on service interface methods that accept `Request` arguments
+- **`ValidationAspect`** — intercepts annotated methods, checks if any argument is a `Request`, validates via
+  `BeanValidator.INSTANCE`
+- **`BeanValidator`** — enum singleton wrapping Jakarta `Validator`, usable outside Spring context
 
-`BeanValidator` is an enum singleton so it's safely usable outside the Spring context (e.g. in builders).
+Entity builders are public due to Java's lack of cross-package encapsulation without JPMS. The service layer is the
+enforced entry point — direct builder usage bypasses validation intentionally left as a known limitation.
 
 ---
 
@@ -209,8 +233,9 @@ Per task requirements:
 ## Completed ✅
 
 - Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`)
-- Generic builder pattern with validation on `build()`
-- Sealed `Entity` and `Request` interfaces
+- Generic builder pattern with `public` access (JPMS needed for true encapsulation)
+- Sealed `Entity` interface
+- `Request` marker interface with abstract base classes (`TraineeRequest`, `TrainerRequest`, `TrainingRequest`)
 - `InMemoryStorage` with namespace support
 - `AbstractDao` with generic CRUD
 - `TraineeDao`, `TrainerDao`, `TrainingDao`
@@ -221,7 +246,6 @@ Per task requirements:
 - `GymFacade` with constructor injection
 - `JacksonConfig` with `JsonMapper`
 - Logback with dev/prod profiles
-- Request DTOs (`CreateTraineeRequest`, `CreateTrainerRequest`, `CreateTrainingRequest`)
 
 ---
 
@@ -244,15 +268,14 @@ Per task requirements:
 - [ ] Merge `Specialization` and `TrainingType` — they are identical enums
 - [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
 - [ ] `Storage.get()` returns raw entity instead of `Optional` — risk of null pointer
+- [ ] `TrainerRequest` missing `implements Request`
+- [ ] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
+- [ ] `Trainer` constructor should be `private` not `public`
 
 ### Future enhancements
 
+- [ ] JPMS (`module-info.java`) for true cross-package encapsulation
 - [ ] Add pagination to `findAll()` methods
 - [ ] Add `findByUsername()` to Trainee/Trainer services
 - [ ] Add `isActive` toggle (activate/deactivate trainee or trainer)
 - [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
-- [ ] Replace in-memory storage with a real database (Spring Data JPA + PostgreSQL)
-- [ ] REST API layer (Spring MVC)
-- [ ] Authentication & authorization (Spring Security)
-- [ ] API documentation (Springdoc OpenAPI)
-- [ ] Docker + docker-compose setup
