@@ -71,10 +71,14 @@ src/
 │   │   │   ├── TrainerDao.java
 │   │   │   └── TrainingDao.java
 │   │   ├── dto/
-│   │   │   ├── Request.java                  # marker interface
-│   │   │   ├── TraineeRequest.java           # abstract base + Create/Update nested classes
-│   │   │   ├── TrainerRequest.java           # abstract base + Create/Update nested classes
-│   │   │   └── TrainingRequest.java          # abstract base + Create nested class
+│   │   │   ├── Request.java                  # sealed marker interface
+│   │   │   ├── Response.java                 # sealed marker interface
+│   │   │   ├── TraineeRequest.java           # sealed interface + Create/Update records
+│   │   │   ├── TrainerRequest.java           # sealed interface + Create/Update records
+│   │   │   ├── TrainingRequest.java          # sealed interface + Create record
+│   │   │   ├── TraineeResponse.java          # sealed interface + Summary/Detail records
+│   │   │   ├── TrainerResponse.java          # sealed interface + Summary/Detail records
+│   │   │   └── TrainingResponse.java         # sealed interface + Summary/Detail records
 │   │   ├── entity/
 │   │   │   ├── Entity.java                   # sealed interface
 │   │   │   ├── User.java                     # base class with generic builder
@@ -171,23 +175,41 @@ src/
 
 ## Request DTOs
 
-Each request type uses an abstract base class with nested `Create` and `Update` static classes to share validation and
-separate concerns:
+Each request type is a sealed interface with nested `Create` and `Update` records.
+Validation annotations live on the record components of each permit:
 
 ```
-TraineeRequest
+TraineeRequest (sealed interface)
 ├── Create(firstName, lastName, dateOfBirth, address)
-└── Update(firstName, lastName, dateOfBirth, address, isActive)
+└── Update(firstName, lastName, dateOfBirth, address, active)
 
-TrainerRequest
+TrainerRequest (sealed interface)
 ├── Create(firstName, lastName, specialization)
-└── Update(firstName, lastName, specialization, isActive)
+└── Update(firstName, lastName, specialization, active)
 
-TrainingRequest
+TrainingRequest (sealed interface)
 └── Create(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration)
 ```
 
-Validation annotations live on the base class fields — no duplication between `Create` and `Update`.
+## Response DTOs
+
+Each response type is a sealed interface with nested `Summary` and `Detail` records,
+exposing only the fields relevant to each use case. Static `from()` factory methods
+map from entity to response:
+
+```
+TraineeResponse (sealed interface)
+├── Summary(id, username, firstName, lastName, isActive)
+└── Detail(id, username, firstName, lastName, isActive, dateOfBirth, address)
+
+TrainerResponse (sealed interface)
+├── Summary(id, username, firstName, lastName, isActive)
+└── Detail(id, username, firstName, lastName, isActive, specialization)
+
+TrainingResponse (sealed interface)
+├── Summary(traineeId, trainerId, trainingName, trainingType)
+└── Detail(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration)
+```
 
 ---
 
@@ -255,23 +277,11 @@ enforced entry point — direct builder usage bypasses validation, intentionally
 
 **Integration tests** (sliced Spring context):
 
-Service tests load only the classes needed for each slice, keeping startup fast:
-
-```java
-@SpringBootTest(classes = {
-        TraineeServiceImpl.class,
-        TraineeDao.class,
-        CredentialGenerator.class,
-        ValidationAspect.class,
-        InMemoryStorage.class
-}, webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        useMainMethod = SpringBootTest.UseMainMethod.NEVER)
-@EnableAspectJAutoProxy
-```
+Service tests load only the classes needed for each slice, keeping startup fast
 
 - `TraineeServiceImplTest` — valid/invalid requests, address and postal code validation, boundary values, update,
   findById, findAll, delete, not-found
-- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
+- `TraineeServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
   findAll, delete, not-found
 - `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints,
   findById, findAll
@@ -322,7 +332,10 @@ Per task requirements:
 - Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`)
 - Generic builder pattern with `public` access (JPMS needed for true encapsulation)
 - Sealed `Entity` interface
-- `Request` marker interface with abstract base classes (`TraineeRequest`, `TrainerRequest`, `TrainingRequest`)
+- `Request` sealed marker interface with sealed interfaces and records (`TraineeRequest`, `TrainerRequest`,
+  `TrainingRequest`)
+- `Response` sealed marker interface with sealed interfaces and records (`TraineeResponse`, `TrainerResponse`,
+  `TrainingResponse`), with static `from()` factory methods
 - `InMemoryStorage` with namespace support
 - `AbstractDao` with generic CRUD
 - `TraineeDao`, `TrainerDao`, `TrainingDao`
@@ -346,12 +359,10 @@ Per task requirements:
 
 ### Technical debt
 
-- [X] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
-- [X] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
+- [ ] JPMS (`module-info.java`) for true cross-package encapsulation
 
 ### Future enhancements
 
-- [ ] JPMS (`module-info.java`) for true cross-package encapsulation
 - [ ] Add pagination to `findAll()` methods
 - [ ] Add `findByUsername()` to Trainee/Trainer services
 - [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
