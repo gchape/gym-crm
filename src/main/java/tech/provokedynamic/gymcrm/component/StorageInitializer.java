@@ -51,7 +51,7 @@ public class StorageInitializer {
         log.info("Storage initialized from {}", dataPath);
     }
 
-    private void loadTrainees(JsonNode root) throws IOException {
+    private void loadTrainees(JsonNode root) {
         JsonNode nodes = root.get("trainees");
         if (nodes == null || !nodes.isArray()) {
             log.warn("No trainees found in {}", dataPath);
@@ -65,7 +65,7 @@ public class StorageInitializer {
         }
     }
 
-    private void loadTrainers(JsonNode root) throws IOException {
+    private void loadTrainers(JsonNode root) {
         JsonNode nodes = root.get("trainers");
         if (nodes == null || !nodes.isArray()) {
             log.warn("No trainers found in {}", dataPath);
@@ -79,7 +79,7 @@ public class StorageInitializer {
         }
     }
 
-    private void loadTrainings(JsonNode root) throws IOException {
+    private void loadTrainings(JsonNode root) {
         JsonNode nodes = root.get("trainings");
         if (nodes == null || !nodes.isArray()) {
             log.warn("No trainings found in {}", dataPath);

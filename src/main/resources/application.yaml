@@ -4,6 +4,9 @@ spring:
   profiles:
     active: dev
 
+  aop:
+    proxy-target-class: false
+
 ---
 
 spring:

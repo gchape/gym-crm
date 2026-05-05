@@ -357,10 +357,6 @@ Per task requirements:
 
 ## TODO 📋
 
-### Technical debt
-
-- [ ] JPMS (`module-info.java`) for true cross-package encapsulation
-
 ### Future enhancements
 
 - [ ] Add pagination to `findAll()` methods

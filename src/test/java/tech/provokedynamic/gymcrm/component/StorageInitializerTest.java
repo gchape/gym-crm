@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         useMainMethod = SpringBootTest.UseMainMethod.NEVER,
-        properties = "storage.data.path=classpath:test-data.json")
+        properties = "storage.data.path=classpath:data/test-data.json")
 class StorageInitializerTest {
 
     @Autowired
