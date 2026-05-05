@@ -20,10 +20,12 @@ import java.io.IOException;
 public class StorageInitializer {
     private static final Logger log = LoggerFactory.getLogger(StorageInitializer.class);
 
+    private static final String TRAINEE_NS = "trainee";
+    private static final String TRAINER_NS = "trainer";
+    private static final String TRAINING_NS = "training";
+
     private final Storage<Entity> storage;
-
     private final JsonMapper jsonMapper;
-
     private final ResourceLoader resourceLoader;
 
     @Value("${storage.data.path}")
@@ -42,27 +44,52 @@ public class StorageInitializer {
         var resource = resourceLoader.getResource(dataPath);
         var root = jsonMapper.readTree(resource.getInputStream());
 
-        for (JsonNode node : root.get("trainees")) {
-            long id = node.get("id").asLong();
-            Trainee trainee = jsonMapper.treeToValue(node, Trainee.class);
-            storage.put("trainee", id, trainee);
-            log.debug("Loaded trainee: {}", trainee.getUsername());
-        }
-
-        for (JsonNode node : root.get("trainers")) {
-            long id = node.get("id").asLong();
-            Trainer trainer = jsonMapper.treeToValue(node, Trainer.class);
-            storage.put("trainer", id, trainer);
-            log.debug("Loaded trainer: {}", trainer.getUsername());
-        }
-
-        for (JsonNode node : root.get("trainings")) {
-            long id = node.get("id").asLong();
-            Training training = jsonMapper.treeToValue(node, Training.class);
-            storage.put("training", id, training);
-            log.debug("Loaded training: {}", training.trainingName());
-        }
+        loadTrainees(root);
+        loadTrainers(root);
+        loadTrainings(root);
 
         log.info("Storage initialized from {}", dataPath);
+    }
+
+    private void loadTrainees(JsonNode root) throws IOException {
+        JsonNode nodes = root.get("trainees");
+        if (nodes == null || !nodes.isArray()) {
+            log.warn("No trainees found in {}", dataPath);
+            return;
+        }
+        for (JsonNode node : nodes) {
+            long id = node.get("id").asLong();
+            Trainee trainee = jsonMapper.treeToValue(node, Trainee.class);
+            storage.put(TRAINEE_NS, id, trainee);
+            log.debug("Loaded trainee: {}", trainee.getUsername());
+        }
+    }
+
+    private void loadTrainers(JsonNode root) throws IOException {
+        JsonNode nodes = root.get("trainers");
+        if (nodes == null || !nodes.isArray()) {
+            log.warn("No trainers found in {}", dataPath);
+            return;
+        }
+        for (JsonNode node : nodes) {
+            long id = node.get("id").asLong();
+            Trainer trainer = jsonMapper.treeToValue(node, Trainer.class);
+            storage.put(TRAINER_NS, id, trainer);
+            log.debug("Loaded trainer: {}", trainer.getUsername());
+        }
+    }
+
+    private void loadTrainings(JsonNode root) throws IOException {
+        JsonNode nodes = root.get("trainings");
+        if (nodes == null || !nodes.isArray()) {
+            log.warn("No trainings found in {}", dataPath);
+            return;
+        }
+        for (JsonNode node : nodes) {
+            long id = node.get("id").asLong();
+            Training training = jsonMapper.treeToValue(node, Training.class);
+            storage.put(TRAINING_NS, id, training);
+            log.debug("Loaded training: {}", training.trainingName());
+        }
     }
 }

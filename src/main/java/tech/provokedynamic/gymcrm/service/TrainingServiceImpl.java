@@ -9,14 +9,13 @@ import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.entity.Training;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
-    private static final AtomicLong ID = new AtomicLong(1);
+    private final AtomicLong id = new AtomicLong(1);
 
     private final TrainingDao trainingDao;
 
@@ -27,7 +26,7 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     @Validate
     public Training create(TrainingRequest.Create request) {
-        long id = ID.getAndIncrement();
+        long nextId = id.getAndIncrement();
 
         Training training = new Training(
                 request.getTraineeId(),
@@ -39,13 +38,14 @@ public class TrainingServiceImpl implements TrainingService {
         );
 
         log.debug("Creating training: {}", request.getTrainingName());
-        return trainingDao.save(id, training);
+        return trainingDao.save(nextId, training);
     }
 
     @Override
-    public Optional<Training> findById(long id) {
+    public Training findById(long id) {
         log.debug("Finding training with id: {}", id);
-        return trainingDao.findById(id);
+        return trainingDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Training not found with id: " + id));
     }
 
     @Override

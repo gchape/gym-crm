@@ -12,7 +12,6 @@ import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.service.TrainingService;
 
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class GymFacade {
@@ -40,7 +39,7 @@ public class GymFacade {
         traineeService.delete(id);
     }
 
-    public Optional<Trainee> findTraineeById(long id) {
+    public Trainee findTraineeById(long id) {
         return traineeService.findById(id);
     }
 
@@ -56,7 +55,7 @@ public class GymFacade {
         return trainerService.update(id, request);
     }
 
-    public Optional<Trainer> findTrainerById(long id) {
+    public Trainer findTrainerById(long id) {
         return trainerService.findById(id);
     }
 
@@ -68,7 +67,7 @@ public class GymFacade {
         return trainingService.create(request);
     }
 
-    public Optional<Training> findTrainingById(long id) {
+    public Training findTrainingById(long id) {
         return trainingService.findById(id);
     }
 

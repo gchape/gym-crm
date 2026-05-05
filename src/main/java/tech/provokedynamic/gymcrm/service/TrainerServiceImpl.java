@@ -11,14 +11,13 @@ import tech.provokedynamic.gymcrm.dto.TrainerRequest;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TrainerServiceImpl implements TrainerService {
     private static final Logger log = LoggerFactory.getLogger(TrainerServiceImpl.class);
 
-    private static final AtomicLong ID = new AtomicLong(1);
+    private final AtomicLong id = new AtomicLong(1);
 
     private final TrainerDao trainerDao;
     private CredentialGenerator credentialGenerator;
@@ -35,7 +34,7 @@ public class TrainerServiceImpl implements TrainerService {
     @Override
     @Validate
     public Trainer create(TrainerRequest.Create request) {
-        long id = ID.getAndIncrement();
+        long nextId = id.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
                 request.getFirstName(),
@@ -45,7 +44,7 @@ public class TrainerServiceImpl implements TrainerService {
         String password = credentialGenerator.generatePassword();
 
         Trainer toSave = Trainer.builder()
-                .id(id)
+                .id(nextId)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .username(username)
@@ -55,7 +54,7 @@ public class TrainerServiceImpl implements TrainerService {
                 .build();
 
         log.debug("Creating trainer with username: {}", username);
-        return trainerDao.save(id, toSave);
+        return trainerDao.save(nextId, toSave);
     }
 
     @Override
@@ -79,9 +78,16 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Optional<Trainer> findById(long id) {
+    public void delete(long id) {
+        log.debug("Deleting trainer with id: {}", id);
+        trainerDao.delete(id);
+    }
+
+    @Override
+    public Trainer findById(long id) {
         log.debug("Finding trainer with id: {}", id);
-        return trainerDao.findById(id);
+        return trainerDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id));
     }
 
     @Override

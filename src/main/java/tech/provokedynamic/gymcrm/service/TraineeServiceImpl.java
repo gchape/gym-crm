@@ -11,14 +11,13 @@ import tech.provokedynamic.gymcrm.dto.TraineeRequest;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
     private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
-    private static final AtomicLong ID = new AtomicLong(1);
+    private final AtomicLong id = new AtomicLong(1);
 
     private final TraineeDao traineeDao;
     private CredentialGenerator credentialGenerator;
@@ -35,7 +34,7 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Validate
     public Trainee create(TraineeRequest.Create request) {
-        long id = ID.getAndIncrement();
+        long nextId = id.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
                 request.getFirstName(),
@@ -45,7 +44,7 @@ public class TraineeServiceImpl implements TraineeService {
         String password = credentialGenerator.generatePassword();
 
         Trainee toSave = Trainee.builder()
-                .id(id)
+                .id(nextId)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .username(username)
@@ -56,7 +55,7 @@ public class TraineeServiceImpl implements TraineeService {
                 .build();
 
         log.debug("Creating trainee with username: {}", username);
-        return traineeDao.save(id, toSave);
+        return traineeDao.save(nextId, toSave);
     }
 
     @Override
@@ -87,9 +86,10 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public Optional<Trainee> findById(long id) {
+    public Trainee findById(long id) {
         log.debug("Finding trainee with id: {}", id);
-        return traineeDao.findById(id);
+        return traineeDao.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id));
     }
 
     @Override
