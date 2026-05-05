@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
+import tech.provokedynamic.gymcrm.dto.TrainingResponse;
 import tech.provokedynamic.gymcrm.entity.Training;
 
 import java.util.List;
@@ -25,32 +26,36 @@ public class TrainingServiceImpl implements TrainingService {
 
     @Override
     @Validate
-    public Training create(TrainingRequest.Create request) {
+    public TrainingResponse.Detail create(TrainingRequest.Create request) {
         long nextId = id.getAndIncrement();
 
         Training training = new Training(
-                request.getTraineeId(),
-                request.getTrainerId(),
-                request.getTrainingName(),
-                request.getTrainingType(),
-                request.getTrainingDate(),
-                request.getTrainingDuration()
+                request.traineeId(),
+                request.trainerId(),
+                request.trainingName(),
+                request.trainingType(),
+                request.trainingDate(),
+                request.trainingDuration()
         );
 
-        log.debug("Creating training: {}", request.getTrainingName());
-        return trainingDao.save(nextId, training);
+        log.debug("Creating training: {}", request.trainingName());
+        return TrainingResponse.Detail.from(trainingDao.save(nextId, training));
     }
 
     @Override
-    public Training findById(long id) {
+    public TrainingResponse.Detail findById(long id) {
         log.debug("Finding training with id: {}", id);
-        return trainingDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Training not found with id: " + id));
+        return TrainingResponse.Detail.from(
+                trainingDao.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Training not found with id: " + id))
+        );
     }
 
     @Override
-    public List<Training> findAll() {
+    public List<TrainingResponse.Summary> findAll() {
         log.debug("Finding all trainings");
-        return trainingDao.findAll();
+        return trainingDao.findAll().stream()
+                .map(TrainingResponse.Summary::from)
+                .toList();
     }
 }

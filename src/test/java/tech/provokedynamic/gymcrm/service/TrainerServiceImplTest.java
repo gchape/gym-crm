@@ -9,7 +9,7 @@ import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.TrainerRequest;
-import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.dto.TrainerResponse;
 import tech.provokedynamic.gymcrm.model.Specialization;
 
 import java.util.List;
@@ -37,11 +37,10 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldCreateTrainer_whenRequestIsValid() {
-        Trainer result = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail result = trainerService.create(validCreateRequest());
 
         assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isNotBlank();
-        assertThat(result.getPassword()).hasSize(10);
+        assertThat(result.username()).isNotBlank();
         assertThat(result.isActive()).isTrue();
     }
 
@@ -71,53 +70,52 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldGenerateUniqueUsernames_whenTwoTrainersHaveSameName() {
-        Trainer first = trainerService.create(validCreateRequest());
-        Trainer second = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail first = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail second = trainerService.create(validCreateRequest());
 
-        assertThat(first.getUsername()).isNotEqualTo(second.getUsername());
+        assertThat(first.username()).isNotEqualTo(second.username());
     }
 
     @Test
     void shouldUpdateTrainer_whenRequestIsValid() {
-        Trainer created = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
         TrainerRequest.Update update = new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
 
-        Trainer updated = trainerService.update(created.getId(), update);
+        TrainerResponse.Detail updated = trainerService.update(created.id(), update);
 
-        assertThat(updated.getFirstName()).isEqualTo("Johnny");
-        assertThat(updated.getSpecialization()).isEqualTo(Specialization.YOGA);
+        assertThat(updated.firstName()).isEqualTo("Johnny");
+        assertThat(updated.specialization()).isEqualTo(Specialization.YOGA);
     }
 
     @Test
-    void shouldPreserveUsernameAndPassword_whenUpdatingTrainer() {
-        Trainer created = trainerService.create(validCreateRequest());
+    void shouldPreserveUsername_whenUpdatingTrainer() {
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
         TrainerRequest.Update update = new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
 
-        Trainer updated = trainerService.update(created.getId(), update);
+        TrainerResponse.Detail updated = trainerService.update(created.id(), update);
 
-        assertThat(updated.getUsername()).isEqualTo(created.getUsername());
-        assertThat(updated.getPassword()).isEqualTo(created.getPassword());
+        assertThat(updated.username()).isEqualTo(created.username());
     }
 
     @Test
     void shouldThrowException_whenUpdatingWithBlankFirstName() {
-        Trainer created = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
         TrainerRequest.Update update = new TrainerRequest.Update("", "Doe", Specialization.FITNESS, true);
 
-        assertThatThrownBy(() -> trainerService.update(created.getId(), update))
+        assertThatThrownBy(() -> trainerService.update(created.id(), update))
                 .isInstanceOf(Exception.class);
     }
 
     @Test
     void shouldThrowException_whenUpdatingWithNullSpecialization() {
-        Trainer created = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
         TrainerRequest.Update update = new TrainerRequest.Update("John", "Doe", null, true);
 
-        assertThatThrownBy(() -> trainerService.update(created.getId(), update))
+        assertThatThrownBy(() -> trainerService.update(created.id(), update))
                 .isInstanceOf(Exception.class);
     }
 
@@ -131,9 +129,9 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldFindTrainerById_whenTrainerExists() {
-        Trainer created = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
-        Trainer found = trainerService.findById(created.getId());
+        TrainerResponse.Detail found = trainerService.findById(created.id());
 
         assertThat(found).isEqualTo(created);
     }
@@ -149,18 +147,18 @@ class TrainerServiceImplTest {
         trainerService.create(validCreateRequest());
         trainerService.create(new TrainerRequest.Create("Jane", "Smith", Specialization.YOGA));
 
-        List<Trainer> result = trainerService.findAll();
+        List<TrainerResponse.Summary> result = trainerService.findAll();
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
     void shouldDeleteTrainer_whenTrainerExists() {
-        Trainer created = trainerService.create(validCreateRequest());
+        TrainerResponse.Detail created = trainerService.create(validCreateRequest());
 
-        trainerService.delete(created.getId());
+        trainerService.delete(created.id());
 
-        assertThatThrownBy(() -> trainerService.findById(created.getId()))
+        assertThatThrownBy(() -> trainerService.findById(created.id()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

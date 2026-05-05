@@ -1,14 +1,14 @@
 package tech.provokedynamic.gymcrm.service;
 
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
-import tech.provokedynamic.gymcrm.entity.Training;
+import tech.provokedynamic.gymcrm.dto.TrainingResponse;
 
 import java.util.List;
 
 public interface TrainingService {
-    Training create(TrainingRequest.Create request);
+    TrainingResponse.Detail create(TrainingRequest.Create request);
 
-    Training findById(long id);
+    TrainingResponse.Detail findById(long id);
 
-    List<Training> findAll();
+    List<TrainingResponse.Summary> findAll();
 }

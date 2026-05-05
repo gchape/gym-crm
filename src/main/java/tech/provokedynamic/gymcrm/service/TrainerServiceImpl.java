@@ -8,6 +8,7 @@ import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.TrainerRequest;
+import tech.provokedynamic.gymcrm.dto.TrainerResponse;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 
 import java.util.List;
@@ -33,48 +34,48 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Validate
-    public Trainer create(TrainerRequest.Create request) {
+    public TrainerResponse.Detail create(TrainerRequest.Create request) {
         long nextId = id.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
-                request.getFirstName(),
-                request.getLastName(),
+                request.firstName(),
+                request.lastName(),
                 trainerDao.findAll()
         );
         String password = credentialGenerator.generatePassword();
 
         Trainer toSave = Trainer.builder()
                 .id(nextId)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
-                .specialization(request.getSpecialization())
+                .specialization(request.specialization())
                 .build();
 
         log.debug("Creating trainer with username: {}", username);
-        return trainerDao.save(nextId, toSave);
+        return TrainerResponse.Detail.from(trainerDao.save(nextId, toSave));
     }
 
     @Override
     @Validate
-    public Trainer update(long id, TrainerRequest.Update request) {
+    public TrainerResponse.Detail update(long id, TrainerRequest.Update request) {
         Trainer existing = trainerDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id));
 
         Trainer updated = Trainer.builder()
                 .id(id)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(existing.getUsername())
                 .password(existing.getPassword())
                 .isActive(existing.isActive())
-                .specialization(request.getSpecialization())
+                .specialization(request.specialization())
                 .build();
 
         log.debug("Updating trainer with id: {}", id);
-        return trainerDao.update(id, updated);
+        return TrainerResponse.Detail.from(trainerDao.save(id, updated));
     }
 
     @Override
@@ -84,15 +85,19 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Trainer findById(long id) {
+    public TrainerResponse.Detail findById(long id) {
         log.debug("Finding trainer with id: {}", id);
-        return trainerDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id));
+        return TrainerResponse.Detail.from(
+                trainerDao.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id))
+        );
     }
 
     @Override
-    public List<Trainer> findAll() {
+    public List<TrainerResponse.Summary> findAll() {
         log.debug("Finding all trainers");
-        return trainerDao.findAll();
+        return trainerDao.findAll().stream()
+                .map(TrainerResponse.Summary::from)
+                .toList();
     }
 }

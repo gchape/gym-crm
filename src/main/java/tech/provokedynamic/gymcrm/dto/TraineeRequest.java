@@ -8,59 +8,30 @@ import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
 
-public abstract sealed class TraineeRequest implements Request permits TraineeRequest.Create, TraineeRequest.Update {
-    @NotBlank(message = "First name is required")
-    private final String firstName;
+public sealed interface TraineeRequest extends Request permits TraineeRequest.Create, TraineeRequest.Update {
 
-    @NotBlank(message = "Last name is required")
-    private final String lastName;
+    String firstName();
 
-    @Past(message = "Date of birth must be in the past")
-    private final LocalDate dateOfBirth;
+    String lastName();
 
-    @Valid
-    @NotNull(message = "Address is required")
-    private final Address address;
+    LocalDate dateOfBirth();
 
-    protected TraineeRequest(String firstName, String lastName, LocalDate dateOfBirth, Address address) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.dateOfBirth = dateOfBirth;
-        this.address = address;
+    Address address();
+
+    record Create(
+            @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName,
+            @Past(message = "Date of birth must be in the past") LocalDate dateOfBirth,
+            @Valid @NotNull(message = "Address is required") Address address
+    ) implements TraineeRequest {
     }
 
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public Address getAddress() {
-        return address;
-    }
-
-    public static final class Create extends TraineeRequest {
-        public Create(String firstName, String lastName, LocalDate dateOfBirth, Address address) {
-            super(firstName, lastName, dateOfBirth, address);
-        }
-    }
-
-    public static final class Update extends TraineeRequest {
-        private final boolean isActive;
-
-        public Update(String firstName, String lastName, LocalDate dateOfBirth, Address address, boolean isActive) {
-            super(firstName, lastName, dateOfBirth, address);
-            this.isActive = isActive;
-        }
-
-        public boolean isActive() {
-            return isActive;
-        }
+    record Update(
+            @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName,
+            @Past(message = "Date of birth must be in the past") LocalDate dateOfBirth,
+            @Valid @NotNull(message = "Address is required") Address address,
+            boolean active
+    ) implements TraineeRequest {
     }
 }

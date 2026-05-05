@@ -8,6 +8,7 @@ import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dto.TraineeRequest;
+import tech.provokedynamic.gymcrm.dto.TraineeResponse;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.util.List;
@@ -33,50 +34,50 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    public Trainee create(TraineeRequest.Create request) {
+    public TraineeResponse.Detail create(TraineeRequest.Create request) {
         long nextId = id.getAndIncrement();
 
         String username = credentialGenerator.generateUsername(
-                request.getFirstName(),
-                request.getLastName(),
+                request.firstName(),
+                request.lastName(),
                 traineeDao.findAll()
         );
         String password = credentialGenerator.generatePassword();
 
         Trainee toSave = Trainee.builder()
                 .id(nextId)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(username)
                 .password(password)
                 .isActive(true)
-                .dateOfBirth(request.getDateOfBirth())
-                .address(request.getAddress())
+                .dateOfBirth(request.dateOfBirth())
+                .address(request.address())
                 .build();
 
         log.debug("Creating trainee with username: {}", username);
-        return traineeDao.save(nextId, toSave);
+        return TraineeResponse.Detail.from(traineeDao.save(nextId, toSave));
     }
 
     @Override
     @Validate
-    public Trainee update(long id, TraineeRequest.Update request) {
+    public TraineeResponse.Detail update(long id, TraineeRequest.Update request) {
         Trainee existing = traineeDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id));
 
         Trainee updated = Trainee.builder()
                 .id(id)
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
                 .username(existing.getUsername())
                 .password(existing.getPassword())
-                .isActive(request.isActive())
-                .dateOfBirth(request.getDateOfBirth())
-                .address(request.getAddress())
+                .isActive(request.active())
+                .dateOfBirth(request.dateOfBirth())
+                .address(request.address())
                 .build();
 
         log.debug("Updating trainee with id: {}", id);
-        return traineeDao.update(id, updated);
+        return TraineeResponse.Detail.from(traineeDao.update(id, updated));
     }
 
     @Override
@@ -86,15 +87,19 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public Trainee findById(long id) {
+    public TraineeResponse.Detail findById(long id) {
         log.debug("Finding trainee with id: {}", id);
-        return traineeDao.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id));
+        return TraineeResponse.Detail.from(
+                traineeDao.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id))
+        );
     }
 
     @Override
-    public List<Trainee> findAll() {
+    public List<TraineeResponse.Summary> findAll() {
         log.debug("Finding all trainees");
-        return traineeDao.findAll();
+        return traineeDao.findAll().stream()
+                .map(TraineeResponse.Summary::from)
+                .toList();
     }
 }

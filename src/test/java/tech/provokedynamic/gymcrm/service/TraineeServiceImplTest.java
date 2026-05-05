@@ -9,7 +9,7 @@ import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dto.TraineeRequest;
-import tech.provokedynamic.gymcrm.entity.Trainee;
+import tech.provokedynamic.gymcrm.dto.TraineeResponse;
 import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
@@ -46,11 +46,10 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldCreateTrainee_whenRequestIsValid() {
-        Trainee result = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail result = traineeService.create(validCreateRequest());
 
         assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isNotBlank();
-        assertThat(result.getPassword()).hasSize(10);
+        assertThat(result.username()).isNotBlank();
     }
 
     @Test
@@ -105,13 +104,13 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldCreateTrainee_whenAddressIsFullyValid() {
-        Trainee result = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail result = traineeService.create(validCreateRequest());
 
-        assertThat(result.getAddress()).isEqualTo(validAddress());
-        assertThat(result.getAddress().street()).isEqualTo("Baker Street 221B");
-        assertThat(result.getAddress().city()).isEqualTo("London");
-        assertThat(result.getAddress().country()).isEqualTo("UK");
-        assertThat(result.getAddress().postalCode()).isEqualTo("12345");
+        assertThat(result.address()).isEqualTo(validAddress());
+        assertThat(result.address().street()).isEqualTo("Baker Street 221B");
+        assertThat(result.address().city()).isEqualTo("London");
+        assertThat(result.address().country()).isEqualTo("UK");
+        assertThat(result.address().postalCode()).isEqualTo("12345");
     }
 
     @Test
@@ -198,9 +197,9 @@ class TraineeServiceImplTest {
                 "Jane", "Smith", LocalDate.of(1990, 3, 15), address
         );
 
-        Trainee result = traineeService.create(request);
+        TraineeResponse.Detail result = traineeService.create(request);
 
-        assertThat(result.getAddress().postalCode()).isEqualTo("1234");
+        assertThat(result.address().postalCode()).isEqualTo("1234");
     }
 
     @Test
@@ -210,51 +209,51 @@ class TraineeServiceImplTest {
                 "Jane", "Smith", LocalDate.of(1990, 3, 15), address
         );
 
-        Trainee result = traineeService.create(request);
+        TraineeResponse.Detail result = traineeService.create(request);
 
-        assertThat(result.getAddress().postalCode()).isEqualTo("1234567890");
+        assertThat(result.address().postalCode()).isEqualTo("1234567890");
     }
 
     @Test
     void shouldUpdateTrainee_whenRequestIsValid() {
-        Trainee created = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail created = traineeService.create(validCreateRequest());
 
         TraineeRequest.Update update = new TraineeRequest.Update(
                 "Johnny", "Doe", LocalDate.of(1995, 5, 10), validAddress(), true
         );
 
-        Trainee updated = traineeService.update(created.getId(), update);
+        TraineeResponse.Detail updated = traineeService.update(created.id(), update);
 
-        assertThat(updated.getFirstName()).isEqualTo("Johnny");
+        assertThat(updated.firstName()).isEqualTo("Johnny");
         assertThat(updated.isActive()).isTrue();
     }
 
     @Test
     void shouldUpdateTrainee_whenAddressChangesToValidValue() {
-        Trainee created = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail created = traineeService.create(validCreateRequest());
 
         Address newAddress = new Address("New Street 99", "Munich", "Germany", "80331");
         TraineeRequest.Update update = new TraineeRequest.Update(
                 "John", "Doe", LocalDate.of(1995, 5, 10), newAddress, true
         );
 
-        Trainee updated = traineeService.update(created.getId(), update);
+        TraineeResponse.Detail updated = traineeService.update(created.id(), update);
 
-        assertThat(updated.getAddress().street()).isEqualTo("New Street 99");
-        assertThat(updated.getAddress().city()).isEqualTo("Munich");
-        assertThat(updated.getAddress().postalCode()).isEqualTo("80331");
+        assertThat(updated.address().street()).isEqualTo("New Street 99");
+        assertThat(updated.address().city()).isEqualTo("Munich");
+        assertThat(updated.address().postalCode()).isEqualTo("80331");
     }
 
     @Test
     void shouldThrowException_whenUpdatingTraineeWithInvalidAddress() {
-        Trainee created = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail created = traineeService.create(validCreateRequest());
 
         Address badAddress = new Address("", "Munich", "Germany", "80331");
         TraineeRequest.Update update = new TraineeRequest.Update(
                 "John", "Doe", LocalDate.of(1995, 5, 10), badAddress, true
         );
 
-        assertThatThrownBy(() -> traineeService.update(created.getId(), update))
+        assertThatThrownBy(() -> traineeService.update(created.id(), update))
                 .isInstanceOf(Exception.class);
     }
 
@@ -270,9 +269,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldFindTraineeById_whenTraineeExists() {
-        Trainee created = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail created = traineeService.create(validCreateRequest());
 
-        Trainee found = traineeService.findById(created.getId());
+        TraineeResponse.Detail found = traineeService.findById(created.id());
 
         assertThat(found).isEqualTo(created);
     }
@@ -290,18 +289,18 @@ class TraineeServiceImplTest {
                 "Jane", "Smith", LocalDate.of(1990, 3, 15), validAddress()
         ));
 
-        List<Trainee> result = traineeService.findAll();
+        List<TraineeResponse.Summary> result = traineeService.findAll();
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
     void shouldDeleteTrainee_whenTraineeExists() {
-        Trainee created = traineeService.create(validCreateRequest());
+        TraineeResponse.Detail created = traineeService.create(validCreateRequest());
 
-        traineeService.delete(created.getId());
+        traineeService.delete(created.id());
 
-        assertThatThrownBy(() -> traineeService.findById(created.getId()))
+        assertThatThrownBy(() -> traineeService.findById(created.id()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

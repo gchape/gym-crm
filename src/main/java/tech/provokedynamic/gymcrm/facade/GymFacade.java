@@ -1,12 +1,7 @@
 package tech.provokedynamic.gymcrm.facade;
 
 import org.springframework.stereotype.Component;
-import tech.provokedynamic.gymcrm.dto.TraineeRequest;
-import tech.provokedynamic.gymcrm.dto.TrainerRequest;
-import tech.provokedynamic.gymcrm.dto.TrainingRequest;
-import tech.provokedynamic.gymcrm.entity.Trainee;
-import tech.provokedynamic.gymcrm.entity.Trainer;
-import tech.provokedynamic.gymcrm.entity.Training;
+import tech.provokedynamic.gymcrm.dto.*;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.service.TrainingService;
@@ -27,11 +22,11 @@ public class GymFacade {
         this.trainingService = trainingService;
     }
 
-    public Trainee createTrainee(TraineeRequest.Create request) {
+    public TraineeResponse.Detail createTrainee(TraineeRequest.Create request) {
         return traineeService.create(request);
     }
 
-    public Trainee updateTrainee(long id, TraineeRequest.Update request) {
+    public TraineeResponse.Detail updateTrainee(long id, TraineeRequest.Update request) {
         return traineeService.update(id, request);
     }
 
@@ -39,39 +34,39 @@ public class GymFacade {
         traineeService.delete(id);
     }
 
-    public Trainee findTraineeById(long id) {
+    public TraineeResponse.Detail findTraineeById(long id) {
         return traineeService.findById(id);
     }
 
-    public List<Trainee> findAllTrainees() {
+    public List<TraineeResponse.Summary> findAllTrainees() {
         return traineeService.findAll();
     }
 
-    public Trainer createTrainer(TrainerRequest.Create request) {
+    public TrainerResponse.Detail createTrainer(TrainerRequest.Create request) {
         return trainerService.create(request);
     }
 
-    public Trainer updateTrainer(long id, TrainerRequest.Update request) {
+    public TrainerResponse.Detail updateTrainer(long id, TrainerRequest.Update request) {
         return trainerService.update(id, request);
     }
 
-    public Trainer findTrainerById(long id) {
+    public TrainerResponse.Detail findTrainerById(long id) {
         return trainerService.findById(id);
     }
 
-    public List<Trainer> findAllTrainers() {
+    public List<TrainerResponse.Summary> findAllTrainers() {
         return trainerService.findAll();
     }
 
-    public Training createTraining(TrainingRequest.Create request) {
+    public TrainingResponse.Detail createTraining(TrainingRequest.Create request) {
         return trainingService.create(request);
     }
 
-    public Training findTrainingById(long id) {
+    public TrainingResponse.Detail findTrainingById(long id) {
         return trainingService.findById(id);
     }
 
-    public List<Training> findAllTrainings() {
+    public List<TrainingResponse.Summary> findAllTrainings() {
         return trainingService.findAll();
     }
 }

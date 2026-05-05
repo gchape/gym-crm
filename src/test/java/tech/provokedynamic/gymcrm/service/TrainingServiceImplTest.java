@@ -9,7 +9,7 @@ import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
-import tech.provokedynamic.gymcrm.entity.Training;
+import tech.provokedynamic.gymcrm.dto.TrainingResponse;
 import tech.provokedynamic.gymcrm.model.TrainingType;
 
 import java.time.Duration;
@@ -44,7 +44,7 @@ class TrainingServiceImplTest {
 
     @Test
     void shouldCreateTraining_whenRequestIsValid() {
-        Training result = trainingService.create(validCreateRequest());
+        TrainingResponse.Detail result = trainingService.create(validCreateRequest());
 
         assertThat(result).isNotNull();
         assertThat(result.trainingName()).isEqualTo("Morning Cardio");
@@ -98,7 +98,7 @@ class TrainingServiceImplTest {
 
     @Test
     void shouldCreateTraining_whenTrainingDateIsToday() {
-        Training result = trainingService.create(validCreateRequest());
+        TrainingResponse.Detail result = trainingService.create(validCreateRequest());
 
         assertThat(result.trainingDate()).isEqualTo(LocalDate.now());
     }
@@ -112,7 +112,7 @@ class TrainingServiceImplTest {
                 Duration.ofHours(1)
         );
 
-        Training result = trainingService.create(request);
+        TrainingResponse.Detail result = trainingService.create(request);
 
         assertThat(result.trainingDate()).isEqualTo(LocalDate.now().plusDays(7));
     }
@@ -149,7 +149,7 @@ class TrainingServiceImplTest {
                 Duration.ofMinutes(30)
         );
 
-        Training result = trainingService.create(request);
+        TrainingResponse.Detail result = trainingService.create(request);
 
         assertThat(result.trainingDuration()).isEqualTo(Duration.ofMinutes(30));
     }
@@ -196,9 +196,9 @@ class TrainingServiceImplTest {
 
     @Test
     void shouldFindTrainingById_whenTrainingExists() {
-        Training created = trainingService.create(validCreateRequest());
+        TrainingResponse.Detail created = trainingService.create(validCreateRequest());
 
-        Training found = trainingService.findById(1L);
+        TrainingResponse.Detail found = trainingService.findById(1L);
 
         assertThat(found).isEqualTo(created);
     }
@@ -219,7 +219,7 @@ class TrainingServiceImplTest {
                 Duration.ofHours(1)
         ));
 
-        List<Training> result = trainingService.findAll();
+        List<TrainingResponse.Summary> result = trainingService.findAll();
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
     }

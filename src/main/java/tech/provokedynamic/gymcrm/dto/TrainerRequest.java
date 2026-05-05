@@ -4,50 +4,26 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import tech.provokedynamic.gymcrm.model.Specialization;
 
-public abstract sealed class TrainerRequest implements Request permits TrainerRequest.Create, TrainerRequest.Update {
-    @NotBlank(message = "First name is required")
-    private final String firstName;
+public sealed interface TrainerRequest extends Request permits TrainerRequest.Create, TrainerRequest.Update {
 
-    @NotBlank(message = "Last name is required")
-    private final String lastName;
+    String firstName();
 
-    @NotNull(message = "Specialization is required")
-    private final Specialization specialization;
+    String lastName();
 
-    protected TrainerRequest(String firstName, String lastName, Specialization specialization) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.specialization = specialization;
+    Specialization specialization();
+
+    record Create(
+            @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName,
+            @NotNull(message = "Specialization is required") Specialization specialization
+    ) implements TrainerRequest {
     }
 
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public Specialization getSpecialization() {
-        return specialization;
-    }
-
-    public static final class Create extends TrainerRequest {
-        public Create(String firstName, String lastName, Specialization specialization) {
-            super(firstName, lastName, specialization);
-        }
-    }
-
-    public static final class Update extends TrainerRequest {
-        private final boolean isActive;
-
-        public Update(String firstName, String lastName, Specialization specialization, boolean isActive) {
-            super(firstName, lastName, specialization);
-            this.isActive = isActive;
-        }
-
-        public boolean isActive() {
-            return isActive;
-        }
+    record Update(
+            @NotBlank(message = "First name is required") String firstName,
+            @NotBlank(message = "Last name is required") String lastName,
+            @NotNull(message = "Specialization is required") Specialization specialization,
+            boolean active
+    ) implements TrainerRequest {
     }
 }

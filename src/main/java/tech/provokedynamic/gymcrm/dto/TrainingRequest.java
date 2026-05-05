@@ -10,67 +10,29 @@ import tech.provokedynamic.gymcrm.model.TrainingType;
 import java.time.Duration;
 import java.time.LocalDate;
 
-public abstract sealed class TrainingRequest implements Request permits TrainingRequest.Create {
-    @Positive(message = "Trainee ID must be positive")
-    private final long traineeId;
+public sealed interface TrainingRequest extends Request permits TrainingRequest.Create {
 
-    @Positive(message = "Trainer ID must be positive")
-    private final long trainerId;
+    long traineeId();
 
-    @NotBlank(message = "Training name is required")
-    private final String trainingName;
+    long trainerId();
 
-    @NotNull(message = "Training type is required")
-    private final TrainingType trainingType;
+    String trainingName();
 
-    @NotNull(message = "Training date is required")
-    @FutureOrPresent(message = "Training date must be today or in the future")
-    private final LocalDate trainingDate;
+    TrainingType trainingType();
 
-    @NotNull(message = "Training duration is required")
-    @DurationMin(days = 0, hours = 0, minutes = 30, message = "Training must be at least 30 minutes")
-    private final Duration trainingDuration;
+    LocalDate trainingDate();
 
-    protected TrainingRequest(long traineeId, long trainerId, String trainingName,
-                              TrainingType trainingType, LocalDate trainingDate,
-                              Duration trainingDuration) {
-        this.traineeId = traineeId;
-        this.trainerId = trainerId;
-        this.trainingName = trainingName;
-        this.trainingType = trainingType;
-        this.trainingDate = trainingDate;
-        this.trainingDuration = trainingDuration;
-    }
+    Duration trainingDuration();
 
-    public long getTraineeId() {
-        return traineeId;
-    }
-
-    public long getTrainerId() {
-        return trainerId;
-    }
-
-    public String getTrainingName() {
-        return trainingName;
-    }
-
-    public TrainingType getTrainingType() {
-        return trainingType;
-    }
-
-    public LocalDate getTrainingDate() {
-        return trainingDate;
-    }
-
-    public Duration getTrainingDuration() {
-        return trainingDuration;
-    }
-
-    public static final class Create extends TrainingRequest {
-        public Create(long traineeId, long trainerId, String trainingName,
-                      TrainingType trainingType, LocalDate trainingDate,
-                      Duration trainingDuration) {
-            super(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration);
-        }
+    record Create(
+            @Positive(message = "Trainee ID must be positive") long traineeId,
+            @Positive(message = "Trainer ID must be positive") long trainerId,
+            @NotBlank(message = "Training name is required") String trainingName,
+            @NotNull(message = "Training type is required") TrainingType trainingType,
+            @NotNull(message = "Training date is required")
+            @FutureOrPresent(message = "Training date must be today or in the future") LocalDate trainingDate,
+            @NotNull(message = "Training duration is required")
+            @DurationMin(days = 0, hours = 0, minutes = 30, message = "Training must be at least 30 minutes") Duration trainingDuration
+    ) implements TrainingRequest {
     }
 }
