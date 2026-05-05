@@ -102,12 +102,13 @@ src/
 │       ├── application.yaml                  # dev/prod profiles + storage path
 │       ├── logback.xml                       # dev + prod log profiles
 │       └── data/
-│           └── init-data.json               # seed data loaded on startup
+│           └── init-data.json                # seed data loaded on startup
 └── test/
     └── java/tech/provokedynamic/gymcrm/
         ├── component/
         │   ├── CredentialGeneratorTest.java  # unit tests, no Spring context
-        │   └── InMemoryStorageTest.java      # unit tests, no Spring context
+        │   ├── InMemoryStorageTest.java      # unit tests, no Spring context
+        │   └── StorageInitializerTest.java   # sliced context, startup loading tests
         ├── dao/
         │   ├── AbstractDaoTest.java          # unit tests, no Spring context
         │   └── TestDao.java                  # test-only AbstractDao subclass
@@ -257,8 +258,6 @@ enforced entry point — direct builder usage bypasses validation, intentionally
 Service tests load only the classes needed for each slice, keeping startup fast:
 
 ```java
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-
 @SpringBootTest(classes = {
         TraineeServiceImpl.class,
         TraineeDao.class,
@@ -271,12 +270,25 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 ```
 
 - `TraineeServiceImplTest` — valid/invalid requests, address and postal code validation, boundary values, update,
-  not-found
-- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, not-found
-- `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints
+  findById, findAll, delete, not-found
+- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
+  findAll, delete, not-found
+- `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints,
+  findById, findAll
+- `StorageInitializerTest` — entity count per namespace, type correctness, field values, namespace isolation, duplicate
+  username handling
 
 `GymFacade` is not tested directly — it is pure delegation with no logic of its own. Service tests cover all behavior
 end-to-end.
+
+### Coverage
+
+| Metric | Coverage      |
+|--------|---------------|
+| Class  | 100% (33/33)  |
+| Method | 85% (109/127) |
+| Line   | 90% (311/344) |
+| Branch | 82% (28/34)   |
 
 ---
 
@@ -325,6 +337,7 @@ Per task requirements:
 - Logback with dev/prod profiles
 - Unit tests for `CredentialGenerator`, `InMemoryStorage`, `AbstractDao`
 - Sliced context integration tests for `TraineeService`, `TrainerService`, `TrainingService`
+- Sliced context integration tests for `StorageInitializer`
 - `GymFacade` not tested — pure delegation, no logic to verify
 
 ---
@@ -333,7 +346,6 @@ Per task requirements:
 
 ### Technical debt
 
-- [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
 - [X] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
 - [X] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
 
