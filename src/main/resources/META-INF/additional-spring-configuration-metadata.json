@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "storage.data.path",
+      "type": "java.lang.String",
+      "description": "Path to the JSON file used to initialize in-memory storage."
+    }
+  ]
+}
