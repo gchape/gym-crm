@@ -10,8 +10,10 @@ import org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootConfiguration(proxyBeanMethods = false)
 @EnableAutoConfiguration(exclude = {
@@ -24,7 +26,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableAspectJAutoProxy
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrm.dao",
-        "tech.provokedynamic.gymcrm.config",
         "tech.provokedynamic.gymcrm.service",
         "tech.provokedynamic.gymcrm.component",
         "tech.provokedynamic.gymcrm.facade",
@@ -40,5 +41,11 @@ public class GymCrmApplication {
                 .headless(false)
                 .build(args)
                 .run();
+    }
+
+    @Bean
+    public JsonMapper jsonMapper() {
+        return JsonMapper.builder()
+                .build();
     }
 }
