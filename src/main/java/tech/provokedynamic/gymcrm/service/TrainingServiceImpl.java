@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -24,6 +25,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Validate
     public Training create(TrainingRequest.Create request) {
         long id = ID.getAndIncrement();
 
