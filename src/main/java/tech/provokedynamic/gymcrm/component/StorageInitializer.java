@@ -64,6 +64,5 @@ public class StorageInitializer {
         }
 
         log.info("Storage initialized from {}", dataPath);
-        System.out.println(storage);
     }
 }

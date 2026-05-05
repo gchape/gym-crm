@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import tech.provokedynamic.gymcrm.model.Specialization;
 
-public abstract class TrainerRequest implements Request {
+public abstract sealed class TrainerRequest implements Request permits TrainerRequest.Create, TrainerRequest.Update {
     @NotBlank(message = "First name is required")
     private final String firstName;
 
@@ -32,13 +32,13 @@ public abstract class TrainerRequest implements Request {
         return specialization;
     }
 
-    public static class Create extends TrainerRequest {
+    public static final class Create extends TrainerRequest {
         public Create(String firstName, String lastName, Specialization specialization) {
             super(firstName, lastName, specialization);
         }
     }
 
-    public static class Update extends TrainerRequest {
+    public static final class Update extends TrainerRequest {
         private final boolean isActive;
 
         public Update(String firstName, String lastName, Specialization specialization, boolean isActive) {

@@ -8,7 +8,7 @@ import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
 
-public abstract class TraineeRequest implements Request {
+public abstract sealed class TraineeRequest implements Request permits TraineeRequest.Create, TraineeRequest.Update {
     @NotBlank(message = "First name is required")
     private final String firstName;
 
@@ -45,14 +45,13 @@ public abstract class TraineeRequest implements Request {
         return address;
     }
 
-    public static class Create extends TraineeRequest {
-
+    public static final class Create extends TraineeRequest {
         public Create(String firstName, String lastName, LocalDate dateOfBirth, Address address) {
             super(firstName, lastName, dateOfBirth, address);
         }
     }
 
-    public static class Update extends TraineeRequest {
+    public static final class Update extends TraineeRequest {
         private final boolean isActive;
 
         public Update(String firstName, String lastName, LocalDate dateOfBirth, Address address, boolean isActive) {

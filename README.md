@@ -336,9 +336,8 @@ Per task requirements:
 - [ ] Merge `Specialization` and `TrainingType` — they are identical enums
 - [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
 - [ ] `Storage.get()` returns raw entity instead of `Optional` — risk of null pointer
-- [ ] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
-- [ ] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
-- [ ] Remove `System.out.println(storage)` from `StorageInitializer`
+- [X] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
+- [X] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
 
 ### Future enhancements
 

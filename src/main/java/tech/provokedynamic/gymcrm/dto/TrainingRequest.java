@@ -10,7 +10,7 @@ import tech.provokedynamic.gymcrm.model.TrainingType;
 import java.time.Duration;
 import java.time.LocalDate;
 
-public abstract class TrainingRequest implements Request {
+public abstract sealed class TrainingRequest implements Request permits TrainingRequest.Create {
     @Positive(message = "Trainee ID must be positive")
     private final long traineeId;
 
@@ -66,7 +66,7 @@ public abstract class TrainingRequest implements Request {
         return trainingDuration;
     }
 
-    public static class Create extends TrainingRequest {
+    public static final class Create extends TrainingRequest {
         public Create(long traineeId, long trainerId, String trainingName,
                       TrainingType trainingType, LocalDate trainingDate,
                       Duration trainingDuration) {
