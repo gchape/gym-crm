@@ -11,7 +11,7 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 - **Jackson 3** (`tools.jackson`) for JSON deserialization
 - **Jakarta Bean Validation** with Hibernate Validator
 - **Logback** with dev/prod profiles
-- **JUnit 5 + Mockito** (planned)
+- **JUnit 5 + AssertJ**
 
 ---
 
@@ -103,6 +103,18 @@ src/
 │       ├── logback.xml                       # dev + prod log profiles
 │       └── data/
 │           └── init-data.json               # seed data loaded on startup
+└── test/
+    └── java/tech/provokedynamic/gymcrm/
+        ├── component/
+        │   ├── CredentialGeneratorTest.java  # unit tests, no Spring context
+        │   └── InMemoryStorageTest.java      # unit tests, no Spring context
+        ├── dao/
+        │   ├── AbstractDaoTest.java          # unit tests, no Spring context
+        │   └── TestDao.java                  # test-only AbstractDao subclass
+        └── service/
+            ├── TraineeServiceImplTest.java   # sliced context, validation + CRUD tests
+            ├── TrainerServiceImplTest.java   # sliced context, validation + CRUD tests
+            └── TrainingServiceImplTest.java  # sliced context, validation + CRUD tests
 ```
 
 ---
@@ -124,8 +136,8 @@ src/
 | Field       | Type      | Notes                         |
 |-------------|-----------|-------------------------------|
 | id          | long      | auto-generated                |
-| dateOfBirth | LocalDate | optional, must be past        |
-| address     | Address   | optional, cascades validation |
+| dateOfBirth | LocalDate | must be in the past           |
+| address     | Address   | required, cascades validation |
 
 ### Trainer extends User
 
@@ -147,12 +159,12 @@ src/
 
 ### Address (record)
 
-| Field      | Type   | Notes       |
-|------------|--------|-------------|
-| street     | String | required    |
-| city       | String | required    |
-| country    | String | required    |
-| postalCode | String | 4-10 digits |
+| Field      | Type   | Notes                 |
+|------------|--------|-----------------------|
+| street     | String | required              |
+| city       | String | required              |
+| country    | String | required              |
+| postalCode | String | required, 4-10 digits |
 
 ---
 
@@ -218,13 +230,53 @@ on `Training` record components.
 
 Single-layer validation via AOP:
 
-- **`@Validate`** — placed on service interface methods that accept `Request` arguments
+- **`@Validate`** — placed on service impl methods that accept `Request` arguments
 - **`ValidationAspect`** — intercepts annotated methods, checks if any argument is a `Request`, validates via
-  `BeanValidator.INSTANCE`
+  `BeanValidator.INSTANCE`, scoped to `tech.provokedynamic.gymcrm.service..*`
 - **`BeanValidator`** — enum singleton wrapping Jakarta `Validator`, usable outside Spring context
+
+`@Validate` must be placed on the concrete implementation class, not the interface. Spring's `@annotation` pointcut
+resolves annotations against the target class method, not the proxy interface method — the same limitation applies to
+`@Transactional` and other Spring AOP-driven annotations.
 
 Entity builders are public due to Java's lack of cross-package encapsulation without JPMS. The service layer is the
 enforced entry point — direct builder usage bypasses validation, intentionally left as a known limitation.
+
+---
+
+## Testing
+
+**Unit tests** (no Spring context, plain instantiation):
+
+- `CredentialGeneratorTest` — username generation, suffix incrementing, password length and uniqueness
+- `InMemoryStorageTest` — key generation, put/get/delete, namespace isolation
+- `AbstractDaoTest` — save, findById, findAll, update, delete via a test-only `TestDao` subclass
+
+**Integration tests** (sliced Spring context):
+
+Service tests load only the classes needed for each slice, keeping startup fast:
+
+```java
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+
+@SpringBootTest(classes = {
+        TraineeServiceImpl.class,
+        TraineeDao.class,
+        CredentialGenerator.class,
+        ValidationAspect.class,
+        InMemoryStorage.class
+}, webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        useMainMethod = SpringBootTest.UseMainMethod.NEVER)
+@EnableAspectJAutoProxy
+```
+
+- `TraineeServiceImplTest` — valid/invalid requests, address and postal code validation, boundary values, update,
+  not-found
+- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, not-found
+- `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints
+
+`GymFacade` is not tested directly — it is pure delegation with no logic of its own. Service tests cover all behavior
+end-to-end.
 
 ---
 
@@ -262,30 +314,28 @@ Per task requirements:
 - `InMemoryStorage` with namespace support
 - `AbstractDao` with generic CRUD
 - `TraineeDao`, `TrainerDao`, `TrainingDao`
-- `TraineeService`, `TrainerService`, `TrainingService` with interfaces
+- `TraineeService`, `TrainerService`, `TrainingService` with interfaces and implementations
 - `CredentialGenerator` (username + password generation)
 - `BeanValidator` enum singleton
-- `@Validate` annotation + `ValidationAspect`
+- `@Validate` annotation + `ValidationAspect` (scoped to service package, on impl methods)
 - `GymFacade` with constructor injection
 - `JacksonConfig` with `JsonMapper`
 - `StorageInitializer` with `@PostConstruct` loading from `init-data.json`
 - Property placeholder for file path via `application.yaml`
 - Logback with dev/prod profiles
+- Unit tests for `CredentialGenerator`, `InMemoryStorage`, `AbstractDao`
+- Sliced context integration tests for `TraineeService`, `TrainerService`, `TrainingService`
+- `GymFacade` not tested — pure delegation, no logic to verify
 
 ---
 
 ## TODO 📋
-
-### Required by task
-
-- [ ] **Unit tests** — cover all service and DAO methods with JUnit 5 + Mockito
 
 ### Technical debt
 
 - [ ] Merge `Specialization` and `TrainingType` — they are identical enums
 - [ ] `AtomicLong` ID counters reset on restart — seed data IDs may collide with generated IDs
 - [ ] `Storage.get()` returns raw entity instead of `Optional` — risk of null pointer
-- [ ] `TrainerRequest` `Update` constructor is `protected` — should be `public`
 - [ ] `Request` interface should be `sealed` permitting `TraineeRequest`, `TrainerRequest`, `TrainingRequest`
 - [ ] `Training.java` mixes Jackson 2 (`com.fasterxml`) and Jackson 3 (`tools.jackson`) imports
 - [ ] Remove `System.out.println(storage)` from `StorageInitializer`
