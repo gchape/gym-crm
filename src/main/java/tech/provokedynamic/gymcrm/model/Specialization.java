@@ -9,5 +9,5 @@ public enum Specialization {
     REHABILITATION,
     MARTIAL_ARTS,
     SWIMMING,
-    CYCLING
+    FITNESS, CYCLING
 }

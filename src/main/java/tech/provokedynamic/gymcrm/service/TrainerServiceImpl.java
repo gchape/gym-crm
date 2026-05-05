@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.TrainerRequest;
@@ -32,6 +33,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Validate
     public Trainer create(TrainerRequest.Create request) {
         long id = ID.getAndIncrement();
 
@@ -57,6 +59,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Validate
     public Trainer update(long id, TrainerRequest.Update request) {
         Trainer existing = trainerDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainer not found with id: " + id));

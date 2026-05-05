@@ -41,7 +41,7 @@ public abstract class TrainerRequest implements Request {
     public static class Update extends TrainerRequest {
         private final boolean isActive;
 
-        protected Update(String firstName, String lastName, Specialization specialization, boolean isActive) {
+        public Update(String firstName, String lastName, Specialization specialization, boolean isActive) {
             super(firstName, lastName, specialization);
             this.isActive = isActive;
         }

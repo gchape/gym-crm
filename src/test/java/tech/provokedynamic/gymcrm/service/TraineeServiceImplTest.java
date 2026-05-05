@@ -3,6 +3,11 @@ package tech.provokedynamic.gymcrm.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
+import tech.provokedynamic.gymcrm.component.CredentialGenerator;
+import tech.provokedynamic.gymcrm.component.InMemoryStorage;
+import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dto.TraineeRequest;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.model.Address;
@@ -12,7 +17,15 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+@SpringBootTest(classes = {
+        TraineeServiceImpl.class,
+        TraineeDao.class,
+        CredentialGenerator.class,
+        ValidationAspect.class,
+        InMemoryStorage.class
+}, webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        useMainMethod = SpringBootTest.UseMainMethod.NEVER)
+@EnableAspectJAutoProxy
 class TraineeServiceImplTest {
 
     @Autowired
