@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tech.provokedynamic.gymcrm.annotations.Validate;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dto.TraineeRequest;
@@ -32,6 +33,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Validate
     public Trainee create(TraineeRequest.Create request) {
         long id = ID.getAndIncrement();
 
@@ -58,6 +60,7 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    @Validate
     public Trainee update(long id, TraineeRequest.Update request) {
         Trainee existing = traineeDao.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Trainee not found with id: " + id));

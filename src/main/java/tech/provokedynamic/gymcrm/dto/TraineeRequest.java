@@ -2,6 +2,7 @@ package tech.provokedynamic.gymcrm.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import tech.provokedynamic.gymcrm.model.Address;
 
@@ -18,6 +19,7 @@ public abstract class TraineeRequest implements Request {
     private final LocalDate dateOfBirth;
 
     @Valid
+    @NotNull(message = "Address is required")
     private final Address address;
 
     protected TraineeRequest(String firstName, String lastName, LocalDate dateOfBirth, Address address) {

@@ -15,11 +15,12 @@ import tech.provokedynamic.gymcrm.validation.BeanValidator;
 public class ValidationAspect {
     private static final Logger log = LoggerFactory.getLogger(ValidationAspect.class);
 
-    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotations.Validate)")
+    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotations.Validate) && " +
+            "within(tech.provokedynamic.gymcrm.service..*)")
     public void validateTarget() {
     }
 
-    @Before("validateTarget() && within(tech.provokedynamic.gymcrm.service.*)")
+    @Before("validateTarget()")
     public void validate(JoinPoint joinPoint) {
         for (Object arg : joinPoint.getArgs()) {
             if (arg instanceof Request request) {
