@@ -12,6 +12,8 @@ import tech.provokedynamic.gymcrm.dto.TrainerRequest;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.model.Specialization;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -45,8 +47,7 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldThrowException_whenFirstNameIsBlank() {
-        TrainerRequest.Create request =
-                new TrainerRequest.Create("", "Doe", Specialization.FITNESS);
+        TrainerRequest.Create request = new TrainerRequest.Create("", "Doe", Specialization.FITNESS);
 
         assertThatThrownBy(() -> trainerService.create(request))
                 .isInstanceOf(Exception.class);
@@ -54,8 +55,7 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldThrowException_whenLastNameIsBlank() {
-        TrainerRequest.Create request =
-                new TrainerRequest.Create("John", "", Specialization.FITNESS);
+        TrainerRequest.Create request = new TrainerRequest.Create("John", "", Specialization.FITNESS);
 
         assertThatThrownBy(() -> trainerService.create(request))
                 .isInstanceOf(Exception.class);
@@ -63,8 +63,7 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldThrowException_whenSpecializationIsNull() {
-        TrainerRequest.Create request =
-                new TrainerRequest.Create("John", "Doe", null);
+        TrainerRequest.Create request = new TrainerRequest.Create("John", "Doe", null);
 
         assertThatThrownBy(() -> trainerService.create(request))
                 .isInstanceOf(Exception.class);
@@ -82,8 +81,7 @@ class TrainerServiceImplTest {
     void shouldUpdateTrainer_whenRequestIsValid() {
         Trainer created = trainerService.create(validCreateRequest());
 
-        TrainerRequest.Update update =
-                new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
+        TrainerRequest.Update update = new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
 
         Trainer updated = trainerService.update(created.getId(), update);
 
@@ -95,8 +93,7 @@ class TrainerServiceImplTest {
     void shouldPreserveUsernameAndPassword_whenUpdatingTrainer() {
         Trainer created = trainerService.create(validCreateRequest());
 
-        TrainerRequest.Update update =
-                new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
+        TrainerRequest.Update update = new TrainerRequest.Update("Johnny", "Doe", Specialization.YOGA, true);
 
         Trainer updated = trainerService.update(created.getId(), update);
 
@@ -108,8 +105,7 @@ class TrainerServiceImplTest {
     void shouldThrowException_whenUpdatingWithBlankFirstName() {
         Trainer created = trainerService.create(validCreateRequest());
 
-        TrainerRequest.Update update =
-                new TrainerRequest.Update("", "Doe", Specialization.FITNESS, true);
+        TrainerRequest.Update update = new TrainerRequest.Update("", "Doe", Specialization.FITNESS, true);
 
         assertThatThrownBy(() -> trainerService.update(created.getId(), update))
                 .isInstanceOf(Exception.class);
@@ -119,8 +115,7 @@ class TrainerServiceImplTest {
     void shouldThrowException_whenUpdatingWithNullSpecialization() {
         Trainer created = trainerService.create(validCreateRequest());
 
-        TrainerRequest.Update update =
-                new TrainerRequest.Update("John", "Doe", null, true);
+        TrainerRequest.Update update = new TrainerRequest.Update("John", "Doe", null, true);
 
         assertThatThrownBy(() -> trainerService.update(created.getId(), update))
                 .isInstanceOf(Exception.class);
@@ -128,10 +123,44 @@ class TrainerServiceImplTest {
 
     @Test
     void shouldThrowException_whenUpdatingNonExistentTrainer() {
-        TrainerRequest.Update update =
-                new TrainerRequest.Update("John", "Doe", Specialization.FITNESS, true);
+        TrainerRequest.Update update = new TrainerRequest.Update("John", "Doe", Specialization.FITNESS, true);
 
         assertThatThrownBy(() -> trainerService.update(999999L, update))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFindTrainerById_whenTrainerExists() {
+        Trainer created = trainerService.create(validCreateRequest());
+
+        Trainer found = trainerService.findById(created.getId());
+
+        assertThat(found).isEqualTo(created);
+    }
+
+    @Test
+    void shouldThrowException_whenFindByIdAndTrainerDoesNotExist() {
+        assertThatThrownBy(() -> trainerService.findById(999999L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldReturnAllTrainers_whenFindAllCalled() {
+        trainerService.create(validCreateRequest());
+        trainerService.create(new TrainerRequest.Create("Jane", "Smith", Specialization.YOGA));
+
+        List<Trainer> result = trainerService.findAll();
+
+        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void shouldDeleteTrainer_whenTrainerExists() {
+        Trainer created = trainerService.create(validCreateRequest());
+
+        trainerService.delete(created.getId());
+
+        assertThatThrownBy(() -> trainerService.findById(created.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

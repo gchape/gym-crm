@@ -13,6 +13,7 @@ import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,12 +55,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenFirstNameIsBlank() {
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "", "Doe",
-                        LocalDate.of(1995, 5, 10),
-                        validAddress()
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "", "Doe", LocalDate.of(1995, 5, 10), validAddress()
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -67,12 +65,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenLastNameIsBlank() {
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "John", "",
-                        LocalDate.of(1995, 5, 10),
-                        validAddress()
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "John", "", LocalDate.of(1995, 5, 10), validAddress()
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -80,12 +75,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenDateOfBirthIsInTheFuture() {
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "John", "Doe",
-                        LocalDate.now().plusDays(1),
-                        validAddress()
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "John", "Doe", LocalDate.now().plusDays(1), validAddress()
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -93,12 +85,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenDateOfBirthIsToday() {
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "John", "Doe",
-                        LocalDate.now(),
-                        validAddress()
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "John", "Doe", LocalDate.now(), validAddress()
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -106,12 +95,9 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenAddressIsNull() {
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        null
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), null
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -131,12 +117,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenAddressStreetIsBlank() {
         Address address = new Address("", "London", "UK", "12345");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -145,12 +128,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenAddressCityIsBlank() {
         Address address = new Address("Baker Street 221B", "", "UK", "12345");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -159,12 +139,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenAddressCountryIsBlank() {
         Address address = new Address("Baker Street 221B", "London", "", "12345");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -173,12 +150,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenPostalCodeIsNull() {
         Address address = new Address("Baker Street 221B", "London", "UK", null);
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -187,12 +161,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenPostalCodeIsTooShort() {
         Address address = new Address("Baker Street 221B", "London", "UK", "123");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -201,12 +172,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenPostalCodeIsTooLong() {
         Address address = new Address("Baker Street 221B", "London", "UK", "12345678901");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -215,12 +183,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldThrowException_whenPostalCodeContainsLetters() {
         Address address = new Address("Baker Street 221B", "London", "UK", "SW1A1AA");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         assertThatThrownBy(() -> traineeService.create(request))
                 .isInstanceOf(Exception.class);
@@ -229,12 +194,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldCreateTrainee_whenPostalCodeIsAtMinimumLength() {
         Address address = new Address("Baker Street 221B", "London", "UK", "1234");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         Trainee result = traineeService.create(request);
 
@@ -244,12 +206,9 @@ class TraineeServiceImplTest {
     @Test
     void shouldCreateTrainee_whenPostalCodeIsAtMaximumLength() {
         Address address = new Address("Baker Street 221B", "London", "UK", "1234567890");
-        TraineeRequest.Create request =
-                new TraineeRequest.Create(
-                        "Jane", "Smith",
-                        LocalDate.of(1990, 3, 15),
-                        address
-                );
+        TraineeRequest.Create request = new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), address
+        );
 
         Trainee result = traineeService.create(request);
 
@@ -260,13 +219,9 @@ class TraineeServiceImplTest {
     void shouldUpdateTrainee_whenRequestIsValid() {
         Trainee created = traineeService.create(validCreateRequest());
 
-        TraineeRequest.Update update =
-                new TraineeRequest.Update(
-                        "Johnny", "Doe",
-                        LocalDate.of(1995, 5, 10),
-                        validAddress(),
-                        true
-                );
+        TraineeRequest.Update update = new TraineeRequest.Update(
+                "Johnny", "Doe", LocalDate.of(1995, 5, 10), validAddress(), true
+        );
 
         Trainee updated = traineeService.update(created.getId(), update);
 
@@ -279,13 +234,9 @@ class TraineeServiceImplTest {
         Trainee created = traineeService.create(validCreateRequest());
 
         Address newAddress = new Address("New Street 99", "Munich", "Germany", "80331");
-        TraineeRequest.Update update =
-                new TraineeRequest.Update(
-                        "John", "Doe",
-                        LocalDate.of(1995, 5, 10),
-                        newAddress,
-                        true
-                );
+        TraineeRequest.Update update = new TraineeRequest.Update(
+                "John", "Doe", LocalDate.of(1995, 5, 10), newAddress, true
+        );
 
         Trainee updated = traineeService.update(created.getId(), update);
 
@@ -299,13 +250,9 @@ class TraineeServiceImplTest {
         Trainee created = traineeService.create(validCreateRequest());
 
         Address badAddress = new Address("", "Munich", "Germany", "80331");
-        TraineeRequest.Update update =
-                new TraineeRequest.Update(
-                        "John", "Doe",
-                        LocalDate.of(1995, 5, 10),
-                        badAddress,
-                        true
-                );
+        TraineeRequest.Update update = new TraineeRequest.Update(
+                "John", "Doe", LocalDate.of(1995, 5, 10), badAddress, true
+        );
 
         assertThatThrownBy(() -> traineeService.update(created.getId(), update))
                 .isInstanceOf(Exception.class);
@@ -313,15 +260,48 @@ class TraineeServiceImplTest {
 
     @Test
     void shouldThrowException_whenUpdatingNonExistentTrainee() {
-        TraineeRequest.Update update =
-                new TraineeRequest.Update(
-                        "John", "Doe",
-                        LocalDate.of(1995, 5, 10),
-                        validAddress(),
-                        true
-                );
+        TraineeRequest.Update update = new TraineeRequest.Update(
+                "John", "Doe", LocalDate.of(1995, 5, 10), validAddress(), true
+        );
 
         assertThatThrownBy(() -> traineeService.update(999999L, update))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldFindTraineeById_whenTraineeExists() {
+        Trainee created = traineeService.create(validCreateRequest());
+
+        Trainee found = traineeService.findById(created.getId());
+
+        assertThat(found).isEqualTo(created);
+    }
+
+    @Test
+    void shouldThrowException_whenFindByIdAndTraineeDoesNotExist() {
+        assertThatThrownBy(() -> traineeService.findById(999999L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldReturnAllTrainees_whenFindAllCalled() {
+        traineeService.create(validCreateRequest());
+        traineeService.create(new TraineeRequest.Create(
+                "Jane", "Smith", LocalDate.of(1990, 3, 15), validAddress()
+        ));
+
+        List<Trainee> result = traineeService.findAll();
+
+        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void shouldDeleteTrainee_whenTraineeExists() {
+        Trainee created = traineeService.create(validCreateRequest());
+
+        traineeService.delete(created.getId());
+
+        assertThatThrownBy(() -> traineeService.findById(created.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
