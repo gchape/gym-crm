@@ -3,27 +3,28 @@ package tech.provokedynamic.gymcrm;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration;
-import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
-import org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration;
-import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
-import org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootConfiguration(proxyBeanMethods = false)
-@EnableAutoConfiguration(exclude = {
-        JmxAutoConfiguration.class,
-        SslAutoConfiguration.class,
-        TaskExecutionAutoConfiguration.class,
-        TaskSchedulingAutoConfiguration.class,
-        SpringApplicationAdminJmxAutoConfiguration.class,
+@SpringBootConfiguration(
+        proxyBeanMethods = false)
+@ImportAutoConfiguration(classes = {
+        AopAutoConfiguration.class,
+        LifecycleAutoConfiguration.class,
+        PropertyPlaceholderAutoConfiguration.class,
+//      ProjectInfoAutoConfiguration.class,
+//      ConfigurationPropertiesAutoConfiguration.class,
 })
-@EnableAspectJAutoProxy
+@AutoConfigurationPackage(
+        basePackageClasses = GymCrmApplication.class)
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrm.dao",
         "tech.provokedynamic.gymcrm.service",
@@ -31,9 +32,10 @@ import tools.jackson.databind.json.JsonMapper;
         "tech.provokedynamic.gymcrm.facade",
         "tech.provokedynamic.gymcrm.aspect",
 })
+@EnableAspectJAutoProxy
 public class GymCrmApplication {
     static void main(String[] args) {
-        new SpringApplicationBuilder()
+        var ctx = new SpringApplicationBuilder()
                 .sources(GymCrmApplication.class)
                 .web(WebApplicationType.NONE)
                 .bannerMode(Banner.Mode.OFF)
@@ -41,6 +43,8 @@ public class GymCrmApplication {
                 .headless(false)
                 .build(args)
                 .run();
+
+        System.out.println(ctx.getBeanDefinitionCount());
     }
 
     @Bean
