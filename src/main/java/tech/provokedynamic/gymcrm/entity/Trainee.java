@@ -1,67 +1,40 @@
 package tech.provokedynamic.gymcrm.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import tech.provokedynamic.gymcrm.model.Address;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.time.LocalDate;
 
-@JsonDeserialize(builder = Trainee.Builder.class)
+@Getter
+@SuperBuilder
 public final class Trainee extends User implements Entity {
     private final long id;
     private final Address address;
     private final LocalDate dateOfBirth;
 
-    private Trainee(Builder builder) {
-        super(builder);
-        this.dateOfBirth = builder.dateOfBirth;
-        this.address = builder.address;
-        this.id = builder.id;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public Address getAddress() {
-        return address;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    @JsonPOJOBuilder(withPrefix = "")
-    public static class Builder extends User.Builder<Builder> {
-        private LocalDate dateOfBirth;
-        private Address address;
-        private long id;
-
-        private Builder() {
-        }
-
-        public Builder dateOfBirth(LocalDate dateOfBirth) {
-            this.dateOfBirth = dateOfBirth;
-            return this;
-        }
-
-        public Builder address(Address address) {
-            this.address = address;
-            return this;
-        }
-
-        public Builder id(long id) {
-            this.id = id;
-            return this;
-        }
-
-        @Override
-        public Trainee build() {
-            return new Trainee(this);
-        }
+    @JsonCreator
+    public static Trainee of(
+            @JsonProperty("id") long id,
+            @JsonProperty("firstName") String firstName,
+            @JsonProperty("lastName") String lastName,
+            @JsonProperty("username") String username,
+            @JsonProperty("password") String password,
+            @JsonProperty("isActive") boolean isActive,
+            @JsonProperty("address") Address address,
+            @JsonProperty("dateOfBirth") LocalDate dateOfBirth
+    ) {
+        return Trainee.builder()
+                .id(id)
+                .firstName(firstName)
+                .lastName(lastName)
+                .username(username)
+                .password(password)
+                .isActive(isActive)
+                .address(address)
+                .dateOfBirth(dateOfBirth)
+                .build();
     }
 }

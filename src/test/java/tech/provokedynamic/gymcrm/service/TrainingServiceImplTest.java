@@ -1,10 +1,13 @@
 package tech.provokedynamic.gymcrm.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
@@ -19,13 +22,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(classes = {
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {
         TrainingServiceImpl.class,
+        TrainingServiceImplTest.TestConfig.class,
         TrainingDao.class,
         ValidationAspect.class,
         InMemoryStorage.class
-}, webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        useMainMethod = SpringBootTest.UseMainMethod.NEVER)
+})
 @EnableAspectJAutoProxy
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class TrainingServiceImplTest {
@@ -222,5 +226,10 @@ class TrainingServiceImplTest {
         List<TrainingResponse.Summary> result = trainingService.findAll();
 
         assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Configuration
+    @EnableAspectJAutoProxy
+    static class TestConfig {
     }
 }

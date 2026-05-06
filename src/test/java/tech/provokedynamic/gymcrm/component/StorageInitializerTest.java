@@ -1,8 +1,12 @@
 package tech.provokedynamic.gymcrm.component;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import tech.provokedynamic.gymcrm.config.JacksonConfig;
 import tech.provokedynamic.gymcrm.entity.Entity;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
@@ -11,10 +15,13 @@ import tech.provokedynamic.gymcrm.storage.Storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        useMainMethod = SpringBootTest.UseMainMethod.NEVER,
-        properties = "storage.data.path=classpath:data/test-data.json")
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {
+        StorageInitializer.class,
+        InMemoryStorage.class,
+        JacksonConfig.class
+})
+@TestPropertySource(properties = "storage.data.path=classpath:data/test-data.json")
 class StorageInitializerTest {
 
     @Autowired

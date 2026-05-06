@@ -1,9 +1,12 @@
 package tech.provokedynamic.gymcrm.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
@@ -17,14 +20,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(classes = {
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {
         TrainerServiceImpl.class,
+        TrainerServiceImplTest.TestConfig.class,
         TrainerDao.class,
         CredentialGenerator.class,
         ValidationAspect.class,
         InMemoryStorage.class
-}, webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        useMainMethod = SpringBootTest.UseMainMethod.NEVER)
+})
 @EnableAspectJAutoProxy
 class TrainerServiceImplTest {
 
@@ -160,5 +164,10 @@ class TrainerServiceImplTest {
 
         assertThatThrownBy(() -> trainerService.findById(created.id()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Configuration
+    @EnableAspectJAutoProxy
+    static class TestConfig {
     }
 }

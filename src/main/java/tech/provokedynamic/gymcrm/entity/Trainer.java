@@ -1,53 +1,35 @@
 package tech.provokedynamic.gymcrm.entity;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import tech.provokedynamic.gymcrm.model.Specialization;
-import tools.jackson.databind.annotation.JsonDeserialize;
-import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
-@JsonDeserialize(builder = Trainer.Builder.class)
+@Getter
+@SuperBuilder
 public final class Trainer extends User implements Entity {
     private final long id;
     private final Specialization specialization;
 
-    private Trainer(Builder builder) {
-        super(builder);
-        this.id = builder.id;
-        this.specialization = builder.specialization;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public Specialization getSpecialization() {
-        return specialization;
-    }
-
-    @JsonPOJOBuilder(withPrefix = "")
-    public static class Builder extends User.Builder<Builder> {
-        private long id;
-        private Specialization specialization;
-
-        private Builder() {
-        }
-
-        public Builder id(long id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder specialization(Specialization specialization) {
-            this.specialization = specialization;
-            return this;
-        }
-
-        @Override
-        public Trainer build() {
-            return new Trainer(this);
-        }
+    @JsonCreator
+    public static Trainer of(
+            @JsonProperty("id") long id,
+            @JsonProperty("firstName") String firstName,
+            @JsonProperty("lastName") String lastName,
+            @JsonProperty("username") String username,
+            @JsonProperty("password") String password,
+            @JsonProperty("isActive") boolean isActive,
+            @JsonProperty("specialization") Specialization specialization
+    ) {
+        return Trainer.builder()
+                .id(id)
+                .firstName(firstName)
+                .lastName(lastName)
+                .username(username)
+                .password(password)
+                .isActive(isActive)
+                .specialization(specialization)
+                .build();
     }
 }
