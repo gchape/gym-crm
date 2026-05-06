@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class AbstractDao<T extends Entity> implements CrudDao<T, Long> {
+public abstract class AbstractDao<T extends Entity> {
     private final String namespace;
     private final Storage<Entity> storage;
 
@@ -16,7 +16,6 @@ public abstract class AbstractDao<T extends Entity> implements CrudDao<T, Long> 
         this.namespace = namespace;
     }
 
-    @Override
     public Optional<T> findById(Long id) {
         @SuppressWarnings("unchecked")
         T entity = (T) storage.get(namespace, id);
@@ -27,7 +26,6 @@ public abstract class AbstractDao<T extends Entity> implements CrudDao<T, Long> 
         return Optional.of(entity);
     }
 
-    @Override
     public List<T> findAll() {
         @SuppressWarnings("unchecked")
         var values = (Collection<T>) storage.getNamespace(namespace).values();
@@ -35,21 +33,18 @@ public abstract class AbstractDao<T extends Entity> implements CrudDao<T, Long> 
         return values.stream().toList();
     }
 
-    @Override
     public T save(Long id, T entity) {
         storage.put(namespace, id, entity);
 
         return entity;
     }
 
-    @Override
     public T update(Long id, T entity) {
         storage.put(namespace, id, entity);
 
         return entity;
     }
 
-    @Override
     public void delete(Long id) {
         storage.delete(namespace, id);
     }

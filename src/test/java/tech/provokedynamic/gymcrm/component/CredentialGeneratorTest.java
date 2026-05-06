@@ -26,8 +26,7 @@ class CredentialGeneratorTest {
     @Test
     void shouldAppendSuffixWhenUsernameAlreadyExists() {
         User existing = Trainee.builder()
-                .firstName("John")
-                .lastName("Doe")
+                .username("John.Doe")
                 .build();
 
         List<User> users = List.of(existing);
@@ -40,8 +39,8 @@ class CredentialGeneratorTest {
     @Test
     void shouldIncrementSuffixWhenMultipleUsersExist() {
         List<User> users = List.of(
-                Trainee.builder().firstName("John").lastName("Doe").build(),
-                Trainee.builder().firstName("John").lastName("Doe").build()
+                Trainee.builder().username("John.Doe").build(),
+                Trainee.builder().username("John.Doe1").build()
         );
 
         String username = credentialGenerator.generateUsername("John", "Doe", users);

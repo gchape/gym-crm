@@ -13,16 +13,27 @@ public sealed interface TrainerRequest extends Request permits TrainerRequest.Cr
     Specialization specialization();
 
     record Create(
-            @NotBlank(message = "First name is required") String firstName,
-            @NotBlank(message = "Last name is required") String lastName,
-            @NotNull(message = "Specialization is required") Specialization specialization
+            @NotBlank(message = "First name is required")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            String lastName,
+
+            @NotNull(message = "Specialization is required")
+            Specialization specialization
     ) implements TrainerRequest {
     }
 
     record Update(
-            @NotBlank(message = "First name is required") String firstName,
-            @NotBlank(message = "Last name is required") String lastName,
-            @NotNull(message = "Specialization is required") Specialization specialization,
+            @NotBlank(message = "First name is required")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            String lastName,
+
+            @NotNull(message = "Specialization is required")
+            Specialization specialization,
+
             boolean active
     ) implements TrainerRequest {
     }

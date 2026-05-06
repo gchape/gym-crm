@@ -19,18 +19,33 @@ public sealed interface TraineeRequest extends Request permits TraineeRequest.Cr
     Address address();
 
     record Create(
-            @NotBlank(message = "First name is required") String firstName,
-            @NotBlank(message = "Last name is required") String lastName,
-            @Past(message = "Date of birth must be in the past") LocalDate dateOfBirth,
-            @Valid @NotNull(message = "Address is required") Address address
+            @NotBlank(message = "First name is required")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            String lastName,
+
+            @Past(message = "Date of birth must be in the past")
+            LocalDate dateOfBirth,
+
+            @Valid @NotNull(message = "Address is required")
+            Address address
     ) implements TraineeRequest {
     }
 
     record Update(
-            @NotBlank(message = "First name is required") String firstName,
-            @NotBlank(message = "Last name is required") String lastName,
-            @Past(message = "Date of birth must be in the past") LocalDate dateOfBirth,
-            @Valid @NotNull(message = "Address is required") Address address,
+            @NotBlank(message = "First name is required")
+            String firstName,
+
+            @NotBlank(message = "Last name is required")
+            String lastName,
+
+            @Past(message = "Date of birth must be in the past")
+            LocalDate dateOfBirth,
+
+            @Valid @NotNull(message = "Address is required")
+            Address address,
+
             boolean active
     ) implements TraineeRequest {
     }
