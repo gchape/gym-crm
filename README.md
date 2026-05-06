@@ -7,10 +7,11 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 ## Tech Stack
 
 - **Java 25**
-- **Spring Boot** (Spring Core, Spring AOP)
+- **Spring Framework 7** (Spring Core, Spring AOP)
 - **Jackson 3** (`tools.jackson`) for JSON deserialization
 - **Jakarta Bean Validation** with Hibernate Validator
-- **Logback** with dev/prod profiles
+- **Lombok** (`@SuperBuilder`, `@Getter`) for entity boilerplate
+- **Logback** for logging
 - **JUnit 5 + AssertJ**
 
 ---
@@ -63,7 +64,8 @@ src/
 │   │   │   ├── InMemoryStorage.java          # shared ConcurrentHashMap storage
 │   │   │   └── StorageInitializer.java       # loads init-data.json on startup
 │   │   ├── config/
-│   │   │   └── JacksonConfig.java            # JsonMapper bean with JavaTimeModule
+│   │   │   ├── JacksonConfig.java            # JsonMapper bean with JavaTimeModule
+│   │   │   └── PropertySourcesPlaceholderConfig.java  # enables @Value resolution
 │   │   ├── dao/
 │   │   │   ├── AbstractDao.java              # generic CRUD via Storage
 │   │   │   ├── CrudDao.java                  # generic CRUD interface
@@ -81,7 +83,7 @@ src/
 │   │   │   └── TrainingResponse.java         # sealed interface + Summary/Detail records
 │   │   ├── entity/
 │   │   │   ├── Entity.java                   # sealed interface
-│   │   │   ├── User.java                     # base class with generic builder
+│   │   │   ├── User.java                     # base class with @SuperBuilder/@Getter
 │   │   │   ├── Trainee.java                  # extends User, implements Entity
 │   │   │   ├── Trainer.java                  # extends User, implements Entity
 │   │   │   └── Training.java                 # record, implements Entity
@@ -103,7 +105,7 @@ src/
 │   │   └── validation/
 │   │       └── BeanValidator.java            # enum singleton validator
 │   └── resources/
-│       ├── application.yaml                  # dev/prod profiles + storage path
+│       ├── application.properties            # storage path config
 │       ├── logback.xml                       # dev + prod log profiles
 │       └── data/
 │           └── init-data.json                # seed data loaded on startup
@@ -236,16 +238,14 @@ training:1 → Training
 ### Initialization
 
 On application startup, `StorageInitializer` reads `init-data.json` via `@PostConstruct` and populates the storage map.
-The file path is configured via `application.yaml`:
+The file path is configured via `application.properties`:
 
-```yaml
-storage:
-  data:
-    path: classpath:data/init-data.json
+```properties
+storage.data.path=classpath:data/init-data.json
 ```
 
-Jackson 3 deserializes entities using `@JsonDeserialize(builder = ...)` on `Trainee` and `Trainer`, and `@JsonProperty`
-on `Training` record components.
+Jackson 3 deserializes entities using `@JsonCreator` factory methods on `Trainee` and `Trainer`,
+and `@JsonProperty` on `Training` record components.
 
 ---
 
@@ -275,13 +275,13 @@ enforced entry point — direct builder usage bypasses validation, intentionally
 - `InMemoryStorageTest` — key generation, put/get/delete, namespace isolation
 - `AbstractDaoTest` — save, findById, findAll, update, delete via a test-only `TestDao` subclass
 
-**Integration tests** (sliced Spring context):
+**Integration tests** (sliced Spring context via `@ExtendWith(SpringExtension.class)` + `@ContextConfiguration`):
 
-Service tests load only the classes needed for each slice, keeping startup fast
+Service tests load only the classes needed for each slice, keeping startup fast.
 
 - `TraineeServiceImplTest` — valid/invalid requests, address and postal code validation, boundary values, update,
   findById, findAll, delete, not-found
-- `TraineeServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
+- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
   findAll, delete, not-found
 - `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints,
   findById, findAll
@@ -309,12 +309,6 @@ Logback profiles:
 - **dev**: DEBUG level, logs to console + file
 - **prod**: INFO/WARN level, logs to file only
 
-Activate with:
-
-```
--Dspring.profiles.active=dev
-```
-
 ---
 
 ## Injection Strategy
@@ -329,8 +323,7 @@ Per task requirements:
 
 ## Completed ✅
 
-- Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`)
-- Generic builder pattern with `public` access (JPMS needed for true encapsulation)
+- Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`) with Lombok `@SuperBuilder`/`@Getter`
 - Sealed `Entity` interface
 - `Request` sealed marker interface with sealed interfaces and records (`TraineeRequest`, `TrainerRequest`,
   `TrainingRequest`)
@@ -344,9 +337,10 @@ Per task requirements:
 - `BeanValidator` enum singleton
 - `@Validate` annotation + `ValidationAspect` (scoped to service package, on impl methods)
 - `GymFacade` with constructor injection
-- `JacksonConfig` with `JsonMapper`
+- `JacksonConfig` with `JsonMapper` + `@JsonCreator` factory methods for deserialization
 - `StorageInitializer` with `@PostConstruct` loading from `init-data.json`
-- Property placeholder for file path via `application.yaml`
+- `PropertySourcesPlaceholderConfig` for `@Value` resolution
+- Property placeholder for file path via `application.properties`
 - Logback with dev/prod profiles
 - Unit tests for `CredentialGenerator`, `InMemoryStorage`, `AbstractDao`
 - Sliced context integration tests for `TraineeService`, `TrainerService`, `TrainingService`
