@@ -14,10 +14,10 @@ public sealed interface TrainerResponse extends Response permits TrainerResponse
     ) implements TrainerResponse {
         public static Summary from(Trainer trainer) {
             return new Summary(
-                    trainer.getId(),
-                    trainer.getUsername(),
-                    trainer.getFirstName(),
-                    trainer.getLastName(),
+                    trainer.id(),
+                    trainer.username(),
+                    trainer.firstName(),
+                    trainer.lastName(),
                     trainer.isActive()
             );
         }
@@ -33,12 +33,12 @@ public sealed interface TrainerResponse extends Response permits TrainerResponse
     ) implements TrainerResponse {
         public static Detail from(Trainer trainer) {
             return new Detail(
-                    trainer.getId(),
-                    trainer.getUsername(),
-                    trainer.getFirstName(),
-                    trainer.getLastName(),
+                    trainer.id(),
+                    trainer.username(),
+                    trainer.firstName(),
+                    trainer.lastName(),
                     trainer.isActive(),
-                    trainer.getSpecialization()
+                    trainer.specialization()
             );
         }
     }

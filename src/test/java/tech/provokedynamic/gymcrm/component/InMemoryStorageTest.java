@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.component;
 import org.junit.jupiter.api.Test;
 import tech.provokedynamic.gymcrm.entity.Entity;
 import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.model.Specialization;
 import tech.provokedynamic.gymcrm.storage.Storage;
 
 import java.util.Map;
@@ -11,32 +12,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class InMemoryStorageTest {
 
+    private static final Trainer TRAINER = Trainer.builder()
+            .id(1L)
+            .firstName("John")
+            .lastName("Doe")
+            .username("john.doe")
+            .password("password")
+            .isActive(true)
+            .specialization(Specialization.CARDIO)
+            .build();
+
+    private static final Trainer ANOTHER_TRAINER = Trainer.builder()
+            .id(2L)
+            .firstName("Jane")
+            .lastName("Doe")
+            .username("jane.doe")
+            .password("password")
+            .isActive(true)
+            .specialization(Specialization.YOGA)
+            .build();
+
     Storage<Entity> storage = new InMemoryStorage();
 
     @Test
     void shouldGenerateCorrectKey() {
-        String namespace = "trainer";
-        long id = 1L;
+        String actual = Storage.toKeyFn.apply("trainer", 1L);
 
-        String expected = "trainer:1";
-        String actual = Storage.toKeyFn.apply(namespace, id);
-
-        assertThat(actual).isEqualTo(expected);
+        assertThat(actual).isEqualTo("trainer:1");
     }
 
     @Test
     void shouldStoreAndRetrieveEntityByKey() {
-        String namespace = "trainer";
-        long id = 1L;
-        Entity entity = Trainer.builder().build();
+        storage.put("trainer", 1L, TRAINER);
 
-        storage.put(namespace, id, entity);
-
-        Entity result = storage.get(namespace, id);
+        Entity result = storage.get("trainer", 1L);
 
         assertThat(result)
                 .isNotNull()
-                .isEqualTo(entity);
+                .isEqualTo(TRAINER);
     }
 
     @Test
@@ -48,40 +61,29 @@ class InMemoryStorageTest {
 
     @Test
     void shouldOverwriteExistingEntityWhenSameKeyUsed() {
-        String namespace = "trainer";
-        long id = 1L;
+        storage.put("trainer", 1L, TRAINER);
+        storage.put("trainer", 1L, ANOTHER_TRAINER);
 
-        Entity first = Trainer.builder().build();
-        Entity second = Trainer.builder().build();
+        Entity result = storage.get("trainer", 1L);
 
-        storage.put(namespace, id, first);
-        storage.put(namespace, id, second);
-
-        Entity result = storage.get(namespace, id);
-
-        assertThat(result).isEqualTo(second);
+        assertThat(result).isEqualTo(ANOTHER_TRAINER);
     }
 
     @Test
     void shouldDeleteEntitySuccessfully() {
-        String namespace = "trainer";
-        long id = 1L;
+        storage.put("trainer", 1L, TRAINER);
+        storage.delete("trainer", 1L);
 
-        Entity entity = Trainer.builder().build();
-
-        storage.put(namespace, id, entity);
-        storage.delete(namespace, id);
-
-        Entity result = storage.get(namespace, id);
+        Entity result = storage.get("trainer", 1L);
 
         assertThat(result).isNull();
     }
 
     @Test
     void shouldReturnOnlyEntitiesFromNamespace() {
-        storage.put("trainer", 1L, Trainer.builder().build());
-        storage.put("trainer", 2L, Trainer.builder().build());
-        storage.put("trainee", 1L, Trainer.builder().build());
+        storage.put("trainer", 1L, TRAINER);
+        storage.put("trainer", 2L, ANOTHER_TRAINER);
+        storage.put("trainee", 1L, TRAINER);
 
         Map<String, Entity> result = storage.getNamespace("trainer");
 
@@ -92,8 +94,8 @@ class InMemoryStorageTest {
 
     @Test
     void shouldNotIncludeOtherNamespacesInResult() {
-        storage.put("trainer", 1L, Trainer.builder().build());
-        storage.put("trainee", 1L, Trainer.builder().build());
+        storage.put("trainer", 1L, TRAINER);
+        storage.put("trainee", 1L, ANOTHER_TRAINER);
 
         Map<String, Entity> result = storage.getNamespace("trainer");
 

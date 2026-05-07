@@ -61,7 +61,7 @@ public class StorageInitializer {
             long id = node.get("id").asLong();
             Trainee trainee = jsonMapper.treeToValue(node, Trainee.class);
             storage.put(TRAINEE_NS, id, trainee);
-            log.debug("Loaded trainee: {}", trainee.getUsername());
+            log.debug("Loaded trainee: {}", trainee.username());
         }
     }
 
@@ -75,7 +75,7 @@ public class StorageInitializer {
             long id = node.get("id").asLong();
             Trainer trainer = jsonMapper.treeToValue(node, Trainer.class);
             storage.put(TRAINER_NS, id, trainer);
-            log.debug("Loaded trainer: {}", trainer.getUsername());
+            log.debug("Loaded trainer: {}", trainer.username());
         }
     }
 

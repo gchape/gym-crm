@@ -75,9 +75,9 @@ class StorageInitializerTest {
         Trainee trainee = (Trainee) storage.get("trainee", 1L);
 
         assertThat(trainee).isNotNull();
-        assertThat(trainee.getFirstName()).isEqualTo("John");
-        assertThat(trainee.getLastName()).isEqualTo("Smith");
-        assertThat(trainee.getUsername()).isEqualTo("John.Smith");
+        assertThat(trainee.firstName()).isEqualTo("John");
+        assertThat(trainee.lastName()).isEqualTo("Smith");
+        assertThat(trainee.username()).isEqualTo("John.Smith");
         assertThat(trainee.isActive()).isTrue();
     }
 
@@ -86,9 +86,9 @@ class StorageInitializerTest {
         Trainer trainer = (Trainer) storage.get("trainer", 1L);
 
         assertThat(trainer).isNotNull();
-        assertThat(trainer.getFirstName()).isEqualTo("Mike");
-        assertThat(trainer.getLastName()).isEqualTo("Johnson");
-        assertThat(trainer.getUsername()).isEqualTo("Mike.Johnson");
+        assertThat(trainer.firstName()).isEqualTo("Mike");
+        assertThat(trainer.lastName()).isEqualTo("Johnson");
+        assertThat(trainer.username()).isEqualTo("Mike.Johnson");
         assertThat(trainer.isActive()).isTrue();
     }
 
@@ -107,7 +107,7 @@ class StorageInitializerTest {
         Trainee trainee = (Trainee) storage.get("trainee", 3L);
 
         assertThat(trainee).isNotNull();
-        assertThat(trainee.getUsername()).isEqualTo("John.Smith1");
+        assertThat(trainee.username()).isEqualTo("John.Smith1");
     }
 
     @Test
@@ -115,6 +115,6 @@ class StorageInitializerTest {
         Trainer trainer = (Trainer) storage.get("trainer", 3L);
 
         assertThat(trainer).isNotNull();
-        assertThat(trainer.getUsername()).isEqualTo("Mike.Johnson1");
+        assertThat(trainer.username()).isEqualTo("Mike.Johnson1");
     }
 }

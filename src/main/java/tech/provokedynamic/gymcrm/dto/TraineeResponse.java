@@ -16,10 +16,10 @@ public sealed interface TraineeResponse extends Response permits TraineeResponse
     ) implements TraineeResponse {
         public static Summary from(Trainee trainee) {
             return new Summary(
-                    trainee.getId(),
-                    trainee.getUsername(),
-                    trainee.getFirstName(),
-                    trainee.getLastName(),
+                    trainee.id(),
+                    trainee.username(),
+                    trainee.firstName(),
+                    trainee.lastName(),
                     trainee.isActive()
             );
         }
@@ -36,13 +36,13 @@ public sealed interface TraineeResponse extends Response permits TraineeResponse
     ) implements TraineeResponse {
         public static Detail from(Trainee trainee) {
             return new Detail(
-                    trainee.getId(),
-                    trainee.getUsername(),
-                    trainee.getFirstName(),
-                    trainee.getLastName(),
+                    trainee.id(),
+                    trainee.username(),
+                    trainee.firstName(),
+                    trainee.lastName(),
                     trainee.isActive(),
-                    trainee.getDateOfBirth(),
-                    trainee.getAddress()
+                    trainee.dateOfBirth(),
+                    trainee.address()
             );
         }
     }

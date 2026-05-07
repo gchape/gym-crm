@@ -18,7 +18,7 @@ public class CredentialGenerator {
         var base = firstName + "." + lastName;
 
         long count = existing.stream()
-                .filter(u -> u.getUsername().startsWith(base))
+                .filter(u -> u.username().startsWith(base))
                 .count();
 
         return count == 0 ? base : base + count;

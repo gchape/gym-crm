@@ -3,7 +3,9 @@ package tech.provokedynamic.gymcrm.component;
 import org.junit.jupiter.api.Test;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.User;
+import tech.provokedynamic.gymcrm.model.Address;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +14,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CredentialGeneratorTest {
 
+    private static final Address DUMMY_ADDRESS = new Address("Street", "City", "Country", "4600");
+
     CredentialGenerator credentialGenerator = new CredentialGenerator();
+
+    private Trainee traineeWithUsername(String username) {
+        return Trainee.builder()
+                .id(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .username(username)
+                .password("password")
+                .isActive(true)
+                .address(DUMMY_ADDRESS)
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .build();
+    }
 
     @Test
     void shouldGenerateUsernameWhenNoUsersExist() {
@@ -25,11 +42,7 @@ class CredentialGeneratorTest {
 
     @Test
     void shouldAppendSuffixWhenUsernameAlreadyExists() {
-        User existing = Trainee.builder()
-                .username("John.Doe")
-                .build();
-
-        List<User> users = List.of(existing);
+        List<User> users = List.of(traineeWithUsername("John.Doe"));
 
         String username = credentialGenerator.generateUsername("John", "Doe", users);
 
@@ -39,8 +52,8 @@ class CredentialGeneratorTest {
     @Test
     void shouldIncrementSuffixWhenMultipleUsersExist() {
         List<User> users = List.of(
-                Trainee.builder().username("John.Doe").build(),
-                Trainee.builder().username("John.Doe1").build()
+                traineeWithUsername("John.Doe"),
+                traineeWithUsername("John.Doe1")
         );
 
         String username = credentialGenerator.generateUsername("John", "Doe", users);
@@ -58,7 +71,6 @@ class CredentialGeneratorTest {
     @Test
     void shouldGenerateDifferentPasswordsWhenCalledMultipleTimes() {
         Set<String> passwords = new HashSet<>();
-
         for (int i = 0; i < 20; i++) {
             passwords.add(credentialGenerator.generatePassword());
         }
@@ -69,7 +81,6 @@ class CredentialGeneratorTest {
     @Test
     void shouldGenerateNonTrivialPasswordWhenGenerated() {
         String password = credentialGenerator.generatePassword();
-
         long distinctChars = password.chars().distinct().count();
 
         assertThat(distinctChars).isGreaterThan(1);

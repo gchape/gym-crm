@@ -68,8 +68,8 @@ public class TrainerServiceImpl implements TrainerService {
                 .id(id)
                 .firstName(request.firstName())
                 .lastName(request.lastName())
-                .username(existing.getUsername())
-                .password(existing.getPassword())
+                .username(existing.username())
+                .password(existing.password())
                 .isActive(existing.isActive())
                 .specialization(request.specialization())
                 .build();

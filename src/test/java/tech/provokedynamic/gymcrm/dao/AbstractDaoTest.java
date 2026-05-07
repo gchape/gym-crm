@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
 import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.model.Specialization;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +12,26 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AbstractDaoTest {
+
+    private static final Trainer TRAINER = Trainer.builder()
+            .id(1L)
+            .firstName("John")
+            .lastName("Doe")
+            .username("john.doe")
+            .password("password")
+            .isActive(true)
+            .specialization(Specialization.CARDIO)
+            .build();
+
+    private static final Trainer ANOTHER_TRAINER = Trainer.builder()
+            .id(2L)
+            .firstName("Jane")
+            .lastName("Doe")
+            .username("jane.doe")
+            .password("password")
+            .isActive(true)
+            .specialization(Specialization.YOGA)
+            .build();
 
     private TestDao dao;
 
@@ -23,58 +44,47 @@ class AbstractDaoTest {
     @Test
     void shouldReturnEmptyWhenEntityDoesNotExist() {
         Optional<Trainer> result = dao.findById(1L);
-
         assertThat(result).isEmpty();
     }
 
     @Test
     void shouldSaveAndFindById() {
-        Trainer trainer = Trainer.builder().build();
-
-        dao.save(1L, trainer);
+        dao.save(1L, TRAINER);
 
         Optional<Trainer> result = dao.findById(1L);
 
         assertThat(result)
                 .isPresent()
-                .containsSame(trainer);
+                .containsSame(TRAINER);
     }
 
     @Test
     void shouldReturnAllSavedEntities() {
-        Trainer t1 = Trainer.builder().build();
-        Trainer t2 = Trainer.builder().build();
-
-        dao.save(1L, t1);
-        dao.save(2L, t2);
+        dao.save(1L, TRAINER);
+        dao.save(2L, ANOTHER_TRAINER);
 
         List<Trainer> result = dao.findAll();
 
         assertThat(result)
                 .hasSize(2)
-                .containsExactlyInAnyOrder(t1, t2);
+                .containsExactlyInAnyOrder(TRAINER, ANOTHER_TRAINER);
     }
 
     @Test
     void shouldOverwriteEntityOnUpdate() {
-        Trainer original = Trainer.builder().build();
-        Trainer updated = Trainer.builder().build();
-
-        dao.save(1L, original);
-        dao.update(1L, updated);
+        dao.save(1L, TRAINER);
+        dao.update(1L, ANOTHER_TRAINER);
 
         Optional<Trainer> result = dao.findById(1L);
 
         assertThat(result)
                 .isPresent()
-                .containsSame(updated);
+                .containsSame(ANOTHER_TRAINER);
     }
 
     @Test
     void shouldDeleteEntity() {
-        Trainer trainer = Trainer.builder().build();
-
-        dao.save(1L, trainer);
+        dao.save(1L, TRAINER);
         dao.delete(1L);
 
         Optional<Trainer> result = dao.findById(1L);
