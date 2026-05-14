@@ -19,9 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ContextConfiguration(classes = {
         StorageInitializer.class,
         InMemoryStorage.class,
-        JacksonConfig.class
+        JacksonConfig.class,
+        StorageKeyFormatter.class
 })
-@TestPropertySource(properties = "storage.data.path=classpath:data/test-data.json")
+@TestPropertySource(locations = "classpath:application.properties")
 class StorageInitializerTest {
 
     @Autowired
@@ -29,50 +30,50 @@ class StorageInitializerTest {
 
     @Test
     void shouldLoadThreeTrainees_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("trainee")).hasSize(3);
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINEE)).hasSize(3);
     }
 
     @Test
     void shouldLoadThreeTrainers_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("trainer")).hasSize(3);
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINER)).hasSize(3);
     }
 
     @Test
     void shouldLoadThreeTrainings_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("training")).hasSize(3);
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINING)).hasSize(3);
     }
 
     @Test
     void shouldLoadTraineesAsCorrectType_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("trainee"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Trainee.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINEE))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Trainee.class));
     }
 
     @Test
     void shouldLoadTrainersAsCorrectType_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("trainer"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Trainer.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINER))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Trainer.class));
     }
 
     @Test
     void shouldLoadTrainingsAsCorrectType_whenDataFileIsValid() {
-        assertThat(storage.getNamespace("training"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Training.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINING))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Training.class));
     }
 
     @Test
     void shouldNotPolluteCrossNamespace_whenStorageIsLoaded() {
-        assertThat(storage.getNamespace("trainee"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Trainee.class));
-        assertThat(storage.getNamespace("trainer"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Trainer.class));
-        assertThat(storage.getNamespace("training"))
-                .allSatisfy((id, entity) -> assertThat(entity).isInstanceOf(Training.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINEE))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Trainee.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINER))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Trainer.class));
+        assertThat(storage.getNamespace(Storage.Namespace.TRAINING))
+                .allSatisfy((_, entity) -> assertThat(entity).isInstanceOf(Training.class));
     }
 
     @Test
     void shouldLoadTraineeWithCorrectFields_whenDataFileIsValid() {
-        Trainee trainee = (Trainee) storage.get("trainee", 1L);
+        Trainee trainee = (Trainee) storage.get(Storage.Namespace.TRAINEE, 1L);
 
         assertThat(trainee).isNotNull();
         assertThat(trainee.firstName()).isEqualTo("John");
@@ -83,7 +84,7 @@ class StorageInitializerTest {
 
     @Test
     void shouldLoadTrainerWithCorrectFields_whenDataFileIsValid() {
-        Trainer trainer = (Trainer) storage.get("trainer", 1L);
+        Trainer trainer = (Trainer) storage.get(Storage.Namespace.TRAINER, 1L);
 
         assertThat(trainer).isNotNull();
         assertThat(trainer.firstName()).isEqualTo("Mike");
@@ -94,7 +95,7 @@ class StorageInitializerTest {
 
     @Test
     void shouldLoadTrainingWithCorrectFields_whenDataFileIsValid() {
-        Training training = (Training) storage.get("training", 1L);
+        Training training = (Training) storage.get(Storage.Namespace.TRAINING, 1L);
 
         assertThat(training).isNotNull();
         assertThat(training.trainingName()).isEqualTo("Morning Strength Session");
@@ -104,7 +105,7 @@ class StorageInitializerTest {
 
     @Test
     void shouldLoadTraineeWithSuffixedUsername_whenDuplicateFirstAndLastName() {
-        Trainee trainee = (Trainee) storage.get("trainee", 3L);
+        Trainee trainee = (Trainee) storage.get(Storage.Namespace.TRAINEE, 3L);
 
         assertThat(trainee).isNotNull();
         assertThat(trainee.username()).isEqualTo("John.Smith1");
@@ -112,7 +113,7 @@ class StorageInitializerTest {
 
     @Test
     void shouldLoadTrainerWithSuffixedUsername_whenDuplicateFirstAndLastName() {
-        Trainer trainer = (Trainer) storage.get("trainer", 3L);
+        Trainer trainer = (Trainer) storage.get(Storage.Namespace.TRAINER, 3L);
 
         assertThat(trainer).isNotNull();
         assertThat(trainer.username()).isEqualTo("Mike.Johnson1");

@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.service;
+package tech.provokedynamic.gymcrm.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +10,7 @@ import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dto.TraineeRequest;
 import tech.provokedynamic.gymcrm.dto.TraineeResponse;
 import tech.provokedynamic.gymcrm.entity.Trainee;
+import tech.provokedynamic.gymcrm.service.TraineeService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;

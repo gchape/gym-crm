@@ -9,6 +9,6 @@ import tech.provokedynamic.gymcrm.storage.Storage;
 public class TraineeDao extends AbstractDao<Trainee> {
 
     protected TraineeDao(Storage<Entity> storage) {
-        super(storage, "trainee");
+        super(storage, Storage.Namespace.TRAINEE);
     }
 }

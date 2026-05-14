@@ -2,15 +2,28 @@ package tech.provokedynamic.gymcrm.dao;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
+import tech.provokedynamic.gymcrm.component.StorageKeyFormatter;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.model.Specialization;
+import tech.provokedynamic.gymcrm.storage.KeyFormatter;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {
+        InMemoryStorage.class,
+        StorageKeyFormatter.class
+})
+@TestPropertySource(locations = "classpath:application.properties")
 class AbstractDaoTest {
 
     private static final Trainer TRAINER = Trainer.builder()
@@ -35,9 +48,12 @@ class AbstractDaoTest {
 
     private TestDao dao;
 
+    @Autowired
+    private KeyFormatter keyFormatter;
+
     @BeforeEach
     void setUp() {
-        var storage = new InMemoryStorage();
+        var storage = new InMemoryStorage(keyFormatter);
         dao = new TestDao(storage);
     }
 

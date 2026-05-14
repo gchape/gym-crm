@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.service;
+package tech.provokedynamic.gymcrm.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +8,7 @@ import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.dto.TrainingResponse;
 import tech.provokedynamic.gymcrm.entity.Training;
+import tech.provokedynamic.gymcrm.service.TrainingService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
-    private final AtomicLong id = new AtomicLong(1);
+    private final AtomicLong id = new AtomicLong(1L);
 
     private final TrainingDao trainingDao;
 
@@ -29,17 +30,18 @@ public class TrainingServiceImpl implements TrainingService {
     public TrainingResponse.Detail create(TrainingRequest.Create request) {
         long nextId = id.getAndIncrement();
 
-        Training training = new Training(
-                request.traineeId(),
-                request.trainerId(),
-                request.trainingName(),
-                request.trainingType(),
-                request.trainingDate(),
-                request.trainingDuration()
-        );
+        Training toSave = Training.builder()
+                .id(nextId)
+                .traineeId(request.traineeId())
+                .trainerId(request.trainerId())
+                .trainingName(request.trainingName())
+                .trainingType(request.trainingType())
+                .trainingDate(request.trainingDate())
+                .trainingDuration(request.trainingDuration())
+                .build();
 
         log.debug("Creating training: {}", request.trainingName());
-        return TrainingResponse.Detail.from(trainingDao.save(nextId, training));
+        return TrainingResponse.Detail.from(trainingDao.save(nextId, toSave));
     }
 
     @Override

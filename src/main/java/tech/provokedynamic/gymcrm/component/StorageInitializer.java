@@ -20,10 +20,6 @@ import java.io.IOException;
 public class StorageInitializer {
     private static final Logger log = LoggerFactory.getLogger(StorageInitializer.class);
 
-    private static final String TRAINEE_NS = "trainee";
-    private static final String TRAINER_NS = "trainer";
-    private static final String TRAINING_NS = "training";
-
     private final Storage<Entity> storage;
     private final JsonMapper jsonMapper;
     private final ResourceLoader resourceLoader;
@@ -60,7 +56,7 @@ public class StorageInitializer {
         for (JsonNode node : nodes) {
             long id = node.get("id").asLong();
             Trainee trainee = jsonMapper.treeToValue(node, Trainee.class);
-            storage.put(TRAINEE_NS, id, trainee);
+            storage.put(Storage.Namespace.TRAINEE, id, trainee);
             log.debug("Loaded trainee: {}", trainee.username());
         }
     }
@@ -74,7 +70,7 @@ public class StorageInitializer {
         for (JsonNode node : nodes) {
             long id = node.get("id").asLong();
             Trainer trainer = jsonMapper.treeToValue(node, Trainer.class);
-            storage.put(TRAINER_NS, id, trainer);
+            storage.put(Storage.Namespace.TRAINER, id, trainer);
             log.debug("Loaded trainer: {}", trainer.username());
         }
     }
@@ -88,7 +84,7 @@ public class StorageInitializer {
         for (JsonNode node : nodes) {
             long id = node.get("id").asLong();
             Training training = jsonMapper.treeToValue(node, Training.class);
-            storage.put(TRAINING_NS, id, training);
+            storage.put(Storage.Namespace.TRAINING, id, training);
             log.debug("Loaded training: {}", training.trainingName());
         }
     }

@@ -2,6 +2,7 @@ package tech.provokedynamic.gymcrm.component;
 
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.entity.Entity;
+import tech.provokedynamic.gymcrm.storage.KeyFormatter;
 import tech.provokedynamic.gymcrm.storage.Storage;
 
 import java.util.Map;
@@ -10,41 +11,49 @@ import java.util.stream.Collectors;
 
 @Component
 public class InMemoryStorage implements Storage<Entity> {
+    private final KeyFormatter keyFormatter;
+
     private final Map<String, Entity> storage = new ConcurrentHashMap<>();
 
+    public InMemoryStorage(KeyFormatter keyFormatter) {
+        this.keyFormatter = keyFormatter;
+    }
+
     @Override
-    public void put(String namespace, long id, Entity entity) {
-        var key = toKeyFn.apply(namespace, id);
+    public void put(Namespace namespace, long id, Entity entity) {
+        var key = keyFormatter.format(namespace, id);
 
         storage.put(key, entity);
     }
 
     @Override
-    public Entity get(String namespace, long id) {
-        var key = toKeyFn.apply(namespace, id);
+    public Entity get(Namespace namespace, long id) {
+        var key = keyFormatter.format(namespace, id);
 
         return storage.get(key);
     }
 
     @Override
-    public void delete(String namespace, long id) {
-        var key = toKeyFn.apply(namespace, id);
+    public void delete(Namespace namespace, long id) {
+        var key = keyFormatter.format(namespace, id);
 
         storage.remove(key);
     }
 
     @Override
-    public Map<String, Entity> getNamespace(String namespace) {
-        return storage.entrySet()
-                .stream()
-                .<Map.Entry<String, Entity>>mapMulti((entry, upstream) -> {
-                    if (entry.getKey().startsWith(namespace + ":")) {
-                        int beginIndex = namespace.length() + 1;
-                        var id = entry.getKey().substring(beginIndex);
+    public Map<String, Entity> getNamespace(Namespace namespace) {
+        String prefix = namespace.value() + ":";
 
-                        upstream.accept(Map.entry(id, entry.getValue()));
-                    }
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return storage.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(prefix))
+                .collect(Collectors.toMap(
+                        e -> e.getKey().substring(prefix.length()),
+                        Map.Entry::getValue
+                ));
+    }
+
+    @Override
+    public void clear() {
+        storage.clear();
     }
 }

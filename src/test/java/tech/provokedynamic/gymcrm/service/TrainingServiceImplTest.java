@@ -1,19 +1,24 @@
 package tech.provokedynamic.gymcrm.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
+import tech.provokedynamic.gymcrm.component.StorageKeyFormatter;
 import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.dto.TrainingRequest;
 import tech.provokedynamic.gymcrm.dto.TrainingResponse;
+import tech.provokedynamic.gymcrm.entity.Entity;
 import tech.provokedynamic.gymcrm.model.TrainingType;
+import tech.provokedynamic.gymcrm.service.impl.TrainingServiceImpl;
+import tech.provokedynamic.gymcrm.storage.Storage;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -28,14 +33,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TrainingServiceImplTest.TestConfig.class,
         TrainingDao.class,
         ValidationAspect.class,
-        InMemoryStorage.class
+        InMemoryStorage.class,
+        StorageKeyFormatter.class
 })
 @EnableAspectJAutoProxy
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@TestPropertySource(locations = "classpath:application.properties")
 class TrainingServiceImplTest {
 
     @Autowired
     private TrainingService trainingService;
+
+    @Autowired
+    private Storage<Entity> storage;
+
+    @BeforeEach
+    void setUp() {
+        storage.clear();
+    }
 
     private TrainingRequest.Create validCreateRequest() {
         return new TrainingRequest.Create(
@@ -202,7 +216,7 @@ class TrainingServiceImplTest {
     void shouldFindTrainingById_whenTrainingExists() {
         TrainingResponse.Detail created = trainingService.create(validCreateRequest());
 
-        TrainingResponse.Detail found = trainingService.findById(1L);
+        TrainingResponse.Detail found = trainingService.findById(created.id());
 
         assertThat(found).isEqualTo(created);
     }
@@ -216,6 +230,7 @@ class TrainingServiceImplTest {
     @Test
     void shouldReturnAllTrainings_whenFindAllCalled() {
         trainingService.create(validCreateRequest());
+
         trainingService.create(new TrainingRequest.Create(
                 2L, 2L, "Evening Yoga",
                 TrainingType.YOGA,
@@ -225,7 +240,7 @@ class TrainingServiceImplTest {
 
         List<TrainingResponse.Summary> result = trainingService.findAll();
 
-        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(result).hasSize(2);
     }
 
     @Configuration

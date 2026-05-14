@@ -16,7 +16,7 @@ class CredentialGeneratorTest {
 
     private static final Address DUMMY_ADDRESS = new Address("Street", "City", "Country", "4600");
 
-    CredentialGenerator credentialGenerator = new CredentialGenerator();
+    private final CredentialGenerator credentialGenerator = new CredentialGenerator();
 
     private Trainee traineeWithUsername(String username) {
         return Trainee.builder()

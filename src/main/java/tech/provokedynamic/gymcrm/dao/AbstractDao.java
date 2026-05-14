@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 public abstract class AbstractDao<T extends Entity> {
-    private final String namespace;
+    private final Storage.Namespace namespace;
     private final Storage<Entity> storage;
 
-    protected AbstractDao(Storage<Entity> storage, String namespace) {
+    protected AbstractDao(Storage<Entity> storage, Storage.Namespace namespace) {
         this.storage = storage;
         this.namespace = namespace;
     }

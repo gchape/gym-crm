@@ -1,19 +1,25 @@
 package tech.provokedynamic.gymcrm.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.ValidationAspect;
 import tech.provokedynamic.gymcrm.component.CredentialGenerator;
 import tech.provokedynamic.gymcrm.component.InMemoryStorage;
+import tech.provokedynamic.gymcrm.component.StorageKeyFormatter;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.TrainerRequest;
 import tech.provokedynamic.gymcrm.dto.TrainerResponse;
+import tech.provokedynamic.gymcrm.entity.Entity;
 import tech.provokedynamic.gymcrm.model.Specialization;
+import tech.provokedynamic.gymcrm.service.impl.TrainerServiceImpl;
+import tech.provokedynamic.gymcrm.storage.Storage;
 
 import java.util.List;
 
@@ -27,13 +33,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TrainerDao.class,
         CredentialGenerator.class,
         ValidationAspect.class,
-        InMemoryStorage.class
+        InMemoryStorage.class,
+        StorageKeyFormatter.class
 })
+@TestPropertySource(locations = "classpath:application.properties")
 @EnableAspectJAutoProxy
 class TrainerServiceImplTest {
 
     @Autowired
     private TrainerService trainerService;
+
+    @Autowired
+    private Storage<Entity> storage;
+
+    @BeforeEach
+    void setUp() {
+        storage.clear();
+    }
 
     private TrainerRequest.Create validCreateRequest() {
         return new TrainerRequest.Create("John", "Doe", Specialization.FITNESS);
@@ -153,7 +169,7 @@ class TrainerServiceImplTest {
 
         List<TrainerResponse.Summary> result = trainerService.findAll();
 
-        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(result).hasSize(2);
     }
 
     @Test

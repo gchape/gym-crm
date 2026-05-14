@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public sealed interface TrainingResponse extends Response permits TrainingResponse.Summary, TrainingResponse.Detail {
 
     record Summary(
+            long id,
             long traineeId,
             long trainerId,
             String trainingName,
@@ -16,6 +17,7 @@ public sealed interface TrainingResponse extends Response permits TrainingRespon
     ) implements TrainingResponse {
         public static Summary from(Training training) {
             return new Summary(
+                    training.id(),
                     training.traineeId(),
                     training.trainerId(),
                     training.trainingName(),
@@ -25,6 +27,7 @@ public sealed interface TrainingResponse extends Response permits TrainingRespon
     }
 
     record Detail(
+            long id,
             long traineeId,
             long trainerId,
             String trainingName,
@@ -34,6 +37,7 @@ public sealed interface TrainingResponse extends Response permits TrainingRespon
     ) implements TrainingResponse {
         public static Detail from(Training training) {
             return new Detail(
+                    training.id(),
                     training.traineeId(),
                     training.trainerId(),
                     training.trainingName(),

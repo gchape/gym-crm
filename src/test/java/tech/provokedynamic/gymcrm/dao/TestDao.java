@@ -6,6 +6,6 @@ import tech.provokedynamic.gymcrm.storage.Storage;
 
 class TestDao extends AbstractDao<Trainer> {
     protected TestDao(Storage<Entity> storage) {
-        super(storage, "test");
+        super(storage, Storage.Namespace.TEST);
     }
 }
