@@ -3,34 +3,47 @@ package tech.provokedynamic.gymcrm.component;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.entity.User;
 
+import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.random.RandomGenerator;
+import java.util.Random;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Component
 public class CredentialGenerator {
+    private static final Random RANDOM;
+
     private static final int PASSWORD_LENGTH = 10;
 
-    private static final RandomGenerator RANDOM = RandomGenerator.getDefault();
+    private static final Charset DEFAULT_CHARSET = UTF_8;
 
-    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    static {
+        try {
+            RANDOM = SecureRandom.getInstanceStrong();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public String generateUsername(String firstName, String lastName, List<? extends User> existing) {
         var base = firstName + "." + lastName;
 
         long count = existing.stream()
-                .filter(u -> u.username().startsWith(base))
+                .filter(u -> u.getUsername().startsWith(base))
                 .count();
 
         return count == 0 ? base : base + count;
     }
 
     public String generatePassword() {
-        var password = new StringBuilder();
+        float maxBytesPerChar = DEFAULT_CHARSET.newEncoder().maxBytesPerChar();
 
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            password.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
-        }
+        byte[] bytes = new byte[(int) (PASSWORD_LENGTH * maxBytesPerChar)];
 
-        return password.toString();
+        RANDOM.nextBytes(bytes);
+
+        return new String(bytes, DEFAULT_CHARSET);
     }
 }
