@@ -2,27 +2,25 @@ package tech.provokedynamic.gymcrm.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import tech.provokedynamic.gymcrm.model.TrainingTypeName;
+
+import static lombok.AccessLevel.PROTECTED;
+import static lombok.AccessLevel.PUBLIC;
 
 @Entity
-@Table(name = "training_type")
-@lombok.Getter(AccessLevel.PUBLIC)
-@lombok.NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
-public class TrainingType {
+@lombok.Getter(PUBLIC)
+@lombok.NoArgsConstructor(access = PROTECTED)
+@org.hibernate.annotations.Immutable
+public final class TrainingType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(nullable = false, insertable = false)
     private Long id;
 
     @NotNull
-    @Column(length = 50, unique = true)
-    @Enumerated(EnumType.STRING)
-    private TrainingTypeName name;
+    @Column(unique = true)
+    private String trainingTypeName;
 
-    public static TrainingType of(TrainingTypeName name) {
-        var trainingType = new TrainingType();
-        trainingType.name = name;
-        return trainingType;
+    public TrainingType(String trainingTypeName) {
+        this.trainingTypeName = trainingTypeName;
     }
 }
