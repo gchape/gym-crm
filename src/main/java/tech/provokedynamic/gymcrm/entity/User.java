@@ -1,13 +1,16 @@
 package tech.provokedynamic.gymcrm.entity;
+@jakarta.persistence.Entity
+@jakarta.persistence.Table(name = "user")
+public class User {
+@jakarta.persistence.Id
+@jakarta.persistence.GeneratedValue(strategy = jakarta.persistence.GenerationType.SEQUENCE)
+@jakarta.persistence.Column(name = "id", nullable = false)
+private java.lang.Long id;
 
-public abstract class User {
-    public abstract String firstName();
+public java.lang.Long getId() {
+  return id;
+}public void setId(java.lang.Long id) {
+  this.id = id;
+}
 
-    public abstract String lastName();
-
-    public abstract String username();
-
-    public abstract String password();
-
-    public abstract boolean isActive();
 }

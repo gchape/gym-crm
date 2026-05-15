@@ -1,13 +1,9 @@
 package tech.provokedynamic.gymcrm.model;
 
 public enum Specialization {
-    STRENGTH_TRAINING,
-    CARDIO,
-    YOGA,
-    PILATES,
-    CROSSFIT,
-    REHABILITATION,
+    FITNESS,
     MARTIAL_ARTS,
+    STRENGTH_TRAINING,
+    REHABILITATION,
     SWIMMING,
-    FITNESS, CYCLING
 }

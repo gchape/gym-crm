@@ -1,34 +1,22 @@
 package tech.provokedynamic.gymcrm.validation;
 
 import jakarta.validation.*;
-import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tech.provokedynamic.gymcrm.dto.Request;
 
-import java.io.Closeable;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public enum BeanValidator implements Closeable {
+public enum BeanValidator {
     INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(BeanValidator.class);
 
-    private final Validator validator;
-    private final ValidatorFactory validatorFactory;
+    private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    private final Validator validator = validatorFactory.getValidator();
 
-    BeanValidator() {
-        this.validatorFactory = Validation.byDefaultProvider()
-                .configure()
-                .messageInterpolator(new ParameterMessageInterpolator())
-                .buildValidatorFactory();
-        this.validator = validatorFactory.getValidator();
-    }
-
-    public <T> void validate(T object) {
-        Objects.requireNonNull(object, "Object to validate must not be null");
-
+    public <T extends Request> void validate(T object) {
         Set<ConstraintViolation<T>> violations = validator.validate(object);
 
         if (!violations.isEmpty()) {
@@ -39,10 +27,5 @@ public enum BeanValidator implements Closeable {
             log.error("Validation failed for {}: {}", object.getClass().getSimpleName(), message);
             throw new ConstraintViolationException(message, violations);
         }
-    }
-
-    @Override
-    public void close() {
-        validatorFactory.close();
     }
 }
