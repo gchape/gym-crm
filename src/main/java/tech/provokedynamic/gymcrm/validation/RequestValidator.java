@@ -1,6 +1,8 @@
 package tech.provokedynamic.gymcrm.validation;
 
-import jakarta.validation.*;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -8,16 +10,14 @@ import tech.provokedynamic.gymcrm.dto.Request;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public enum BeanValidator {
+public enum RequestValidator {
     INSTANCE;
 
-    private static final Logger log = LoggerFactory.getLogger(BeanValidator.class);
-
-    private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
-    private final Validator validator = validatorFactory.getValidator();
+    private static final Logger log = LoggerFactory.getLogger(RequestValidator.class);
 
     public <T extends Request> void validate(T object) {
-        Set<ConstraintViolation<T>> violations = validator.validate(object);
+        @lombok.Cleanup var validatorFactory = Validation.buildDefaultValidatorFactory();
+        Set<ConstraintViolation<T>> violations = validatorFactory.getValidator().validate(object);
 
         if (!violations.isEmpty()) {
             String message = violations.stream()
