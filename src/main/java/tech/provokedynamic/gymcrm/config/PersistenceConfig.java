@@ -21,8 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import tech.provokedynamic.gymcrm.entity.TrainingType;
-import tech.provokedynamic.gymcrm.entity.User;
+import tech.provokedynamic.gymcrm.entity.*;
 
 import javax.sql.DataSource;
 import java.util.concurrent.TimeUnit;
@@ -79,7 +78,10 @@ public class PersistenceConfig {
                 .property(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, ddlAuto)
                 .property(AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl())
                 .managedClass(User.class)
-                .managedClass(TrainingType.class);
+                .managedClass(TrainingType.class)
+                .managedClass(Trainee.class)
+                .managedClass(Trainer.class)
+                .managedClass(Training.class);
         return Persistence.createEntityManagerFactory(configuration);
     }
 
