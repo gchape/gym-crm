@@ -10,19 +10,20 @@ import org.springframework.context.annotation.PropertySource;
 @EnableAspectJAutoProxy
 public class GymCrmApplication {
 
-    static String[] basePackages = {
+    private static final String[] basePackages = {
             "tech.provokedynamic.gymcrm.dao",
             "tech.provokedynamic.gymcrm.service",
             "tech.provokedynamic.gymcrm.component",
-            "tech.provokedynamic.gymcrm.facade",
             "tech.provokedynamic.gymcrm.aspect",
             "tech.provokedynamic.gymcrm.config"
     };
 
     static void main() {
-        var ctx = new AnnotationConfigApplicationContext();
-        ctx.register(GymCrmApplication.class);
-        ctx.scan(basePackages);
-        ctx.refresh();
+        try (var ctx = new AnnotationConfigApplicationContext()) {
+            ctx.register(GymCrmApplication.class);
+            ctx.getEnvironment().setActiveProfiles("dev");
+            ctx.scan(basePackages);
+            ctx.refresh();
+        }
     }
 }
