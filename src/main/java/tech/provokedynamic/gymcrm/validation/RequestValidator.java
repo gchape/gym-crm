@@ -8,7 +8,7 @@ import tech.provokedynamic.gymcrm.dto.Request;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public enum RequestValidator {
+public enum RequestValidator implements AutoCloseable {
     INSTANCE();
 
     private static final Logger log = LoggerFactory.getLogger(RequestValidator.class);
@@ -28,5 +28,10 @@ public enum RequestValidator {
             log.error("Validation failed for {}: {}", object.getClass().getSimpleName(), message);
             throw new ConstraintViolationException(message, violations);
         }
+    }
+
+    @Override
+    public void close() {
+        factory.close();
     }
 }
