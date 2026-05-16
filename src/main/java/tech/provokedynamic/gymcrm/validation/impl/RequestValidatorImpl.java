@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.component;
+package tech.provokedynamic.gymcrm.validation.impl;
 
 import jakarta.validation.*;
 import lombok.Synchronized;
