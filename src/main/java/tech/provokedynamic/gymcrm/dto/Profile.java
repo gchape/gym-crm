@@ -4,30 +4,39 @@ import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
 
-public sealed interface Response {
+public sealed interface Profile {
 
-    record TraineeProfile(
+    record Trainee(
             String firstName,
             String lastName,
             String username,
             LocalDate dateOfBirth,
             Address address
-    ) implements Response {
+    ) implements Profile {
+        public static Profile.Trainee from(tech.provokedynamic.gymcrm.entity.Trainee trainee) {
+            return new Profile.Trainee(
+                    trainee.getFirstName(),
+                    trainee.getLastName(),
+                    trainee.getUsername(),
+                    trainee.getDateOfBirth(),
+                    trainee.getAddress()
+            );
+        }
     }
 
-    record TrainerProfile(
+    record Trainer(
             String firstName,
             String lastName,
             String username,
             String specialization
-    ) implements Response {
-    }
-
-    record TrainingSummary(
-            String trainingName,
-            LocalDate trainingDate,
-            Integer trainingDuration,
-            String trainerUsername
-    ) implements Response {
+    ) implements Profile {
+        public static Profile.Trainer from(tech.provokedynamic.gymcrm.entity.Trainer trainer) {
+            return new Profile.Trainer(
+                    trainer.getFirstName(),
+                    trainer.getLastName(),
+                    trainer.getUsername(),
+                    trainer.getSpecialization().getTrainingTypeName()
+            );
+        }
     }
 }

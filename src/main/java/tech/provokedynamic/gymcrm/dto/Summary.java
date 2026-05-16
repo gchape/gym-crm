@@ -1,4 +1,14 @@
 package tech.provokedynamic.gymcrm.dto;
 
-public interface Summary {
+import java.time.LocalDate;
+
+public sealed interface Summary {
+
+    record Training(
+            String trainingName,
+            LocalDate trainingDate,
+            Integer trainingDuration,
+            String trainerUsername
+    ) implements Summary {
+    }
 }
