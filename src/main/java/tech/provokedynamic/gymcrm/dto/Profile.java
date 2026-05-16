@@ -23,7 +23,7 @@ public sealed interface Response {
     ) implements Response {
     }
 
-    record TrainingProfile(
+    record TrainingSummary(
             String trainingName,
             LocalDate trainingDate,
             Integer trainingDuration,
