@@ -8,9 +8,10 @@ import tech.provokedynamic.gymcrm.model.Address;
 import java.time.LocalDate;
 import java.util.List;
 
-public sealed interface Request permits Request.AddTraining, Request.Authenticated, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
+public sealed interface Request permits Request.AddTraining, Request.Authenticated, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.DeleteTrainee, Request.ToggleActive, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
 
-    sealed interface Authenticated extends Request permits Request.UpdateTrainee, Request.UpdateTrainer, Request.UpdateTraineeTrainers, Request.ChangePassword {
+    sealed interface Authenticated extends Request permits AddTraining, ChangePassword, DeleteTrainee, ToggleActive, UpdateTrainee, UpdateTraineeTrainers, UpdateTrainer {
+
         String username();
 
         String password();
@@ -61,6 +62,15 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
             @Nullable
             @Valid
             Address address
+    ) implements Request, Authenticated {
+    }
+
+    record DeleteTrainee(
+            @NotBlank
+            String username,
+
+            @NotBlank
+            String password
     ) implements Request, Authenticated {
     }
 
@@ -128,9 +138,21 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
     ) implements Request, Authenticated {
     }
 
+    record ToggleActive(
+            @NotBlank
+            String username,
+
+            @NotBlank
+            String password
+    ) implements Request, Authenticated {
+    }
+
     record AddTraining(
             @NotBlank
             String traineeUsername,
+
+            @NotBlank
+            String traineePassword,
 
             @NotBlank
             String trainerUsername,
@@ -150,6 +172,16 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
             @Positive(message = "Training duration must be a positive number")
             @Max(value = 480, message = "Training duration cannot exceed 480 minutes")
             Integer trainingDuration
-    ) implements Request {
+    ) implements Request, Authenticated {
+
+        @Override
+        public String username() {
+            return traineeUsername();
+        }
+
+        @Override
+        public String password() {
+            return traineePassword();
+        }
     }
 }
