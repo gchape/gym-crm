@@ -1,13 +1,11 @@
 package tech.provokedynamic.gymcrm.util;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
-import tech.provokedynamic.gymcrm.entity.User;
+import tech.provokedynamic.gymcrm.dao.UserDao;
 
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.List;
 import java.util.Random;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,14 +26,25 @@ public class CredentialGenerator {
         }
     }
 
-    public String generateUsername(String firstName, String lastName, @NonNull List<? extends User> existing) {
+    private final UserDao userDao;
+
+    public CredentialGenerator(UserDao userDao) {
+        this.userDao = userDao;
+    }
+
+    public String generateUsername(String firstName, String lastName) {
         var base = firstName + "." + lastName;
 
-        long count = existing.stream()
-                .filter(u -> u.getUsername().startsWith(base))
-                .count();
+        if (!userDao.existsByUsernameIncludingDeleted(base)) {
+            return base;
+        }
 
-        return count == 0 ? base : base + count;
+        int suffix = 1;
+        while (userDao.existsByUsernameIncludingDeleted(base + suffix)) {
+            suffix++;
+        }
+
+        return base + suffix;
     }
 
     public String generatePassword() {
