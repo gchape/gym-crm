@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class RequestValidatorImpl implements AutoCloseable, RequestValidator {
+
     private static final Logger log = LoggerFactory.getLogger(RequestValidatorImpl.class);
 
     private final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
@@ -28,7 +29,7 @@ public class RequestValidatorImpl implements AutoCloseable, RequestValidator {
                     .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                     .collect(Collectors.joining(", "));
 
-            log.error("Validation failed for {}: {}", object.getClass().getSimpleName(), message);
+            log.warn("Validation failed for {}: {}", object.getClass().getSimpleName(), message);
             throw new ConstraintViolationException(message, violations);
         }
     }

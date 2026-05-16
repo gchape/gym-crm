@@ -1,16 +1,18 @@
 package tech.provokedynamic.gymcrm.dao.impl;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.UserDao;
 import tech.provokedynamic.gymcrm.dao.UserDao_;
 
 @Repository
-public abstract class UserDaoImpl implements UserDao {
+public class UserDaoImpl implements UserDao {
 
-    @PersistenceContext
-    protected EntityManager em;
+    protected final EntityManager em;
+
+    public UserDaoImpl(EntityManager em) {
+        this.em = em;
+    }
 
     @Override
     public boolean existsByUsernameIncludingDeleted(String username) {

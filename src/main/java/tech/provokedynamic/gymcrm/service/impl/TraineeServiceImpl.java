@@ -14,6 +14,7 @@ import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.entity.User;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
@@ -69,9 +70,14 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional(readOnly = true)
     public Profile.Trainee getProfile(String username) {
         log.debug("Fetching profile for trainee '{}'", username);
-        return traineeDao.findByUsername(username)
+
+        var profile = traineeDao.findByUsername(username)
                 .map(Profile.Trainee::from)
                 .orElseThrow(() -> new UserDoesNotExistException(username));
+
+        log.debug("Fetched profile for trainee '{}'", username);
+
+        return profile;
     }
 
     @Override
@@ -79,8 +85,11 @@ public class TraineeServiceImpl implements TraineeService {
     @Authenticated
     @Transactional
     public void changePassword(Request.ChangePassword request) {
-        log.info("Changing password for trainee '{}'", request.username());
+        log.debug("Changing password for trainee '{}'", request.username());
+
         traineeDao.updatePassword(request.username(), request.newPassword());
+
+        log.debug("Password changed for trainee '{}'", request.username());
     }
 
     @Override
@@ -88,6 +97,8 @@ public class TraineeServiceImpl implements TraineeService {
     @Authenticated
     @Transactional
     public Profile.Trainee update(Request.UpdateTrainee request) {
+        log.debug("Updating trainee profile for '{}'", request.username());
+
         Trainee trainee = traineeDao.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
@@ -112,10 +123,13 @@ public class TraineeServiceImpl implements TraineeService {
     public void activate(Request.ToggleActive request) {
         String username = request.username();
 
+        log.debug("Activating trainee '{}'", username);
+
         if (traineeDao.activateByUsername(username) == 0) {
             log.warn("Trainee '{}' is already active", username);
             throw new AlreadyActivatedException(username);
         }
+
         log.info("Activated trainee '{}'", username);
     }
 
@@ -126,10 +140,13 @@ public class TraineeServiceImpl implements TraineeService {
     public void deactivate(Request.ToggleActive request) {
         String username = request.username();
 
+        log.debug("Deactivating trainee '{}'", username);
+
         if (traineeDao.deactivateByUsername(username) == 0) {
             log.warn("Trainee '{}' is already inactive", username);
             throw new AlreadyDeactivatedException(username);
         }
+
         log.info("Deactivated trainee '{}'", username);
     }
 
@@ -139,6 +156,8 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void delete(Request.DeleteTrainee request) {
         String username = request.username();
+
+        log.debug("Deleting trainee '{}'", username);
 
         Trainee trainee = traineeDao.findByUsername(username)
                 .orElseThrow(() -> new UserDoesNotExistException(username));
@@ -157,15 +176,26 @@ public class TraineeServiceImpl implements TraineeService {
             @Nullable String trainerUsername,
             @Nullable String trainingType
     ) {
-        log.debug("Fetching trainings for trainee '{}'", username);
-        return traineeDao.findTrainingsByUsername(username, from, to, trainerUsername, trainingType);
+        log.debug("Fetching trainings for trainee '{}' [from={}, to={}, trainer={}, type={}]",
+                username, from, to, trainerUsername, trainingType);
+
+        var trainings = traineeDao.findTrainingsByUsername(username, from, to, trainerUsername, trainingType);
+
+        log.debug("Found {} trainings for trainee '{}'", trainings.size(), username);
+
+        return trainings;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Profile.Trainer> getUnassignedTrainers(String username) {
         log.debug("Fetching unassigned trainers for trainee '{}'", username);
-        return traineeDao.findUnassignedTrainers(username);
+
+        var trainers = traineeDao.findUnassignedTrainers(username);
+
+        log.debug("Found {} unassigned trainers for trainee '{}'", trainers.size(), username);
+
+        return trainers;
     }
 
     @Override
@@ -173,12 +203,17 @@ public class TraineeServiceImpl implements TraineeService {
     @Authenticated
     @Transactional
     public List<Profile.Trainer> updateTrainers(Request.UpdateTraineeTrainers request) {
+        log.debug("Updating trainers for trainee '{}'", request.username());
+
         Trainee trainee = traineeDao.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        List<Trainer> newTrainers = trainerDao.findByUsernames(request.trainerUsernames());
+        List<String> usernames = request.trainerUsernames().stream().distinct().toList();
+        List<Trainer> newTrainers = trainerDao.findByUsernames(usernames);
 
-        if (newTrainers.size() != request.trainerUsernames().size()) {
+        if (newTrainers.size() != usernames.size()) {
+            log.warn("Some trainer usernames not found, requested={}, found={}",
+                    usernames, newTrainers.stream().map(User::getUsername).toList());
             throw new UserDoesNotExistException("One or more trainer usernames not found");
         }
 
@@ -186,7 +221,8 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.getTrainers().addAll(newTrainers);
         traineeDao.update(trainee);
 
-        log.info("Updated trainers list for trainee '{}'", request.username());
+        log.info("Updated trainers for trainee '{}': {}", request.username(), usernames);
+
         return traineeDao.findAssignedTrainers(request.username());
     }
 }
