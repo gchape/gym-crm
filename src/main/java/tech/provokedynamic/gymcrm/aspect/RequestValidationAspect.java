@@ -7,12 +7,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.validation.RequestValidator;
+import tech.provokedynamic.gymcrm.validation.ValidatorIF;
 
 @Aspect
 @Component
 public class ValidationAspect {
     private static final Logger log = LoggerFactory.getLogger(ValidationAspect.class);
+
+    private final ValidatorIF validator;
+
+    public ValidationAspect(ValidatorIF validator) {
+        this.validator = validator;
+    }
 
     @Before("@annotation(tech.provokedynamic.gymcrm.annotations.ValidateRequest)")
     public void validate(JoinPoint joinPoint) {
@@ -21,7 +27,7 @@ public class ValidationAspect {
                 log.debug("Validating {} in {}",
                         request.getClass().getSimpleName(),
                         joinPoint.getSignature().getName());
-                RequestValidator.INSTANCE.validate(request);
+                validator.validate(request);
             }
         }
     }

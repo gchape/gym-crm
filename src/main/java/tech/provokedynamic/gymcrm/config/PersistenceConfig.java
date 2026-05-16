@@ -2,9 +2,6 @@ package tech.provokedynamic.gymcrm.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-import jakarta.persistence.PersistenceConfiguration;
 import net.ttddyy.dsproxy.listener.logging.OutputParameterLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
@@ -12,8 +9,8 @@ import net.ttddyy.dsproxy.support.ProxyDataSource;
 import net.ttddyy.dsproxy.support.ProxyDataSourceBuilder;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.JdbcSettings;
 import org.hibernate.engine.jdbc.internal.DDLFormatterImpl;
+import org.hibernate.tool.schema.Action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,9 +18,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import tech.provokedynamic.gymcrm.entity.*;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.sql.DataSource;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 @Configuration(proxyBeanMethods = false)
@@ -39,9 +39,6 @@ public class PersistenceConfig {
     @Value("${db.url}")
     private String url;
 
-    @Value("${db.ddl-auto}")
-    private String ddlAuto;
-
     @Bean
     public DataSource dataSource() {
         var config = new HikariConfig();
@@ -56,11 +53,9 @@ public class PersistenceConfig {
     @Primary
     @Profile("dev")
     public ProxyDataSource proxyDataSource(DataSource dataSource) {
-        var listener = getSlf4JQueryLoggingListener();
-
         return ProxyDataSourceBuilder.create(dataSource)
                 .name("gym-crm")
-                .listener(listener)
+                .listener(queryLoggingListener())
                 .countQuery()
                 .logSlowQueryBySlf4j(500, TimeUnit.MILLISECONDS, SLF4JLogLevel.WARN)
                 .afterQuery((executionInfo, _) -> {
@@ -72,20 +67,22 @@ public class PersistenceConfig {
     }
 
     @Bean
-    public EntityManagerFactory entityManagerFactory(DataSource dataSource) {
-        var configuration = new PersistenceConfiguration("tech.provokedynamic.gymcrm")
-                .property(JdbcSettings.JAKARTA_NON_JTA_DATASOURCE, dataSource)
-                .property(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, ddlAuto)
-                .property(AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl())
-                .managedClass(User.class)
-                .managedClass(TrainingType.class)
-                .managedClass(Trainee.class)
-                .managedClass(Trainer.class)
-                .managedClass(Training.class);
-        return Persistence.createEntityManagerFactory(configuration);
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+        var entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
+        entityManagerFactoryBean.setDataSource(dataSource);
+        entityManagerFactoryBean.setPackagesToScan("tech.provokedynamic.gymcrm.entity");
+        entityManagerFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
+        entityManagerFactoryBean.setJpaDialect(new HibernateJpaDialect());
+
+        var props = new Properties();
+        props.put(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, Action.ACTION_CREATE_THEN_DROP);
+        props.put(AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl());
+        entityManagerFactoryBean.setJpaProperties(props);
+
+        return entityManagerFactoryBean;
     }
 
-    private SLF4JQueryLoggingListener getSlf4JQueryLoggingListener() {
+    private SLF4JQueryLoggingListener queryLoggingListener() {
         var formatter = new OutputParameterLogEntryCreator() {
             @Override
             protected String formatQuery(String query) {
@@ -93,7 +90,6 @@ public class PersistenceConfig {
             }
         };
         formatter.setMultiline(true);
-
         var listener = new SLF4JQueryLoggingListener();
         listener.setLogLevel(SLF4JLogLevel.DEBUG);
         listener.setQueryLogEntryCreator(formatter);
