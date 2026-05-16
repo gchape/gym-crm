@@ -2,45 +2,37 @@ package tech.provokedynamic.gymcrm.dao;
 
 import jakarta.annotation.Nullable;
 import org.hibernate.annotations.processing.HQL;
-import org.hibernate.annotations.processing.SQL;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface TrainerDao extends UserDao {
 
-    void save(Trainer training);
+    void save(Trainer trainer);
 
-    @SQL("""
-            SELECT count(*) > 0
-            FROM "user"
-            WHERE username = :username
+    void update(Trainer trainer);
+
+    @HQL("""
+            SELECT count(u.id) > 0
+            FROM User u
+            WHERE u.username = :username
             """)
     boolean existsByUsername(String username);
+
+    Optional<Trainer> findByUsername(String username);
 
     @HQL("""
             SELECT tr
             FROM Trainer tr
-            WHERE tr.username = :username
+            WHERE tr.username IN :usernames
             """)
-    Trainer findByUsername(String username);
+    List<Trainer> findByUsernames(List<String> usernames);
 
     @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TrainerProfile(
-                tr.firstName,
-                tr.lastName,
-                tr.username,
-                tr.specialization.trainingTypeName
-            )
-            FROM Trainer tr
-            WHERE tr.username = :username
-            """)
-    Response.TrainerProfile findProfileByUsername(String username);
-
-    @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TrainingProfile(
+            SELECT new tech.provokedynamic.gymcrm.dto.Summary.Training(
                 trn.trainingName,
                 trn.trainingDate,
                 trn.trainingDuration,
@@ -53,7 +45,7 @@ public interface TrainerDao extends UserDao {
               AND (:trainee IS NULL OR trn.trainee.username = :trainee)
             ORDER BY trn.trainingDate DESC
             """)
-    List<Response.TrainingProfile> findTrainingsByUsername(
+    List<Summary.Training> findTrainingsByUsername(
             String username,
             @Nullable LocalDate from,
             @Nullable LocalDate to,

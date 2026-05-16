@@ -2,44 +2,33 @@ package tech.provokedynamic.gymcrm.dao;
 
 import jakarta.annotation.Nullable;
 import org.hibernate.annotations.processing.HQL;
-import org.hibernate.annotations.processing.SQL;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.Profile;
+import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface TraineeDao extends UserDao {
 
     void save(Trainee trainee);
 
-    @SQL("""
-            SELECT count(*) > 0
-            FROM "user"
-            WHERE username = :username
-            """)
-    boolean existsByUsername(String username);
-
-    @HQL("""
-            SELECT t
-            FROM Trainee t
-            WHERE t.username = :username
-            """)
-    Trainee findByUsername(String username);
-
-    @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TraineeProfile(
-                t.firstName, t.lastName, t.username, t.dateOfBirth, t.address
-            )
-            FROM Trainee t
-            WHERE t.username = :username
-            """)
-    Response.TraineeProfile findProfileByUsername(String username);
+    void update(Trainee trainee);
 
     void delete(Trainee trainee);
 
     @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TrainingProfile(
+            SELECT count(u.id) > 0
+            FROM User u
+            WHERE u.username = :username
+            """)
+    boolean existsByUsername(String username);
+
+    Optional<Trainee> findByUsername(String username);
+
+    @HQL("""
+            SELECT new tech.provokedynamic.gymcrm.dto.Summary.Training(
                 trn.trainingName,
                 trn.trainingDate,
                 trn.trainingDuration,
@@ -53,7 +42,7 @@ public interface TraineeDao extends UserDao {
               AND (:type    IS NULL OR trn.trainingType.trainingTypeName = :type)
             ORDER BY trn.trainingDate DESC
             """)
-    List<Response.TrainingProfile> findTrainingsByUsername(
+    List<Summary.Training> findTrainingsByUsername(
             String username,
             @Nullable LocalDate from,
             @Nullable LocalDate to,
@@ -62,7 +51,7 @@ public interface TraineeDao extends UserDao {
     );
 
     @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TrainerProfile(
+            SELECT new tech.provokedynamic.gymcrm.dto.Profile.Trainer(
                 tr.firstName,
                 tr.lastName,
                 tr.username,
@@ -76,10 +65,10 @@ public interface TraineeDao extends UserDao {
                 WHERE t.username = :username
             )
             """)
-    List<Response.TrainerProfile> findUnassignedTrainers(String username);
+    List<Profile.Trainer> findUnassignedTrainers(String username);
 
     @HQL("""
-            SELECT new tech.provokedynamic.gymcrm.dto.Response.TrainerProfile(
+            SELECT new tech.provokedynamic.gymcrm.dto.Profile.Trainer(
                 tr.firstName,
                 tr.lastName,
                 tr.username,
@@ -89,5 +78,5 @@ public interface TraineeDao extends UserDao {
             JOIN t.trainers tr
             WHERE t.username = :username
             """)
-    List<Response.TrainerProfile> findAssignedTrainers(String username);
+    List<Profile.Trainer> findAssignedTrainers(String username);
 }

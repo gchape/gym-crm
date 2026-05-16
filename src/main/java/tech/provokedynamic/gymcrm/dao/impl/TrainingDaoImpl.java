@@ -10,7 +10,11 @@ import tech.provokedynamic.gymcrm.entity.Training;
 public class TrainingDaoImpl implements TrainingDao {
 
     @PersistenceContext
-    private EntityManager em;
+    private final EntityManager em;
+
+    public TrainingDaoImpl(EntityManager em) {
+        this.em = em;
+    }
 
     @Override
     public void save(Training training) {

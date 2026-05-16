@@ -1,20 +1,29 @@
 package tech.provokedynamic.gymcrm.dao.impl;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.NoResultException;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dao.TraineeDao_;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.Profile;
+import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
 
+    @Override
     public void save(Trainee trainee) {
         em.persist(trainee);
+    }
+
+    @Override
+    public void update(Trainee trainee) {
+        em.merge(trainee);
     }
 
     @Override
@@ -23,13 +32,16 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
     }
 
     @Override
-    public Trainee findByUsername(String username) {
-        return TraineeDao_.findByUsername(em, username);
-    }
-
-    @Override
-    public Response.TraineeProfile findProfileByUsername(String username) {
-        return TraineeDao_.findProfileByUsername(em, username);
+    public Optional<Trainee> findByUsername(String username) {
+        try {
+            return Optional.of(
+                    em.createQuery("SELECT t FROM Trainee t WHERE t.username = :username", Trainee.class)
+                            .setParameter("username", username)
+                            .getSingleResult()
+            );
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -38,7 +50,7 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
     }
 
     @Override
-    public List<Response.TrainingProfile> findTrainingsByUsername(
+    public List<Summary.Training> findTrainingsByUsername(
             String username,
             @Nullable LocalDate from,
             @Nullable LocalDate to,
@@ -49,12 +61,12 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
     }
 
     @Override
-    public List<Response.TrainerProfile> findUnassignedTrainers(String username) {
+    public List<Profile.Trainer> findUnassignedTrainers(String username) {
         return TraineeDao_.findUnassignedTrainers(em, username);
     }
 
     @Override
-    public List<Response.TrainerProfile> findAssignedTrainers(String username) {
+    public List<Profile.Trainer> findAssignedTrainers(String username) {
         return TraineeDao_.findAssignedTrainers(em, username);
     }
 }
