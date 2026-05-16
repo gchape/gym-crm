@@ -23,7 +23,7 @@ import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.sql.DataSource;
-import java.util.Properties;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Configuration(proxyBeanMethods = false)
@@ -73,12 +73,11 @@ public class PersistenceConfig {
         entityManagerFactoryBean.setPackagesToScan("tech.provokedynamic.gymcrm.entity");
         entityManagerFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         entityManagerFactoryBean.setJpaDialect(new HibernateJpaDialect());
-
-        var props = new Properties();
-        props.put(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, Action.ACTION_CREATE_THEN_DROP);
-        props.put(AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl());
-        entityManagerFactoryBean.setJpaProperties(props);
-
+        var jpaProperties = Map.of(
+                AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, Action.ACTION_CREATE_THEN_DROP,
+                AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl()
+        );
+        entityManagerFactoryBean.setJpaPropertyMap(jpaProperties);
         return entityManagerFactoryBean;
     }
 
