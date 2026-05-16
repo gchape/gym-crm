@@ -27,7 +27,7 @@ public class RequestValidationAspect implements Ordered {
     public void validate(@NonNull JoinPoint joinPoint) {
         for (Object arg : joinPoint.getArgs()) {
             if (arg instanceof Request request) {
-                log.debug("Validating {} in {}",
+                log.trace("Validating {} in {}",
                         request.getClass().getSimpleName(),
                         joinPoint.getSignature().getName());
                 validator.validate(request);

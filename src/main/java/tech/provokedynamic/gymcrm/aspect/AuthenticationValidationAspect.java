@@ -6,6 +6,7 @@ import org.aspectj.lang.annotation.Before;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dao.UserDao;
@@ -20,7 +21,9 @@ public class AuthenticationValidationAspect implements Ordered {
 
     private final UserDao userDao;
 
-    public AuthenticationValidationAspect(UserDao userDao) {
+    public AuthenticationValidationAspect(
+            @Qualifier("userDaoImpl") UserDao userDao
+    ) {
         this.userDao = userDao;
     }
 
@@ -29,7 +32,9 @@ public class AuthenticationValidationAspect implements Ordered {
         for (Object arg : joinPoint.getArgs()) {
             if (arg instanceof Request.Authenticated authenticated) {
                 if (!userDao.existsByUsernameAndPassword(authenticated.username(), authenticated.password())) {
-                    log.warn("Authentication failed for username '{}'", authenticated.username());
+                    log.warn("Authentication failed for username '{}' attempting '{}'",
+                            authenticated.username(),
+                            joinPoint.getSignature().getName());
                     throw new AuthenticationException("Invalid username or password");
                 }
                 return;

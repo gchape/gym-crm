@@ -1,5 +1,8 @@
 package tech.provokedynamic.gymcrm.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dao.UserDao;
 
@@ -18,6 +21,8 @@ public class CredentialGenerator {
 
     private static final Charset DEFAULT_CHARSET = UTF_8;
 
+    private static final Logger log = LoggerFactory.getLogger(CredentialGenerator.class);
+
     static {
         try {
             RANDOM = SecureRandom.getInstanceStrong();
@@ -28,7 +33,9 @@ public class CredentialGenerator {
 
     private final UserDao userDao;
 
-    public CredentialGenerator(UserDao userDao) {
+    public CredentialGenerator(
+            @Qualifier("userDaoImpl") UserDao userDao
+    ) {
         this.userDao = userDao;
     }
 
@@ -36,6 +43,7 @@ public class CredentialGenerator {
         var base = firstName + "." + lastName;
 
         if (!userDao.existsByUsernameIncludingDeleted(base)) {
+            log.debug("Generated username '{}'", base);
             return base;
         }
 
@@ -44,7 +52,11 @@ public class CredentialGenerator {
             suffix++;
         }
 
-        return base + suffix;
+        var username = base + suffix;
+
+        log.debug("Username '{}' taken, generated '{}'", base, username);
+
+        return username;
     }
 
     public String generatePassword() {

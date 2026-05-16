@@ -42,6 +42,9 @@ public class TrainingServiceImpl implements TrainingService {
     @Authenticated
     @Transactional
     public void add(Request.AddTraining request) {
+        log.debug("Adding training '{}' for trainee '{}' with trainer '{}'",
+                request.trainingName(), request.traineeUsername(), request.trainerUsername());
+
         var trainee = traineeDao.findByUsername(request.traineeUsername())
                 .orElseThrow(() -> new UserDoesNotExistException(request.traineeUsername()));
 

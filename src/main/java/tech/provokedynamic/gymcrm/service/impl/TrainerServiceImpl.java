@@ -68,9 +68,14 @@ public class TrainerServiceImpl implements TrainerService {
     @Transactional(readOnly = true)
     public Profile.Trainer getProfile(String username) {
         log.debug("Fetching profile for trainer '{}'", username);
-        return trainerDao.findByUsername(username)
+
+        var profile = trainerDao.findByUsername(username)
                 .map(Profile.Trainer::from)
                 .orElseThrow(() -> new UserDoesNotExistException(username));
+
+        log.debug("Fetched profile for trainer '{}'", username);
+
+        return profile;
     }
 
     @Override
@@ -78,8 +83,11 @@ public class TrainerServiceImpl implements TrainerService {
     @Authenticated
     @Transactional
     public void changePassword(Request.ChangePassword request) {
-        log.info("Changing password for trainer '{}'", request.username());
+        log.debug("Changing password for trainer '{}'", request.username());
+
         trainerDao.updatePassword(request.username(), request.newPassword());
+
+        log.debug("Password changed for trainer '{}'", request.username());
     }
 
     @Override
@@ -87,6 +95,8 @@ public class TrainerServiceImpl implements TrainerService {
     @Authenticated
     @Transactional
     public Profile.Trainer update(Request.UpdateTrainer request) {
+        log.debug("Updating trainer profile for '{}'", request.username());
+
         Trainer trainer = trainerDao.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
@@ -116,6 +126,7 @@ public class TrainerServiceImpl implements TrainerService {
             log.warn("Trainer '{}' is already active", username);
             throw new AlreadyActivatedException(username);
         }
+
         log.info("Activated trainer '{}'", username);
     }
 
@@ -130,6 +141,7 @@ public class TrainerServiceImpl implements TrainerService {
             log.warn("Trainer '{}' is already inactive", username);
             throw new AlreadyDeactivatedException(username);
         }
+
         log.info("Deactivated trainer '{}'", username);
     }
 
@@ -141,7 +153,10 @@ public class TrainerServiceImpl implements TrainerService {
             @Nullable LocalDate to,
             @Nullable String traineeUsername
     ) {
-        log.debug("Fetching trainings for trainer '{}'", username);
-        return trainerDao.findTrainingsByUsername(username, from, to, traineeUsername);
+        log.debug("Fetching trainings for trainer '{}' [from={}, to={}, trainee={}]",
+                username, from, to, traineeUsername);
+        var trainings = trainerDao.findTrainingsByUsername(username, from, to, traineeUsername);
+        log.debug("Found {} trainings for trainer '{}'", trainings.size(), username);
+        return trainings;
     }
 }

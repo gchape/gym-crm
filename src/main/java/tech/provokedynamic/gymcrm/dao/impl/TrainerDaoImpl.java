@@ -1,6 +1,7 @@
 package tech.provokedynamic.gymcrm.dao.impl;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
@@ -14,6 +15,10 @@ import java.util.Optional;
 
 @Repository
 public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
+
+    public TrainerDaoImpl(EntityManager em) {
+        super(em);
+    }
 
     @Override
     public void save(Trainer trainer) {
