@@ -1,28 +1,20 @@
-package tech.provokedynamic.gymcrm.aspect;
+package tech.provokedynamic.gymcrm.aspect.pointcuts;
 
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 
 @Aspect
-public class Pointcuts {
+public final class ServicePointcuts {
 
     @Pointcut("within(tech.provokedynamic.gymcrm.service..*)")
-    public void inServiceLayer() {
+    private void inServiceLayer() {
     }
 
-    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotation.Validate)")
-    public void validateAnnotated() {
-    }
-
-    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotation.Authenticated)")
-    public void authenticatedAnnotated() {
-    }
-
-    @Pointcut("inServiceLayer() && validateAnnotated()")
+    @Pointcut("tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts.validateAnnotated() && inServiceLayer()")
     public void validateInService() {
     }
 
-    @Pointcut("inServiceLayer() && authenticatedAnnotated()")
+    @Pointcut("tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts.authenticatedAnnotated() && inServiceLayer()")
     public void authenticatedInService() {
     }
 }
