@@ -3,9 +3,9 @@ package tech.provokedynamic.gymcrm.dao.impl;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import org.hibernate.jpa.AvailableHints;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dao.TrainerDao_;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 
@@ -32,14 +32,21 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
 
     @Override
     public boolean existsByUsername(String username) {
-        return TrainerDao_.existsByUsername(em, username);
+        return em.createQuery(
+                        "SELECT count(tr.id) > 0 FROM Trainer tr WHERE tr.username = :username",
+                        Boolean.class)
+                .setParameter("username", username)
+                .setHint(AvailableHints.HINT_READ_ONLY, true)
+                .getSingleResult();
     }
 
     @Override
     public Optional<Trainer> findByUsername(String username) {
         try {
             return Optional.of(
-                    em.createQuery("SELECT tr FROM Trainer tr WHERE tr.username = :username", Trainer.class)
+                    em.createQuery(
+                                    "FROM Trainer tr WHERE tr.username = :username",
+                                    Trainer.class)
                             .setParameter("username", username)
                             .getSingleResult()
             );
@@ -50,7 +57,11 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
 
     @Override
     public List<Trainer> findByUsernames(List<String> usernames) {
-        return TrainerDao_.findByUsernames(em, usernames);
+        return em.createQuery(
+                        "FROM Trainer tr WHERE tr.username IN :usernames",
+                        Trainer.class)
+                .setParameter("usernames", usernames)
+                .getResultList();
     }
 
     @Override
@@ -60,6 +71,24 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
             @Nullable LocalDate to,
             @Nullable String trainee
     ) {
-        return TrainerDao_.findTrainingsByUsername(em, username, from, to, trainee);
+        return em.createQuery("""
+                        SELECT new tech.provokedynamic.gymcrm.dto.Summary.Training(
+                            t.trainingName,
+                            t.trainingDate,
+                            t.trainingDuration,
+                            t.trainee.username
+                        )
+                        FROM Training t
+                        WHERE t.trainer.username = :username
+                          AND (:from    IS NULL OR t.trainingDate >= :from)
+                          AND (:to      IS NULL OR t.trainingDate <= :to)
+                          AND (:trainee IS NULL OR t.trainee.username = :trainee)
+                        ORDER BY t.trainingDate DESC
+                        """, Summary.Training.class)
+                .setParameter("username", username)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .setParameter("trainee", trainee)
+                .getResultList();
     }
 }
