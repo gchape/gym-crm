@@ -1,51 +1,57 @@
 # Gym CRM System
 
-A Spring-based CRM module for managing gym trainees, trainers, and training sessions.
+A Spring-based CRM system for managing gym trainees, trainers, and training sessions.
 
 ---
 
 ## Tech Stack
 
 - **Java 25**
-- **Spring Framework 7** (Spring Core, Spring AOP)
-- **Jackson 3** (`tools.jackson`) for JSON deserialization
+- **Spring Framework 7** (Spring Core, Spring AOP, Spring TX)
+- **Hibernate ORM 7** (JPA provider)
+- **HikariCP** (connection pooling)
 - **Jakarta Bean Validation** with Hibernate Validator
 - **Lombok** (`@SuperBuilder`, `@Getter`) for entity boilerplate
+- **JSpecify** for null safety annotations
 - **Logback** for logging
-- **JUnit 5 + AssertJ**
+- **JUnit 5 + AssertJ** for testing
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│                   GymFacade                 │
-└────────────┬────────────┬───────────┬───────┘
-             │            │           │
-     ┌───────▼──┐  ┌──────▼──┐  ┌─────▼───────┐
-     │ Trainee  │  │ Trainer │  │  Training   │
-     │ Service  │  │ Service │  │   Service   │
-     └───────┬──┘  └──────┬──┘  └──────┬──────┘
-             │            │            │
-     ┌───────▼──┐  ┌──────▼──┐  ┌─────▼───────┐
-     │ Trainee  │  │ Trainer │  │  Training   │
-     │   DAO    │  │   DAO   │  │    DAO      │
-     └───────┬──┘  └──────┬──┘  └──────┬──────┘
-             │            │            │
-             └────────────▼────────────┘
+┌──────────────────────────────────────────────────────┐
+│                     Service Layer                    │
+│       TraineeService  TrainerService  TrainingService│
+└────────────┬────────────┬───────────────┬────────────┘
+             │            │               │
+      ┌──────▼──┐  ┌──────▼──┐  ┌────────▼────┐
+      │Trainee  │  │Trainer  │  │  Training   │
+      │  DAO    │  │  DAO    │  │    DAO      │
+      └──────┬──┘  └──────┬──┘  └────────┬────┘
+             │            │               │
+             └────────────▼───────────────┘
                    ┌──────────────┐
-                   │ InMemory     │
-                   │ Storage      │
-                   │ (single map) │
+                   │ EntityManager│
+                   │  (Hibernate) │
                    └──────────────┘
-                         ▲
-                  ┌──────┴──────┐
-                  │  Storage    │
-                  │ Initializer │
-                  │ (on startup)│
-                  └─────────────┘
+                          ▲
+                   ┌──────┴──────┐
+                   │  HikariCP   │
+                   │ DataSource  │
+                   └─────────────┘
 ```
+
+### Cross-cutting Concerns (AOP)
+
+```
+Request → @Validate → RequestValidationAspect (order=2)
+        → @Authenticated → AuthenticationValidationAspect (order=1)
+        → Service Method
+```
+
+Authentication runs before validation — invalid credentials are rejected first.
 
 ---
 
@@ -54,84 +60,79 @@ A Spring-based CRM module for managing gym trainees, trainers, and training sess
 ```
 src/
 ├── main/
-│   ├── java/tech/provokedynamic/gymcrm/
-│   │   ├── annotations/
-│   │   │   └── Validate.java                 # method-level validation trigger
-│   │   ├── aspect/
-│   │   │   └── ValidationAspect.java         # AOP aspect for @Validate
-│   │   ├── component/
-│   │   │   ├── CredentialGenerator.java      # username + password generation
-│   │   │   ├── InMemoryStorage.java          # shared ConcurrentHashMap storage
-│   │   │   └── StorageInitializer.java       # loads init-data.json on startup
-│   │   ├── config/
-│   │   │   ├── JacksonConfig.java            # JsonMapper bean with JavaTimeModule
-│   │   │   └── PropertySourcesPlaceholderConfig.java  # enables @Value resolution
-│   │   ├── dao/
-│   │   │   ├── AbstractDao.java              # generic CRUD via Storage
-│   │   │   ├── CrudDao.java                  # generic CRUD interface
-│   │   │   ├── TraineeDao.java
-│   │   │   ├── TrainerDao.java
-│   │   │   └── TrainingDao.java
-│   │   ├── dto/
-│   │   │   ├── Request.java                  # sealed marker interface
-│   │   │   ├── Response.java                 # sealed marker interface
-│   │   │   ├── TraineeRequest.java           # sealed interface + Create/Update records
-│   │   │   ├── TrainerRequest.java           # sealed interface + Create/Update records
-│   │   │   ├── TrainingRequest.java          # sealed interface + Create record
-│   │   │   ├── TraineeResponse.java          # sealed interface + Summary/Detail records
-│   │   │   ├── TrainerResponse.java          # sealed interface + Summary/Detail records
-│   │   │   └── TrainingResponse.java         # sealed interface + Summary/Detail records
-│   │   ├── entity/
-│   │   │   ├── Entity.java                   # sealed interface
-│   │   │   ├── User.java                     # base class with @SuperBuilder/@Getter
-│   │   │   ├── Trainee.java                  # extends User, implements Entity
-│   │   │   ├── Trainer.java                  # extends User, implements Entity
-│   │   │   └── Training.java                 # record, implements Entity
-│   │   ├── facade/
-│   │   │   └── GymFacade.java                # single entry point, constructor injection
-│   │   ├── model/
-│   │   │   ├── Address.java                  # record
-│   │   │   ├── Specialization.java           # enum
-│   │   │   └── TrainingType.java             # enum (same values as Specialization)
-│   │   ├── service/
-│   │   │   ├── TraineeService.java           # interface
-│   │   │   ├── TrainerService.java           # interface
-│   │   │   ├── TrainingService.java          # interface
-│   │   │   ├── TraineeServiceImpl.java
-│   │   │   ├── TrainerServiceImpl.java
-│   │   │   └── TrainingServiceImpl.java
-│   │   ├── storage/
-│   │   │   └── Storage.java                  # storage interface
-│   │   └── validation/
-│   │       └── BeanValidator.java            # enum singleton validator
-│   └── resources/
-│       ├── application.properties            # storage path config
-│       ├── logback.xml                       # dev + prod log profiles
-│       └── data/
-│           └── init-data.json                # seed data loaded on startup
+│   └── java/tech/provokedynamic/gymcrm/
+│       ├── annotation/
+│       │   ├── Authenticated.java        # triggers auth aspect
+│       │   └── Validate.java             # triggers validation aspect
+│       ├── aspect/
+│       │   ├── AuthenticationValidationAspect.java
+│       │   ├── RequestValidationAspect.java
+│       │   └── pointcuts/
+│       │       ├── AnnotationPointcuts.java
+│       │       └── ServicePointcuts.java
+│       ├── config/
+│       │   └── PersistenceConfig.java    # DataSource, EntityManagerFactory, TX
+│       ├── dao/
+│       │   ├── UserDao.java
+│       │   ├── TraineeDao.java
+│       │   ├── TrainerDao.java
+│       │   ├── TrainingDao.java
+│       │   ├── TrainingTypeDao.java
+│       │   └── impl/
+│       │       ├── UserDaoImpl.java
+│       │       ├── TraineeDaoImpl.java
+│       │       ├── TrainerDaoImpl.java
+│       │       ├── TrainingDaoImpl.java
+│       │       └── TrainingTypeDaoImpl.java
+│       ├── dto/
+│       │   ├── Request.java              # sealed interface with nested records
+│       │   ├── Profile.java              # sealed interface (Trainee, Trainer records)
+│       │   └── Summary.java              # sealed interface (Training record)
+│       ├── entity/
+│       │   ├── User.java                 # base @Entity with @Inheritance
+│       │   ├── Trainee.java              # extends User
+│       │   ├── Trainer.java              # extends User
+│       │   ├── Training.java
+│       │   └── TrainingType.java         # @Immutable
+│       ├── exception/
+│       │   ├── AuthenticationException.java
+│       │   ├── AlreadyActivatedException.java
+│       │   ├── AlreadyDeactivatedException.java
+│       │   ├── UserDoesNotExistException.java
+│       │   └── TrainingTypeNotFoundException.java
+│       ├── model/
+│       │   └── Address.java              # @Embeddable record
+│       ├── service/
+│       │   ├── TraineeService.java
+│       │   ├── TrainerService.java
+│       │   ├── TrainingService.java
+│       │   └── impl/
+│       │       ├── TraineeServiceImpl.java
+│       │       ├── TrainerServiceImpl.java
+│       │       └── TrainingServiceImpl.java
+│       ├── util/
+│       │   └── CredentialGenerator.java
+│       └── validation/
+│           ├── RequestValidator.java
+│           └── impl/
+│               └── RequestValidatorImpl.java
 └── test/
     └── java/tech/provokedynamic/gymcrm/
-        ├── component/
-        │   ├── CredentialGeneratorTest.java  # unit tests, no Spring context
-        │   ├── InMemoryStorageTest.java      # unit tests, no Spring context
-        │   └── StorageInitializerTest.java   # sliced context, startup loading tests
-        ├── dao/
-        │   ├── AbstractDaoTest.java          # unit tests, no Spring context
-        │   └── TestDao.java                  # test-only AbstractDao subclass
         └── service/
-            ├── TraineeServiceImplTest.java   # sliced context, validation + CRUD tests
-            ├── TrainerServiceImplTest.java   # sliced context, validation + CRUD tests
-            └── TrainingServiceImplTest.java  # sliced context, validation + CRUD tests
+            ├── TraineeServiceImplTest.java
+            ├── TrainerServiceImplTest.java
+            └── TrainingServiceImplTest.java
 ```
 
 ---
 
 ## Domain Model
 
-### User (base class)
+### User (base entity, single-table inheritance)
 
 | Field     | Type    | Notes                           |
 |-----------|---------|---------------------------------|
+| id        | Long    | auto-generated PK               |
 | firstName | String  | required                        |
 | lastName  | String  | required                        |
 | username  | String  | auto-generated: `First.Last`    |
@@ -140,219 +141,181 @@ src/
 
 ### Trainee extends User
 
-| Field       | Type      | Notes                         |
-|-------------|-----------|-------------------------------|
-| id          | long      | auto-generated                |
-| dateOfBirth | LocalDate | must be in the past           |
-| address     | Address   | required, cascades validation |
+| Field       | Type      | Notes                     |
+|-------------|-----------|---------------------------|
+| dateOfBirth | LocalDate | optional, past or present |
+| address     | Address   | optional, embedded        |
+| trainers    | Set       | many-to-many with Trainer |
 
 ### Trainer extends User
 
-| Field          | Type           | Notes          |
-|----------------|----------------|----------------|
-| id             | long           | auto-generated |
-| specialization | Specialization | required       |
+| Field          | Type         | Notes        |
+|----------------|--------------|--------------|
+| specialization | TrainingType | required, FK |
 
-### Training (record)
+### Training
 
 | Field            | Type         | Notes                     |
 |------------------|--------------|---------------------------|
-| traineeId        | long         | required, positive        |
-| trainerId        | long         | required, positive        |
-| trainingName     | String       | required                  |
-| trainingType     | TrainingType | required                  |
+| id               | Long         | auto-generated PK         |
+| trainee          | Trainee      | required, FK              |
+| trainer          | Trainer      | required, FK              |
+| trainingName     | String       | required, max 100 chars   |
+| trainingType     | TrainingType | required, FK              |
 | trainingDate     | LocalDate    | required, today or future |
-| trainingDuration | Duration     | required, min 30 minutes  |
+| trainingDuration | Integer      | required, 1-480 minutes   |
 
-### Address (record)
+### Address (embeddable)
 
-| Field      | Type   | Notes                 |
-|------------|--------|-----------------------|
-| street     | String | required              |
-| city       | String | required              |
-| country    | String | required              |
-| postalCode | String | required, 4-10 digits |
+| Field   | Type   | Notes    |
+|---------|--------|----------|
+| street  | String | optional |
+| city    | String | optional |
+| country | String | optional |
+
+### TrainingType (immutable lookup table)
+
+| Field            | Type   | Notes                        |
+|------------------|--------|------------------------------|
+| id               | Long   | auto-generated PK            |
+| trainingTypeName | String | constant values, not updated |
 
 ---
 
 ## Request DTOs
 
-Each request type is a sealed interface with nested `Create` and `Update` records.
-Validation annotations live on the record components of each permit:
+All requests implement the sealed `Request` interface. Authenticated requests
+additionally implement `Request.Authenticated` which exposes `username()` and `password()`.
 
 ```
-TraineeRequest (sealed interface)
-├── Create(firstName, lastName, dateOfBirth, address)
-└── Update(firstName, lastName, dateOfBirth, address, active)
-
-TrainerRequest (sealed interface)
-├── Create(firstName, lastName, specialization)
-└── Update(firstName, lastName, specialization, active)
-
-TrainingRequest (sealed interface)
-└── Create(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration)
+Request (sealed interface)
+├── CreateTrainee(firstName, lastName, dateOfBirth?, address?)
+├── CreateTrainer(firstName, lastName, specialization)
+├── UpdateTrainee(username, password, firstName, lastName, dateOfBirth?, address?)
+├── UpdateTrainer(username, password, firstName, lastName, specialization)
+├── UpdateTraineeTrainers(username, password, trainerUsernames)
+├── ChangePassword(username, password, newPassword)
+├── ToggleActive(username, password)
+├── DeleteTrainee(username, password)
+└── AddTraining(traineeUsername, traineePassword, trainerUsername,
+                trainingName, trainingType, trainingDate, trainingDuration)
 ```
 
 ## Response DTOs
 
-Each response type is a sealed interface with nested `Summary` and `Detail` records,
-exposing only the fields relevant to each use case. Static `from()` factory methods
-map from entity to response:
-
 ```
-TraineeResponse (sealed interface)
-├── Summary(id, username, firstName, lastName, isActive)
-└── Detail(id, username, firstName, lastName, isActive, dateOfBirth, address)
+Profile (sealed interface)
+├── Trainee(firstName, lastName, username, dateOfBirth, address)
+└── Trainer(firstName, lastName, username, specialization)
 
-TrainerResponse (sealed interface)
-├── Summary(id, username, firstName, lastName, isActive)
-└── Detail(id, username, firstName, lastName, isActive, specialization)
-
-TrainingResponse (sealed interface)
-├── Summary(traineeId, trainerId, trainingName, trainingType)
-└── Detail(traineeId, trainerId, trainingName, trainingType, trainingDate, trainingDuration)
+Summary (sealed interface)
+└── Training(trainingName, trainingDate, trainingDuration, trainerUsername/traineeUsername)
 ```
+
+Static `from(entity)` factory methods on `Profile.Trainee` and `Profile.Trainer`
+map from entity to DTO.
 
 ---
 
-## Username & Password Rules
+## Username & Password Generation
 
 - **Username**: `firstName.lastName` (e.g. `John.Smith`)
-- **Duplicate names**: suffix with serial number (e.g. `John.Smith1`, `John.Smith2`)
-- **Password**: randomly generated 10-character alphanumeric string
+- **Duplicates**: suffix with incrementing number (`John.Smith1`, `John.Smith2`)
+- **Uniqueness check**: queries against all users including soft-deleted ones
+- **Password**: 10 random bytes encoded as UTF-8 string via `SecureRandom.getInstanceStrong()`
 
 ---
 
-## Storage
+## Authentication
 
-Single shared `ConcurrentHashMap` bean (`InMemoryStorage`) used by all DAOs. Entities are separated by namespace key
-prefix:
+All operations except `create` require credentials. The `AuthenticationValidationAspect`
+intercepts methods annotated with `@Authenticated`, extracts the `Request.Authenticated`
+argument, and validates username/password against the database before the method executes.
 
-```
-trainee:1  → Trainee
-trainee:2  → Trainee
-trainer:1  → Trainer
-training:1 → Training
-```
-
-### Initialization
-
-On application startup, `StorageInitializer` reads `init-data.json` via `@PostConstruct` and populates the storage map.
-The file path is configured via `application.properties`:
-
-```properties
-storage.data.path=classpath:data/init-data.json
-```
-
-Jackson 3 deserializes entities using `@JsonCreator` factory methods on `Trainee` and `Trainer`,
-and `@JsonProperty` on `Training` record components.
+Authentication runs at `order=1`, validation at `order=2` — invalid credentials are
+rejected before validation runs.
 
 ---
 
 ## Validation
 
-Single-layer validation via AOP:
-
-- **`@Validate`** — placed on service impl methods that accept `Request` arguments
-- **`ValidationAspect`** — intercepts annotated methods, checks if any argument is a `Request`, validates via
-  `BeanValidator.INSTANCE`, scoped to `tech.provokedynamic.gymcrm.service..*`
-- **`BeanValidator`** — enum singleton wrapping Jakarta `Validator`, usable outside Spring context
-
-`@Validate` must be placed on the concrete implementation class, not the interface. Spring's `@annotation` pointcut
-resolves annotations against the target class method, not the proxy interface method — the same limitation applies to
-`@Transactional` and other Spring AOP-driven annotations.
-
-Entity builders are public due to Java's lack of cross-package encapsulation without JPMS. The service layer is the
-enforced entry point — direct builder usage bypasses validation, intentionally left as a known limitation.
+- **`@Validate`** — placed on service impl methods accepting `Request` arguments
+- **`RequestValidationAspect`** — intercepts annotated methods, validates via `RequestValidatorImpl`
+- **`RequestValidatorImpl`** — wraps Jakarta `Validator`, throws `ConstraintViolationException` on failure, logs at
+  `warn`
 
 ---
 
-## Testing
+## Implemented Requirements
 
-**Unit tests** (no Spring context, plain instantiation):
-
-- `CredentialGeneratorTest` — username generation, suffix incrementing, password length and uniqueness
-- `InMemoryStorageTest` — key generation, put/get/delete, namespace isolation
-- `AbstractDaoTest` — save, findById, findAll, update, delete via a test-only `TestDao` subclass
-
-**Integration tests** (sliced Spring context via `@ExtendWith(SpringExtension.class)` + `@ContextConfiguration`):
-
-Service tests load only the classes needed for each slice, keeping startup fast.
-
-- `TraineeServiceImplTest` — valid/invalid requests, address and postal code validation, boundary values, update,
-  findById, findAll, delete, not-found
-- `TrainerServiceImplTest` — valid/invalid requests, specialization validation, username uniqueness, update, findById,
-  findAll, delete, not-found
-- `TrainingServiceImplTest` — valid/invalid requests, date and duration validation, boundary values, ID constraints,
-  findById, findAll
-- `StorageInitializerTest` — entity count per namespace, type correctness, field values, namespace isolation, duplicate
-  username handling
-
-`GymFacade` is not tested directly — it is pure delegation with no logic of its own. Service tests cover all behavior
-end-to-end.
-
-### Coverage
-
-| Metric | Coverage      |
-|--------|---------------|
-| Class  | 91% (31/34)   |
-| Method | 80% (79/94)   |
-| Line   | 91% (299/328) |
-| Branch | 81% (28/32)   |
+| #  | Requirement                            | Status |
+|----|----------------------------------------|--------|
+| 1  | Create Trainer profile                 | ✅      |
+| 2  | Create Trainee profile                 | ✅      |
+| 3  | Trainee username/password matching     | ✅      |
+| 4  | Trainer username/password matching     | ✅      |
+| 5  | Select Trainer profile by username     | ✅      |
+| 6  | Select Trainee profile by username     | ✅      |
+| 7  | Trainee password change                | ✅      |
+| 8  | Trainer password change                | ✅      |
+| 9  | Update Trainer profile                 | ✅      |
+| 10 | Update Trainee profile                 | ✅      |
+| 11 | Activate/Deactivate Trainee            | ✅      |
+| 12 | Activate/Deactivate Trainer            | ✅      |
+| 13 | Delete Trainee (hard delete + cascade) | ✅      |
+| 14 | Get Trainee trainings with criteria    | ✅      |
+| 15 | Get Trainer trainings with criteria    | ✅      |
+| 16 | Add training                           | ✅      |
+| 17 | Get unassigned trainers for trainee    | ✅      |
+| 18 | Update Trainee's trainers list         | ✅      |
 
 ---
 
-## Configuration
+## Persistence
 
-Logback profiles:
+- **Hibernate** as the JPA provider, configured via `PersistenceConfig`
+- **Single-table inheritance** for `User`/`Trainee`/`Trainer` with discriminator column
+- **Snake case** physical naming strategy via `PhysicalNamingStrategySnakeCaseImpl`
+- **HikariCP** connection pool with configurable timeout and pool size
+- **`@OnDelete(CASCADE)`** on `Trainee` for DB-level cascade deletion of trainings
+- **`@Immutable`** on `TrainingType` — never updated from application
+- All queries written manually via `EntityManager` — no annotation processor
+- `HINT_READ_ONLY` applied to SELECT queries for first-level cache optimization
+- `HINT_NATIVE_SPACES` applied to native UPDATE queries for cache synchronization
 
-- **dev**: DEBUG level, logs to console + file
-- **prod**: INFO/WARN level, logs to file only
+---
+
+## Transaction Management
+
+- `@Transactional` on all write operations
+- `@Transactional(readOnly = true)` on all read operations
+- Combined with `HINT_READ_ONLY` at the query level for full optimization
+
+---
+
+## Logging
+
+| Level   | Used for                                               |
+|---------|--------------------------------------------------------|
+| `trace` | Aspect interception (validation firing)                |
+| `debug` | Method entry/exit, fetched result counts               |
+| `info`  | Successful mutations (created, updated, deleted)       |
+| `warn`  | Expected failures (auth failure, already active, etc.) |
 
 ---
 
 ## Injection Strategy
 
-Per task requirements:
-
-- **Constructor injection**: DAO → Service (required dependencies)
-- **Setter injection**: `CredentialGenerator` → Service (auxiliary dependency)
-- **Constructor injection**: Services → Facade
-
----
-
-## Completed ✅
-
-- Domain model (`User`, `Trainee`, `Trainer`, `Training`, `Address`) with Lombok `@SuperBuilder`/`@Getter`
-- Sealed `Entity` interface
-- `Request` sealed marker interface with sealed interfaces and records (`TraineeRequest`, `TrainerRequest`,
-  `TrainingRequest`)
-- `Response` sealed marker interface with sealed interfaces and records (`TraineeResponse`, `TrainerResponse`,
-  `TrainingResponse`), with static `from()` factory methods
-- `InMemoryStorage` with namespace support
-- `AbstractDao` with generic CRUD
-- `TraineeDao`, `TrainerDao`, `TrainingDao`
-- `TraineeService`, `TrainerService`, `TrainingService` with interfaces and implementations
-- `CredentialGenerator` (username + password generation)
-- `BeanValidator` enum singleton
-- `@Validate` annotation + `ValidationAspect` (scoped to service package, on impl methods)
-- `GymFacade` with constructor injection
-- `JacksonConfig` with `JsonMapper` + `@JsonCreator` factory methods for deserialization
-- `StorageInitializer` with `@PostConstruct` loading from `init-data.json`
-- `PropertySourcesPlaceholderConfig` for `@Value` resolution
-- Property placeholder for file path via `application.properties`
-- Logback with dev/prod profiles
-- Unit tests for `CredentialGenerator`, `InMemoryStorage`, `AbstractDao`
-- Sliced context integration tests for `TraineeService`, `TrainerService`, `TrainingService`
-- Sliced context integration tests for `StorageInitializer`
-- `GymFacade` not tested — pure delegation, no logic to verify
+- **Constructor injection** throughout — services, DAOs, aspects, utilities
+- `EntityManager` injected via constructor (Spring provides scoped proxy automatically)
+- `@PersistenceContext` retained only on `UserDaoImpl` field for abstract base class inheritance
 
 ---
 
 ## TODO 📋
 
-### Future enhancements
-
-- [ ] Add pagination to `findAll()` methods
-- [ ] Add `findByUsername()` to Trainee/Trainer services
-- [ ] Custom exception hierarchy (`TraineeNotFoundException`, `TrainerNotFoundException`, etc.)
+- [ ] Unit tests for DAO layer
+- [ ] Unit tests for aspects
+- [ ] Unit tests for `CredentialGenerator`
+- [ ] Integration tests for service layer
+- [ ] Add pagination to training list queries
