@@ -3,9 +3,7 @@ package tech.provokedynamic.gymcrm.entity;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.proxy.HibernateProxy;
 import tech.provokedynamic.gymcrm.model.Address;
 
@@ -15,10 +13,11 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Getter
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@lombok.Getter
 @DiscriminatorValue("trainee")
+@lombok.experimental.SuperBuilder(toBuilder = true)
+@lombok.NoArgsConstructor(access = AccessLevel.PROTECTED)
+@org.hibernate.annotations.OnDelete(action = OnDeleteAction.CASCADE)
 public class Trainee extends User {
     @ManyToMany
     @JoinTable(
