@@ -12,10 +12,11 @@ public class GymCrmApplication {
 
     private static final String[] basePackages = {
             "tech.provokedynamic.gymcrm.dao",
-            "tech.provokedynamic.gymcrm.service",
-            "tech.provokedynamic.gymcrm.component",
+            "tech.provokedynamic.gymcrm.util",
             "tech.provokedynamic.gymcrm.aspect",
-            "tech.provokedynamic.gymcrm.config"
+            "tech.provokedynamic.gymcrm.validation",
+            "tech.provokedynamic.gymcrm.service",
+            "tech.provokedynamic.gymcrm.config",
     };
 
     static void main() {

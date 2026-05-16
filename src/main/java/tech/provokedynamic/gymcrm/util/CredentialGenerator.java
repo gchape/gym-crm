@@ -1,5 +1,6 @@
-package tech.provokedynamic.gymcrm.component;
+package tech.provokedynamic.gymcrm.util;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.entity.User;
 
@@ -27,7 +28,7 @@ public class CredentialGenerator {
         }
     }
 
-    public String generateUsername(String firstName, String lastName, List<? extends User> existing) {
+    public String generateUsername(String firstName, String lastName, @NonNull List<? extends User> existing) {
         var base = firstName + "." + lastName;
 
         long count = existing.stream()
