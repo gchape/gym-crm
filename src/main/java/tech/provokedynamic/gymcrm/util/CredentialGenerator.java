@@ -6,22 +6,21 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dao.UserDao;
 
-import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 @Component
 public class CredentialGenerator {
+
     private static final Random RANDOM;
 
     private static final int PASSWORD_LENGTH = 10;
 
-    private static final Charset DEFAULT_CHARSET = UTF_8;
+    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     private static final Logger log = LoggerFactory.getLogger(CredentialGenerator.class);
+
 
     static {
         try {
@@ -60,12 +59,12 @@ public class CredentialGenerator {
     }
 
     public String generatePassword() {
-        float maxBytesPerChar = DEFAULT_CHARSET.newEncoder().maxBytesPerChar();
+        var sb = new StringBuilder(PASSWORD_LENGTH);
 
-        byte[] bytes = new byte[(int) (PASSWORD_LENGTH * maxBytesPerChar)];
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            sb.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+        }
 
-        RANDOM.nextBytes(bytes);
-
-        return new String(bytes, DEFAULT_CHARSET);
+        return sb.toString();
     }
 }
