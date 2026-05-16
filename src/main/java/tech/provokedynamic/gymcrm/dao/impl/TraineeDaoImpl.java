@@ -1,8 +1,6 @@
 package tech.provokedynamic.gymcrm.dao.impl;
 
 import jakarta.annotation.Nullable;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dao.TraineeDao_;
@@ -13,12 +11,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public class TraineeDaoImpl implements TraineeDao {
+public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
 
-    @PersistenceContext
-    private EntityManager em;
-
-    @Override
     public void save(Trainee trainee) {
         em.persist(trainee);
     }
@@ -29,11 +23,6 @@ public class TraineeDaoImpl implements TraineeDao {
     }
 
     @Override
-    public boolean existsByUsernameAndPassword(String username, String password) {
-        return TraineeDao_.existsByUsernameAndPassword(em, username, password);
-    }
-
-    @Override
     public Trainee findByUsername(String username) {
         return TraineeDao_.findByUsername(em, username);
     }
@@ -41,23 +30,6 @@ public class TraineeDaoImpl implements TraineeDao {
     @Override
     public Response.TraineeProfile findProfileByUsername(String username) {
         return TraineeDao_.findProfileByUsername(em, username);
-    }
-
-    @Override
-    public void updatePassword(String username, String newPassword) {
-        TraineeDao_.updatePassword(em, username, newPassword);
-    }
-
-    @Override
-    public void deactivateByUsername(String username) {
-        TraineeDao_.deactivateByUsername(em, username);
-    }
-
-    @Override
-    public void activateByUsername(String username) {
-        em.createNativeQuery(TraineeDao_.ACTIVATE_BY_USERNAME_String)
-                .setParameter("username", username)
-                .executeUpdate();
     }
 
     @Override
