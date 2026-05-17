@@ -3,45 +3,36 @@ package tech.provokedynamic.gymcrm.dao.impl;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Root;
 import org.hibernate.jpa.AvailableHints;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.Summary;
-import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
-import tech.provokedynamic.gymcrm.entity.Training;
+import tech.provokedynamic.gymcrm.model.UserType;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
+public final class TrainerDaoImpl extends AbstractUserDaoImpl implements TrainerDao {
+
+    private static final String FIND_BY_USERNAME =
+            "SELECT tr FROM Trainer tr WHERE tr.username = :username";
+
+    private static final String FIND_BY_USERNAMES =
+            "SELECT tr FROM Trainer tr WHERE tr.username IN :usernames";
+
+    private static final String EXISTS_BY_USERNAME =
+            "SELECT count(tr.id) > 0 FROM Trainer tr WHERE tr.username = :username";
 
     public TrainerDaoImpl(EntityManager em) {
         super(em);
     }
 
     @Override
-    public void save(Trainer trainer) {
-        em.persist(trainer);
-    }
-
-    @Override
-    public void update(Trainer trainer) {
-        em.merge(trainer);
-    }
-
-    @Override
     public boolean existsByUsername(String username) {
-        return em.createQuery(
-                        "SELECT count(tr.id) > 0 FROM Trainer tr WHERE tr.username = :username",
-                        Boolean.class)
+        return em.createQuery(EXISTS_BY_USERNAME, Boolean.class)
                 .setParameter("username", username)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .getSingleResult();
@@ -51,9 +42,7 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
     public Optional<Trainer> findByUsername(String username) {
         try {
             return Optional.of(
-                    em.createQuery(
-                                    "FROM Trainer tr WHERE tr.username = :username",
-                                    Trainer.class)
+                    em.createQuery(FIND_BY_USERNAME, Trainer.class)
                             .setParameter("username", username)
                             .getSingleResult()
             );
@@ -64,9 +53,7 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
 
     @Override
     public List<Trainer> findByUsernames(List<String> usernames) {
-        return em.createQuery(
-                        "FROM Trainer tr WHERE tr.username IN :usernames",
-                        Trainer.class)
+        return em.createQuery(FIND_BY_USERNAMES, Trainer.class)
                 .setParameter("usernames", usernames)
                 .getResultList();
     }
@@ -78,36 +65,13 @@ public class TrainerDaoImpl extends UserDaoImpl implements TrainerDao {
             @Nullable LocalDate to,
             @Nullable String trainee
     ) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Summary.Training> cq = cb.createQuery(Summary.Training.class);
-        Root<Training> root = cq.from(Training.class);
-
-        Join<Training, Trainer> trainerJoin = root.join("trainer");
-        Join<Training, Trainee> traineeJoin = root.join("trainee");
-
-        cq.select(cb.construct(Summary.Training.class,
-                root.get("trainingName"),
-                root.get("trainingDate"),
-                root.get("trainingDuration"),
-                traineeJoin.get("username")
-        ));
-
-        List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(trainerJoin.get("username"), username));
-
-        if (from != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("trainingDate"), from));
-        }
-        if (to != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("trainingDate"), to));
-        }
-        if (trainee != null) {
-            predicates.add(cb.equal(traineeJoin.get("username"), trainee));
-        }
-
-        cq.where(predicates);
-        cq.orderBy(cb.desc(root.get("trainingDate")));
-
-        return em.createQuery(cq).getResultList();
+        return super.findTrainingsByUsername(
+                username,
+                UserType.TRAINER,
+                from,
+                to,
+                trainee,
+                null
+        );
     }
 }
