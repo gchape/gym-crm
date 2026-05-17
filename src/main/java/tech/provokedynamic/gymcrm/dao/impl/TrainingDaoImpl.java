@@ -6,7 +6,7 @@ import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.entity.Training;
 
 @Repository
-public class TrainingDaoImpl implements TrainingDao {
+public final class TrainingDaoImpl implements TrainingDao {
 
     private final EntityManager em;
 
