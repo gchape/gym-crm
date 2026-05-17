@@ -1,10 +1,11 @@
-package tech.provokedynamic.gymcrm.dao;
+package tech.provokedynamic.gymcrm.dao.impl;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import tech.provokedynamic.gymcrm.config.PersistenceConfig;
-import tech.provokedynamic.gymcrm.dao.impl.TrainingTypeDaoImpl;
+import tech.provokedynamic.gymcrm.dao.BaseDaoTest;
+import tech.provokedynamic.gymcrm.dao.TrainingTypeDao;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
 import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 
@@ -16,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         TrainingTypeDaoImpl.class,
         BaseDaoTest.BaseConfig.class
 })
-class TrainingTypeDaoTest extends BaseDaoTest {
+class TrainingTypeDaoImplTest extends BaseDaoTest {
 
     @Autowired
     private TrainingTypeDao trainingTypeDao;

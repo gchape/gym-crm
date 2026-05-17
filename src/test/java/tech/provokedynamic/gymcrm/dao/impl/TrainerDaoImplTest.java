@@ -1,11 +1,12 @@
-package tech.provokedynamic.gymcrm.dao;
+package tech.provokedynamic.gymcrm.dao.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import tech.provokedynamic.gymcrm.config.PersistenceConfig;
-import tech.provokedynamic.gymcrm.dao.impl.TrainerDaoImpl;
+import tech.provokedynamic.gymcrm.dao.BaseDaoTest;
+import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
