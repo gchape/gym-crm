@@ -3,7 +3,11 @@ package tech.provokedynamic.gymcrm.entity;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.jpa.AvailableHints;
 import org.hibernate.proxy.HibernateProxy;
 import tech.provokedynamic.gymcrm.model.Address;
 
@@ -13,11 +17,20 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@lombok.Getter
+@Getter
 @DiscriminatorValue("trainee")
-@lombok.experimental.SuperBuilder(toBuilder = true)
-@lombok.NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @org.hibernate.annotations.OnDelete(action = OnDeleteAction.CASCADE)
+@NamedEntityGraph(
+        name = "Trainee.withTrainers",
+        attributeNodes = @NamedAttributeNode("trainers")
+)
+@NamedQuery(
+        name = "Trainee.findWithTrainersByUsername",
+        query = "SELECT t FROM Trainee t WHERE t.username = :username",
+        hints = @QueryHint(name = AvailableHints.HINT_SPEC_FETCH_GRAPH, value = "Trainee.withTrainers")
+)
 public class Trainee extends User {
     @ManyToMany
     @JoinTable(
