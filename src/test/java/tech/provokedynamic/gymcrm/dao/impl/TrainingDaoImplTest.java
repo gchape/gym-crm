@@ -26,9 +26,7 @@ class TrainingDaoImplTest extends BaseDaoTest {
     private TrainingDao trainingDao;
 
     private TrainingType yoga;
-
     private Trainee trainee;
-
     private Trainer trainer;
 
     @BeforeEach
@@ -65,10 +63,12 @@ class TrainingDaoImplTest extends BaseDaoTest {
         em.flush();
         em.clear();
 
-        long count = (long) em.createQuery("SELECT count(t) FROM Training t").getSingleResult();
+        long count = em.createQuery("SELECT count(t) FROM Training t", Long.class)
+                .getSingleResult();
         assertThat(count).isEqualTo(1);
 
-        Training saved = (Training) em.createQuery("FROM Training t").getSingleResult();
+        Training saved = em.createQuery("SELECT t FROM Training t", Training.class)
+                .getSingleResult();
         assertThat(saved.getTrainingName()).isEqualTo("Evening Yoga");
         assertThat(saved.getTrainingDuration()).isEqualTo(45);
     }
@@ -89,7 +89,8 @@ class TrainingDaoImplTest extends BaseDaoTest {
         em.flush();
         em.clear();
 
-        long count = (long) em.createQuery("SELECT count(t) FROM Training t").getSingleResult();
+        long count = em.createQuery("SELECT count(t) FROM Training t", Long.class)
+                .getSingleResult();
         assertThat(count).isEqualTo(3);
     }
 }

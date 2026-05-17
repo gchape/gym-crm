@@ -22,7 +22,7 @@ public abstract class AbstractUserDaoImpl implements UserDao {
             "SELECT count(u.id) > 0 FROM User u WHERE u.username = :username AND u.password = :password";
 
     private static final String UPDATE_PASSWORD =
-            "UPDATE User u SET u.password = :newPassword WHERE u.username = :username";
+            "UPDATE \"user\" SET password = :newPassword WHERE username = :username";
 
     private static final String SET_ACTIVE_STATUS =
             "UPDATE \"user\" SET is_active = :active WHERE username = :username AND is_active = :current";
@@ -62,9 +62,10 @@ public abstract class AbstractUserDaoImpl implements UserDao {
 
     @Override
     public void updatePassword(String username, String newPassword) {
-        em.createQuery(UPDATE_PASSWORD)
+        em.createNativeQuery(UPDATE_PASSWORD)
                 .setParameter("newPassword", newPassword)
                 .setParameter("username", username)
+                .setHint(AvailableHints.HINT_NATIVE_SPACES, User.class)
                 .executeUpdate();
     }
 
