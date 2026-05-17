@@ -24,7 +24,11 @@ import java.util.Set;
 @org.hibernate.annotations.OnDelete(action = OnDeleteAction.CASCADE)
 @NamedEntityGraph(
         name = "Trainee.withTrainers",
-        attributeNodes = @NamedAttributeNode("trainers")
+        attributeNodes = @NamedAttributeNode(value = "trainers", subgraph = "trainers.specialization"),
+        subgraphs = @NamedSubgraph(
+                name = "trainers.specialization",
+                attributeNodes = @NamedAttributeNode("specialization")
+        )
 )
 @NamedQuery(
         name = "Trainee.findWithTrainersByUsername",
