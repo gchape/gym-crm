@@ -8,7 +8,10 @@ import tech.provokedynamic.gymcrm.entity.TrainingType;
 import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 
 @Repository
-public class TrainingTypeDaoImpl implements TrainingTypeDao {
+public final class TrainingTypeDaoImpl implements TrainingTypeDao {
+
+    private static final String FIND_BY_NAME =
+            "SELECT tt FROM TrainingType tt WHERE tt.trainingTypeName = :name";
 
     private final EntityManager em;
 
@@ -19,9 +22,7 @@ public class TrainingTypeDaoImpl implements TrainingTypeDao {
     @Override
     public TrainingType findByName(String name) {
         try {
-            return em.createQuery(
-                            "FROM TrainingType tt WHERE tt.trainingTypeName = :name",
-                            TrainingType.class)
+            return em.createQuery(FIND_BY_NAME, TrainingType.class)
                     .setParameter("name", name)
                     .getSingleResult();
         } catch (NoResultException e) {
