@@ -12,9 +12,10 @@ A Spring-based CRM system for managing gym trainees, trainers, and training sess
 - **HikariCP** (connection pooling)
 - **Jakarta Bean Validation** with Hibernate Validator
 - **Lombok** (`@SuperBuilder`, `@Getter`) for entity boilerplate
-- **JSpecify** for null safety annotations
+- **Jspecify** for null safety annotations
 - **Logback** for logging
 - **JUnit 5 + AssertJ** for testing
+- **Testcontainers** (PostgreSQL) for DAO integration tests
 
 ---
 
@@ -79,7 +80,7 @@ src/
 │       │   ├── TrainingDao.java
 │       │   ├── TrainingTypeDao.java
 │       │   └── impl/
-│       │       ├── UserDaoImpl.java
+│       │       ├── AbstractUserDaoImpl.java
 │       │       ├── TraineeDaoImpl.java
 │       │       ├── TrainerDaoImpl.java
 │       │       ├── TrainingDaoImpl.java
@@ -118,6 +119,15 @@ src/
 │               └── RequestValidatorImpl.java
 └── test/
     └── java/tech/provokedynamic/gymcrm/
+        ├── dao/
+        │   ├── BaseDaoTest.java           # shared @Transactional base, EntityManager
+        │   ├── SharedPostgres.java        # singleton Testcontainers PostgreSQL instance
+        │   └── impl/
+        │       ├── AbstractUserDaoImplTest.java
+        │       ├── TraineeDaoImplTest.java
+        │       ├── TrainerDaoImplTest.java
+        │       ├── TrainingDaoImplTest.java
+        │       └── TrainingTypeDaoImplTest.java
         └── service/
             ├── TraineeServiceImplTest.java
             ├── TrainerServiceImplTest.java
@@ -128,7 +138,7 @@ src/
 
 ## Domain Model
 
-### User (base entity, single-table inheritance)
+### User (base entity, joined-table inheritance)
 
 | Field     | Type    | Notes                           |
 |-----------|---------|---------------------------------|
@@ -274,7 +284,7 @@ rejected before validation runs.
 ## Persistence
 
 - **Hibernate** as the JPA provider, configured via `PersistenceConfig`
-- **Single-table inheritance** for `User`/`Trainee`/`Trainer` with discriminator column
+- **Joined-table inheritance** for `User`/`Trainee`/`Trainer` with discriminator column
 - **Snake case** physical naming strategy via `PhysicalNamingStrategySnakeCaseImpl`
 - **HikariCP** connection pool with configurable timeout and pool size
 - **`@OnDelete(CASCADE)`** on `Trainee` for DB-level cascade deletion of trainings
@@ -282,6 +292,7 @@ rejected before validation runs.
 - All queries written manually via `EntityManager` — no annotation processor
 - `HINT_READ_ONLY` applied to SELECT queries for first-level cache optimization
 - `HINT_NATIVE_SPACES` applied to native UPDATE queries for cache synchronization
+- Native queries used for mutations on joined-table hierarchy to avoid Hibernate CTE bugs
 
 ---
 
@@ -312,10 +323,9 @@ rejected before validation runs.
 
 ---
 
-## TODO 📋
+## Testing
 
-- [ ] Unit tests for DAO layer
-- [ ] Unit tests for aspects
-- [ ] Unit tests for `CredentialGenerator`
-- [ ] Integration tests for service layer
-- [ ] Add pagination to training list queries
+DAO tests run against a real PostgreSQL instance via Testcontainers. A single container
+is started once per JVM in `SharedPostgres` and shared across all test classes through
+`BaseDaoTest`. Each test method runs in a transaction that is rolled back on completion,
+keeping tests fully isolated without truncating tables between runs.
