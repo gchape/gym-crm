@@ -27,7 +27,7 @@ public abstract class BaseDaoTest {
     }
 
     @Configuration
-    static class BaseConfig {
+    public static class BaseConfig {
 
         @Bean
         public JpaTransactionManager transactionManager(EntityManagerFactory emf) {
