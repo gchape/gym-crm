@@ -11,10 +11,6 @@ import java.util.Optional;
 
 public interface TraineeDao extends UserDao {
 
-    void save(Trainee trainee);
-
-    void update(Trainee trainee);
-
     void delete(Trainee trainee);
 
     boolean existsByUsername(String username);

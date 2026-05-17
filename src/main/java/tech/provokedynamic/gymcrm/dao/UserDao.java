@@ -1,6 +1,12 @@
 package tech.provokedynamic.gymcrm.dao;
 
+import tech.provokedynamic.gymcrm.entity.User;
+
 public interface UserDao {
+
+    void save(User user);
+
+    void update(User user);
 
     boolean existsByUsernameIncludingDeleted(String username);
 
