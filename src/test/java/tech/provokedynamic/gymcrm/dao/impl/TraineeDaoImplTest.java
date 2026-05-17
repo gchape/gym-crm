@@ -101,11 +101,14 @@ class TraineeDaoImplTest extends BaseDaoTest {
     @Test
     void findTrainingsByUsername_returnsAll_whenNoFilters() {
         em.persist(buildTraining("Morning Yoga", LocalDate.of(2024, 3, 10)));
+        em.persist(buildTraining("Evening Yoga", LocalDate.of(2024, 3, 11)));
+        em.persist(buildTraining("Night Yoga", LocalDate.of(2024, 3, 12)));
 
         var results = traineeDao.findTrainingsByUsername("alice.smith", null, null, null, null);
 
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Morning Yoga");
+        assertThat(results).hasSize(3);
+        assertThat(results).extracting("trainingName")
+                .containsExactlyInAnyOrder("Morning Yoga", "Evening Yoga", "Night Yoga");
     }
 
     @Test
@@ -187,6 +190,18 @@ class TraineeDaoImplTest extends BaseDaoTest {
         var results = traineeDao.findTrainingsByUsername("alice.smith", null, null, null, null);
 
         assertThat(results).isEmpty();
+    }
+
+    @Test
+    void findTrainingsByUsername_orderedByDateDesc() {
+        em.persist(buildTraining("First", LocalDate.of(2024, 1, 1)));
+        em.persist(buildTraining("Second", LocalDate.of(2024, 6, 1)));
+        em.persist(buildTraining("Third", LocalDate.of(2024, 9, 1)));
+
+        var results = traineeDao.findTrainingsByUsername("alice.smith", null, null, null, null);
+
+        assertThat(results).extracting("trainingName")
+                .containsExactly("Third", "Second", "First");
     }
 
     @Test
