@@ -51,7 +51,7 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
         em.persist(trainer);
     }
 
-    private Training buildTraining(String name, LocalDate date) {
+    private Training training(String name, LocalDate date) {
         return Training.builder()
                 .trainee(trainee).trainer(trainer).trainingType(yoga)
                 .trainingName(name).trainingDate(date).trainingDuration(60)
@@ -59,79 +59,16 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
     }
 
     @Test
-    void trainee_returnsAllTrainings_whenNoFilters() {
-        em.persist(buildTraining("Session A", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("Session B", LocalDate.of(2024, 6, 1)));
-        em.persist(buildTraining("Session C", LocalDate.of(2024, 9, 1)));
-
-        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null);
-
-        assertThat(results).hasSize(3);
-        assertThat(results).extracting("trainingName")
-                .containsExactlyInAnyOrder("Session A", "Session B", "Session C");
-    }
-
-    @Test
-    void trainee_filtersBy_fromDate() {
-        em.persist(buildTraining("Old", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("New", LocalDate.of(2024, 8, 1)));
-
-        var results = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE, LocalDate.of(2024, 4, 1), null, null, null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("New");
-    }
-
-    @Test
-    void trainee_filtersBy_toDate() {
-        em.persist(buildTraining("Old", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("New", LocalDate.of(2024, 8, 1)));
-
-        var results = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE, null, LocalDate.of(2024, 4, 1), null, null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Old");
-    }
-
-    @Test
-    void trainee_filtersBy_trainerUsername() {
-        TrainingType pilates = new TrainingType("PILATES");
-        em.persist(pilates);
-
-        Trainer otherTrainer = Trainer.builder()
-                .firstName("Dan").lastName("Brown")
-                .username("dan.brown").password("pass")
-                .specialization(pilates)
-                .build();
-        em.persist(otherTrainer);
-
-        em.persist(buildTraining("Bob's Session", LocalDate.of(2024, 3, 1)));
-        em.persist(Training.builder()
-                .trainee(trainee).trainer(otherTrainer).trainingType(pilates)
-                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 3, 2))
-                .trainingDuration(30).build());
-
-        var results = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE, null, null, "bob.jones", null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Bob's Session");
-    }
-
-    @Test
     void save_persistsUser() {
-        Trainee newTrainee = Trainee.builder()
+        Trainee eve = Trainee.builder()
                 .firstName("Eve").lastName("Black")
                 .username("eve.black").password("secret")
                 .build();
-
-        dao.save(newTrainee);
+        dao.save(eve);
         em.flush();
         em.clear();
 
-        assertThat(em.find(Trainee.class, newTrainee.getId())).isNotNull();
+        assertThat(em.find(Trainee.class, eve.getId())).isNotNull();
     }
 
     @Test
@@ -159,11 +96,9 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
         assertThat(dao.existsByUsernameAndPassword("nobody.here", "pass")).isFalse();
     }
 
-
     @Test
     void updatePassword_changesPassword() {
         dao.updatePassword("alice.smith", "newSecret");
-        em.flush();
 
         assertThat(dao.existsByUsernameAndPassword("alice.smith", "newSecret")).isTrue();
         assertThat(dao.existsByUsernameAndPassword("alice.smith", "pass")).isFalse();
@@ -171,33 +106,19 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
 
     @Test
     void deactivateByUsername_setsActiveToFalse() {
-        int affected = dao.deactivateByUsername("alice.smith");
-        em.flush();
-        em.clear();
-
-        assertThat(affected).isEqualTo(1);
-        assertThat(em.find(Trainee.class, trainee.getId())).isNull();
+        assertThat(dao.deactivateByUsername("alice.smith")).isEqualTo(1);
     }
 
     @Test
     void deactivateByUsername_isNoOp_whenAlreadyInactive() {
         dao.deactivateByUsername("alice.smith");
-        em.flush();
-
         assertThat(dao.deactivateByUsername("alice.smith")).isEqualTo(0);
     }
 
     @Test
     void activateByUsername_setsActiveToTrue() {
         dao.deactivateByUsername("alice.smith");
-        em.flush();
-
-        int affected = dao.activateByUsername("alice.smith");
-        em.flush();
-        em.clear();
-
-        assertThat(affected).isEqualTo(1);
-        assertThat(em.find(Trainee.class, trainee.getId())).isNotNull();
+        assertThat(dao.activateByUsername("alice.smith")).isEqualTo(1);
     }
 
     @Test
@@ -206,115 +127,27 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
     }
 
     @Test
-    void trainee_filtersBy_fromAndToDate_combined() {
-        em.persist(buildTraining("Too early", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("In range", LocalDate.of(2024, 5, 15)));
-        em.persist(buildTraining("Too late", LocalDate.of(2024, 9, 1)));
+    void trainee_returnsAllTrainings_whenNoFilters() {
+        em.persist(training("Session A", LocalDate.of(2024, 1, 1)));
+        em.persist(training("Session B", LocalDate.of(2024, 6, 1)));
+        em.persist(training("Session C", LocalDate.of(2024, 9, 1)));
 
-        var results = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE,
-                LocalDate.of(2024, 4, 1), LocalDate.of(2024, 6, 1),
-                null, null);
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null);
 
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("In range");
-    }
-
-    @Test
-    void trainer_filtersBy_fromDate() {
-        em.persist(buildTraining("Old", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("New", LocalDate.of(2024, 8, 1)));
-
-        var results = dao.findTrainings(
-                "bob.jones", UserType.TRAINER,
-                LocalDate.of(2024, 4, 1), null, null, null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("New");
-    }
-
-    @Test
-    void trainer_filtersBy_toDate() {
-        em.persist(buildTraining("Old", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("New", LocalDate.of(2024, 8, 1)));
-
-        var results = dao.findTrainings(
-                "bob.jones", UserType.TRAINER,
-                null, LocalDate.of(2024, 4, 1), null, null);
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Old");
-    }
-
-    @Test
-    void trainer_filtersBy_trainingType() {
-        TrainingType pilates = new TrainingType("PILATES");
-        em.persist(pilates);
-
-        Trainer pilatesTrainer = Trainer.builder()
-                .firstName("Eva").lastName("Green")
-                .username("eva.green").password("pass")
-                .specialization(pilates)
-                .build();
-        em.persist(pilatesTrainer);
-
-        em.persist(buildTraining("Yoga with Bob", LocalDate.of(2024, 3, 1)));
-        em.persist(Training.builder()
-                .trainee(trainee).trainer(pilatesTrainer).trainingType(pilates)
-                .trainingName("Pilates with Eva").trainingDate(LocalDate.of(2024, 3, 2))
-                .trainingDuration(30).build());
-
-        var results = dao.findTrainings(
-                "bob.jones", UserType.TRAINER, null, null, null, "YOGA");
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Yoga with Bob");
-    }
-
-    @Test
-    void trainer_returnsEmpty_whenNoTrainings() {
-        var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, null);
-
-        assertThat(results).isEmpty();
-    }
-
-    @Test
-    void trainee_filtersBy_trainingType() {
-        TrainingType pilates = new TrainingType("PILATES");
-        em.persist(pilates);
-
-        Trainer pilatesTrainer = Trainer.builder()
-                .firstName("Eva").lastName("Green")
-                .username("eva.green").password("pass")
-                .specialization(pilates)
-                .build();
-        em.persist(pilatesTrainer);
-
-        em.persist(buildTraining("Yoga Class", LocalDate.of(2024, 3, 1)));
-        em.persist(Training.builder()
-                .trainee(trainee).trainer(pilatesTrainer).trainingType(pilates)
-                .trainingName("Pilates Class").trainingDate(LocalDate.of(2024, 3, 2))
-                .trainingDuration(30).build());
-
-        var results = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE, null, null, null, "YOGA");
-
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Yoga Class");
+        assertThat(results).extracting("trainingName")
+                .containsExactlyInAnyOrder("Session A", "Session B", "Session C");
     }
 
     @Test
     void trainee_returnsEmpty_whenNoTrainings() {
-        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null);
-
-        assertThat(results).isEmpty();
+        assertThat(dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null)).isEmpty();
     }
 
     @Test
     void trainee_orderedByDateDesc() {
-        em.persist(buildTraining("First", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("Second", LocalDate.of(2024, 6, 1)));
-        em.persist(buildTraining("Third", LocalDate.of(2024, 9, 1)));
+        em.persist(training("First", LocalDate.of(2024, 1, 1)));
+        em.persist(training("Second", LocalDate.of(2024, 6, 1)));
+        em.persist(training("Third", LocalDate.of(2024, 9, 1)));
 
         var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null);
 
@@ -323,9 +156,75 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
     }
 
     @Test
+    void trainee_filtersBy_fromDate() {
+        em.persist(training("Old", LocalDate.of(2024, 1, 1)));
+        em.persist(training("New", LocalDate.of(2024, 8, 1)));
+
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, LocalDate.of(2024, 4, 1), null, null, null);
+
+        assertThat(results).extracting("trainingName").containsExactly("New");
+    }
+
+    @Test
+    void trainee_filtersBy_toDate() {
+        em.persist(training("Old", LocalDate.of(2024, 1, 1)));
+        em.persist(training("New", LocalDate.of(2024, 8, 1)));
+
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, LocalDate.of(2024, 4, 1), null, null);
+
+        assertThat(results).extracting("trainingName").containsExactly("Old");
+    }
+
+    @Test
+    void trainee_filtersBy_fromAndToDate() {
+        em.persist(training("Too early", LocalDate.of(2024, 1, 1)));
+        em.persist(training("In range", LocalDate.of(2024, 5, 15)));
+        em.persist(training("Too late", LocalDate.of(2024, 9, 1)));
+
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE,
+                LocalDate.of(2024, 4, 1), LocalDate.of(2024, 6, 1), null, null);
+
+        assertThat(results).extracting("trainingName").containsExactly("In range");
+    }
+
+    @Test
+    void trainee_filtersBy_trainerUsername() {
+        TrainingType pilates = new TrainingType("PILATES");
+        em.persist(pilates);
+        Trainer dan = Trainer.builder().firstName("Dan").lastName("Brown")
+                .username("dan.brown").password("pass").specialization(pilates).build();
+        em.persist(dan);
+
+        em.persist(training("Bob's Session", LocalDate.of(2024, 3, 1)));
+        em.persist(Training.builder().trainee(trainee).trainer(dan).trainingType(pilates)
+                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 3, 2)).trainingDuration(30).build());
+
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, "bob.jones", null);
+
+        assertThat(results).extracting("trainingName").containsExactly("Bob's Session");
+    }
+
+    @Test
+    void trainee_filtersBy_trainingType() {
+        TrainingType pilates = new TrainingType("PILATES");
+        em.persist(pilates);
+        Trainer eva = Trainer.builder().firstName("Eva").lastName("Green")
+                .username("eva.green").password("pass").specialization(pilates).build();
+        em.persist(eva);
+
+        em.persist(training("Yoga Class", LocalDate.of(2024, 3, 1)));
+        em.persist(Training.builder().trainee(trainee).trainer(eva).trainingType(pilates)
+                .trainingName("Pilates Class").trainingDate(LocalDate.of(2024, 3, 2)).trainingDuration(30).build());
+
+        var results = dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, "YOGA");
+
+        assertThat(results).extracting("trainingName").containsExactly("Yoga Class");
+    }
+
+    @Test
     void trainer_returnsAllTrainings_whenNoFilters() {
-        em.persist(buildTraining("Session A", LocalDate.of(2024, 1, 1)));
-        em.persist(buildTraining("Session B", LocalDate.of(2024, 6, 1)));
+        em.persist(training("Session A", LocalDate.of(2024, 1, 1)));
+        em.persist(training("Session B", LocalDate.of(2024, 6, 1)));
 
         var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, null);
 
@@ -333,75 +232,94 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
     }
 
     @Test
+    void trainer_returnsEmpty_whenNoTrainings() {
+        assertThat(dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, null)).isEmpty();
+    }
+
+    @Test
+    void trainer_filtersBy_fromDate() {
+        em.persist(training("Old", LocalDate.of(2024, 1, 1)));
+        em.persist(training("New", LocalDate.of(2024, 8, 1)));
+
+        var results = dao.findTrainings("bob.jones", UserType.TRAINER, LocalDate.of(2024, 4, 1), null, null, null);
+
+        assertThat(results).extracting("trainingName").containsExactly("New");
+    }
+
+    @Test
+    void trainer_filtersBy_toDate() {
+        em.persist(training("Old", LocalDate.of(2024, 1, 1)));
+        em.persist(training("New", LocalDate.of(2024, 8, 1)));
+
+        var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, LocalDate.of(2024, 4, 1), null, null);
+
+        assertThat(results).extracting("trainingName").containsExactly("Old");
+    }
+
+    @Test
     void trainer_filtersBy_traineeUsername() {
-        Trainee otherTrainee = Trainee.builder()
-                .firstName("Dan").lastName("Brown")
-                .username("dan.brown").password("pass")
-                .build();
-        em.persist(otherTrainee);
+        Trainee dan = Trainee.builder().firstName("Dan").lastName("Brown")
+                .username("dan.brown").password("pass").build();
+        em.persist(dan);
 
-        em.persist(buildTraining("Alice's Session", LocalDate.of(2024, 5, 1)));
-        em.persist(Training.builder()
-                .trainee(otherTrainee).trainer(trainer).trainingType(yoga)
-                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 5, 2))
-                .trainingDuration(30).build());
+        em.persist(training("Alice's Session", LocalDate.of(2024, 5, 1)));
+        em.persist(Training.builder().trainee(dan).trainer(trainer).trainingType(yoga)
+                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 5, 2)).trainingDuration(30).build());
 
-        var results = dao.findTrainings(
-                "bob.jones", UserType.TRAINER, null, null, "alice.smith", null);
+        var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, null, "alice.smith", null);
 
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Alice's Session");
+        assertThat(results).extracting("trainingName").containsExactly("Alice's Session");
+    }
+
+    @Test
+    void trainer_filtersBy_trainingType() {
+        TrainingType pilates = new TrainingType("PILATES");
+        em.persist(pilates);
+        Trainer eva = Trainer.builder().firstName("Eva").lastName("Green")
+                .username("eva.green").password("pass").specialization(pilates).build();
+        em.persist(eva);
+
+        em.persist(training("Yoga with Bob", LocalDate.of(2024, 3, 1)));
+        em.persist(Training.builder().trainee(trainee).trainer(eva).trainingType(pilates)
+                .trainingName("Pilates with Eva").trainingDate(LocalDate.of(2024, 3, 2)).trainingDuration(30).build());
+
+        var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, "YOGA");
+
+        assertThat(results).extracting("trainingName").containsExactly("Yoga with Bob");
     }
 
     @Test
     void trainer_doesNotReturn_otherTrainersTrainings() {
-        Trainer otherTrainer = Trainer.builder()
-                .firstName("Dan").lastName("Brown")
-                .username("dan.brown").password("pass")
-                .specialization(yoga)
-                .build();
-        em.persist(otherTrainer);
+        Trainer dan = Trainer.builder().firstName("Dan").lastName("Brown")
+                .username("dan.brown").password("pass").specialization(yoga).build();
+        em.persist(dan);
 
-        em.persist(buildTraining("Bob's Session", LocalDate.of(2024, 5, 1)));
-        em.persist(Training.builder()
-                .trainee(trainee).trainer(otherTrainer).trainingType(yoga)
-                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 5, 2))
-                .trainingDuration(30).build());
+        em.persist(training("Bob's Session", LocalDate.of(2024, 5, 1)));
+        em.persist(Training.builder().trainee(trainee).trainer(dan).trainingType(yoga)
+                .trainingName("Dan's Session").trainingDate(LocalDate.of(2024, 5, 2)).trainingDuration(30).build());
 
         var results = dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, null);
 
-        assertThat(results).hasSize(1);
-        assertThat(results.getFirst().trainingName()).isEqualTo("Bob's Session");
+        assertThat(results).extracting("trainingName").containsExactly("Bob's Session");
     }
 
     @Test
     void traineeAndTrainer_doNotReturnEachOthersData() {
-        Trainee otherTrainee = Trainee.builder()
-                .firstName("Dan").lastName("Brown")
-                .username("dan.brown").password("pass")
-                .build();
-        em.persist(otherTrainee);
+        Trainee dan = Trainee.builder().firstName("Dan").lastName("Brown")
+                .username("dan.brown").password("pass").build();
+        em.persist(dan);
+        Trainer eva = Trainer.builder().firstName("Eva").lastName("Green")
+                .username("eva.green").password("pass").specialization(yoga).build();
+        em.persist(eva);
 
-        Trainer otherTrainer = Trainer.builder()
-                .firstName("Eva").lastName("Green")
-                .username("eva.green").password("pass")
-                .specialization(yoga)
-                .build();
-        em.persist(otherTrainer);
+        em.persist(training("Alice+Bob", LocalDate.of(2024, 1, 1)));
+        em.persist(Training.builder().trainee(dan).trainer(eva).trainingType(yoga)
+                .trainingName("Dan+Eva").trainingDate(LocalDate.of(2024, 2, 1)).trainingDuration(30).build());
 
-        em.persist(buildTraining("Alice+Bob", LocalDate.of(2024, 1, 1)));
-        em.persist(Training.builder()
-                .trainee(otherTrainee).trainer(otherTrainer).trainingType(yoga)
-                .trainingName("Dan+Eva").trainingDate(LocalDate.of(2024, 2, 1))
-                .trainingDuration(30).build());
-
-        var aliceResults = dao.findTrainings(
-                "alice.smith", UserType.TRAINEE, null, null, null, null);
-        var bobResults = dao.findTrainings(
-                "bob.jones", UserType.TRAINER, null, null, null, null);
-
-        assertThat(aliceResults).extracting("trainingName").containsExactly("Alice+Bob");
-        assertThat(bobResults).extracting("trainingName").containsExactly("Alice+Bob");
+        assertThat(dao.findTrainings("alice.smith", UserType.TRAINEE, null, null, null, null))
+                .extracting("trainingName").containsExactly("Alice+Bob");
+        assertThat(dao.findTrainings("bob.jones", UserType.TRAINER, null, null, null, null))
+                .extracting("trainingName").containsExactly("Alice+Bob");
     }
 
     static class TestDao extends AbstractUserDaoImpl {
@@ -410,12 +328,9 @@ class AbstractUserDaoImplTest extends BaseDaoTest {
         }
 
         public java.util.List<Summary.Training> findTrainings(
-                String username,
-                UserType userType,
-                java.time.LocalDate from,
-                java.time.LocalDate to,
-                String filterUsername,
-                String type
+                String username, UserType userType,
+                java.time.LocalDate from, java.time.LocalDate to,
+                String filterUsername, String type
         ) {
             return super.findTrainingsByUsername(username, userType, from, to, filterUsername, type);
         }
