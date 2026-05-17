@@ -3,7 +3,9 @@ package tech.provokedynamic.gymcrm.dao.impl;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.jpa.AvailableHints;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
@@ -11,37 +13,34 @@ import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
-import tech.provokedynamic.gymcrm.entity.Training;
-import tech.provokedynamic.gymcrm.entity.TrainingType;
+import tech.provokedynamic.gymcrm.entity.Trainer_;
+import tech.provokedynamic.gymcrm.entity.TrainingType_;
+import tech.provokedynamic.gymcrm.model.UserType;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
+public final class TraineeDaoImpl extends AbstractUserDaoImpl implements TraineeDao {
+
+    private static final String EXISTS_BY_USERNAME =
+            "SELECT count(t.id) > 0 FROM Trainee t WHERE t.username = :username";
+
+    private static final String FIND_BY_USERNAME =
+            "SELECT t FROM Trainee t WHERE t.username = :username";
+
+    private static final String NAMED_FIND_WITH_TRAINERS =
+            "Trainee.findWithTrainersByUsername";
 
     public TraineeDaoImpl(EntityManager em) {
         super(em);
     }
 
     @Override
-    public void save(Trainee trainee) {
-        em.persist(trainee);
-    }
-
-    @Override
-    public void update(Trainee trainee) {
-        em.merge(trainee);
-    }
-
-    @Override
     public boolean existsByUsername(String username) {
-        return em.createQuery(
-                        "SELECT count(t.id) > 0 FROM Trainee t WHERE t.username = :username",
-                        Boolean.class)
+        return em.createQuery(EXISTS_BY_USERNAME, Boolean.class)
                 .setParameter("username", username)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .getSingleResult();
@@ -51,9 +50,7 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
     public Optional<Trainee> findByUsername(String username) {
         try {
             return Optional.of(
-                    em.createQuery(
-                                    "SELECT t FROM Trainee t WHERE t.username = :username",
-                                    Trainee.class)
+                    em.createQuery(FIND_BY_USERNAME, Trainee.class)
                             .setParameter("username", username)
                             .getSingleResult()
             );
@@ -75,51 +72,19 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
             @Nullable String trainer,
             @Nullable String type
     ) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Summary.Training> cq = cb.createQuery(Summary.Training.class);
-        Root<Training> root = cq.from(Training.class);
-
-        Join<Training, Trainee> traineeJoin = root.join("trainee");
-        Join<Training, Trainer> trainerJoin = root.join("trainer");
-        Join<Training, TrainingType> typeJoin = root.join("trainingType");
-
-        cq.select(cb.construct(Summary.Training.class,
-                root.get("trainingName"),
-                root.get("trainingDate"),
-                root.get("trainingDuration"),
-                trainerJoin.get("username")
-        ));
-
-        List<Predicate> predicates = new ArrayList<>();
-        predicates.add(cb.equal(traineeJoin.get("username"), username));
-
-        if (from != null) {
-            predicates.add(cb.greaterThanOrEqualTo(root.get("trainingDate"), from));
-        }
-        if (to != null) {
-            predicates.add(cb.lessThanOrEqualTo(root.get("trainingDate"), to));
-        }
-        if (trainer != null) {
-            predicates.add(cb.equal(trainerJoin.get("username"), trainer));
-        }
-        if (type != null) {
-            predicates.add(cb.equal(typeJoin.get("trainingTypeName"), type));
-        }
-
-        cq.where(predicates);
-        cq.orderBy(cb.desc(root.get("trainingDate")));
-
-        return em.createQuery(cq).getResultList();
+        return super.findTrainingsByUsername(
+                username,
+                UserType.TRAINEE,
+                from,
+                to,
+                trainer,
+                type
+        );
     }
 
     @Override
     public List<Profile.Trainer> findUnassignedTrainers(String username) {
-        Set<Trainer> assignedTrainers = em.createNamedQuery(
-                        "Trainee.findWithTrainersByUsername",
-                        Trainee.class)
-                .setParameter("username", username)
-                .getSingleResult()
-                .getTrainers();
+        Set<Trainer> assignedTrainers = findTraineeWithTrainers(username).getTrainers();
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Profile.Trainer> cq = cb.createQuery(Profile.Trainer.class);
@@ -127,10 +92,11 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
 
         cq.select(cb.construct(
                 Profile.Trainer.class,
-                root.get("firstName"),
-                root.get("lastName"),
-                root.get("username"),
-                root.get("specialization").get("trainingTypeName")
+                root.get(Trainer_.firstName),
+                root.get(Trainer_.lastName),
+                root.get(Trainer_.username),
+                root.get(Trainer_.specialization)
+                        .get(TrainingType_.trainingTypeName)
         ));
 
         if (!assignedTrainers.isEmpty()) {
@@ -142,14 +108,16 @@ public class TraineeDaoImpl extends UserDaoImpl implements TraineeDao {
 
     @Override
     public List<Profile.Trainer> findAssignedTrainers(String username) {
-        return em.createNamedQuery(
-                        "Trainee.findWithTrainersByUsername",
-                        Trainee.class)
-                .setParameter("username", username)
-                .getSingleResult()
+        return findTraineeWithTrainers(username)
                 .getTrainers()
                 .stream()
                 .map(Profile.Trainer::from)
                 .toList();
+    }
+
+    private Trainee findTraineeWithTrainers(String username) {
+        return em.createNamedQuery(NAMED_FIND_WITH_TRAINERS, Trainee.class)
+                .setParameter("username", username)
+                .getSingleResult();
     }
 }
