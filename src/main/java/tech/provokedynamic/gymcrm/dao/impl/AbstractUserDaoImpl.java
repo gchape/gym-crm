@@ -103,7 +103,7 @@ public abstract class AbstractUserDaoImpl implements UserDao {
         Join<Training, Trainer> trainerJoin = root.join(Training_.trainer);
         Join<Training, Trainee> traineeJoin = root.join(Training_.trainee);
 
-        var partnerSelection = userType == UserType.TRAINEE
+        var filterUsernameSelection = userType == UserType.TRAINEE
                 ? trainerJoin.get(Trainer_.username)
                 : traineeJoin.get(Trainee_.username);
 
@@ -111,7 +111,7 @@ public abstract class AbstractUserDaoImpl implements UserDao {
                 root.get(Training_.trainingName),
                 root.get(Training_.trainingDate),
                 root.get(Training_.trainingDuration),
-                partnerSelection
+                filterUsernameSelection
         ));
 
         List<Predicate> predicates = new ArrayList<>();
@@ -131,11 +131,13 @@ public abstract class AbstractUserDaoImpl implements UserDao {
             }
         if (type != null) {
             Join<Training, TrainingType> typeJoin = root.join(Training_.trainingType);
+
             predicates.add(cb.equal(typeJoin.get(TrainingType_.trainingTypeName), type));
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
         cq.orderBy(cb.desc(root.get(Training_.trainingDate)));
+
         return em.createQuery(cq).getResultList();
     }
 }
