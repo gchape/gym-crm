@@ -2,15 +2,16 @@ package tech.provokedynamic.gymcrm.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import static lombok.AccessLevel.PROTECTED;
-import static lombok.AccessLevel.PUBLIC;
 
 @Entity
-@lombok.Getter(PUBLIC)
-@lombok.NoArgsConstructor(access = PROTECTED)
+@Getter
+@NoArgsConstructor(access = PROTECTED)
 @org.hibernate.annotations.Immutable
-public final class TrainingType {
+public class TrainingType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false, insertable = false)

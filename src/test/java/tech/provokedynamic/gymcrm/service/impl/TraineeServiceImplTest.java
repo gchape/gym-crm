@@ -21,6 +21,7 @@ import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -241,7 +242,7 @@ class TraineeServiceImplTest {
         var assigned = List.of(new Profile.Trainer("Bob", "Jones", "bob.jones", "YOGA"));
 
         when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(List.of("bob.jones"))).thenReturn(List.of(trainer));
+        when(trainerDao.findByUsernames(Set.of("bob.jones"))).thenReturn(List.of(trainer));
         when(traineeDao.findAssignedTrainers("alice.smith")).thenReturn(assigned);
 
         var request = new Request.UpdateTraineeTrainers(
@@ -272,7 +273,7 @@ class TraineeServiceImplTest {
                 .build();
 
         when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(List.of("bob.jones", "ghost"))).thenReturn(List.of());
+        when(trainerDao.findByUsernames(Set.of("bob.jones", "ghost"))).thenReturn(List.of());
 
         var request = new Request.UpdateTraineeTrainers(
                 "alice.smith", "pass", List.of("bob.jones", "ghost"));
@@ -296,7 +297,7 @@ class TraineeServiceImplTest {
                 .build();
 
         when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(List.of("bob.jones"))).thenReturn(List.of(trainer));
+        when(trainerDao.findByUsernames(Set.of("bob.jones"))).thenReturn(List.of(trainer));
         when(traineeDao.findAssignedTrainers("alice.smith")).thenReturn(List.of());
 
         var request = new Request.UpdateTraineeTrainers(
@@ -304,6 +305,6 @@ class TraineeServiceImplTest {
 
         traineeService.updateTrainers(request);
 
-        verify(trainerDao).findByUsernames(List.of("bob.jones"));
+        verify(trainerDao).findByUsernames(Set.of("bob.jones"));
     }
 }

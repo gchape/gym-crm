@@ -23,11 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AbstractUserDaoImplTest extends BaseDaoTest {
 
     private TestDao dao;
-
     private Trainee trainee;
-
     private Trainer trainer;
-
     private TrainingType yoga;
 
     @BeforeEach

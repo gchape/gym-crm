@@ -13,6 +13,7 @@ import tech.provokedynamic.gymcrm.model.UserType;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public final class TrainerDaoImpl extends AbstractUserDaoImpl implements TrainerDao {
@@ -52,7 +53,7 @@ public final class TrainerDaoImpl extends AbstractUserDaoImpl implements Trainer
     }
 
     @Override
-    public List<Trainer> findByUsernames(List<String> usernames) {
+    public List<Trainer> findByUsernames(Set<String> usernames) {
         return em.createQuery(FIND_BY_USERNAMES, Trainer.class)
                 .setParameter("usernames", usernames)
                 .getResultList();

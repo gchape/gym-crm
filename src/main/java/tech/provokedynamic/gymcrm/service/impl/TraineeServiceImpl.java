@@ -22,7 +22,9 @@ import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
@@ -208,7 +210,7 @@ public class TraineeServiceImpl implements TraineeService {
         Trainee trainee = traineeDao.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        List<String> usernames = request.trainerUsernames().stream().distinct().toList();
+        Set<String> usernames = new HashSet<>(request.trainerUsernames());
         List<Trainer> newTrainers = trainerDao.findByUsernames(usernames);
 
         if (newTrainers.size() != usernames.size()) {
