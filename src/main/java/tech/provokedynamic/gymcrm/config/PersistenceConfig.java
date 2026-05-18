@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import net.ttddyy.dsproxy.listener.logging.OutputParameterLogEntryCreator;
+import net.ttddyy.dsproxy.listener.logging.QueryLogEntryCreator;
 import net.ttddyy.dsproxy.listener.logging.SLF4JLogLevel;
 import net.ttddyy.dsproxy.listener.logging.SLF4JQueryLoggingListener;
 import net.ttddyy.dsproxy.support.ProxyDataSource;
@@ -11,6 +12,7 @@ import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.jdbc.internal.DDLFormatterImpl;
 import org.hibernate.tool.schema.Action;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,10 +44,12 @@ public class PersistenceConfig {
     @Bean
     public DataSource dataSource() {
         var config = new HikariConfig();
-        config.setDriverClassName("org.postgresql.Driver");
+
         config.setJdbcUrl(url);
         config.setUsername(user);
         config.setPassword(password);
+        config.setDriverClassName("org.postgresql.Driver");
+
         return new HikariDataSource(config);
     }
 
@@ -69,29 +73,40 @@ public class PersistenceConfig {
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         var entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
+
         entityManagerFactoryBean.setDataSource(dataSource);
         entityManagerFactoryBean.setPackagesToScan("tech.provokedynamic.gymcrm.entity");
         entityManagerFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         entityManagerFactoryBean.setJpaDialect(new HibernateJpaDialect());
-        var jpaProperties = Map.of(
-                AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, Action.ACTION_CREATE_THEN_DROP,
-                AvailableSettings.PHYSICAL_NAMING_STRATEGY, new PhysicalNamingStrategySnakeCaseImpl()
-        );
-        entityManagerFactoryBean.setJpaPropertyMap(jpaProperties);
+
+        entityManagerFactoryBean.setJpaPropertyMap(Map.of(
+                AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION,
+                Action.ACTION_CREATE_THEN_DROP,
+
+                AvailableSettings.PHYSICAL_NAMING_STRATEGY,
+                new PhysicalNamingStrategySnakeCaseImpl()
+        ));
+
         return entityManagerFactoryBean;
     }
 
     private SLF4JQueryLoggingListener queryLoggingListener() {
-        var formatter = new OutputParameterLogEntryCreator() {
+        var formatter = getQueryLogEntryCreator();
+
+        var listener = new SLF4JQueryLoggingListener();
+        listener.setLogLevel(SLF4JLogLevel.DEBUG);
+        listener.setQueryLogEntryCreator(formatter);
+
+        return listener;
+    }
+
+    private @NonNull QueryLogEntryCreator getQueryLogEntryCreator() {
+        return new OutputParameterLogEntryCreator() {
+
             @Override
             protected String formatQuery(String query) {
                 return new DDLFormatterImpl().format(query);
             }
         };
-        formatter.setMultiline(true);
-        var listener = new SLF4JQueryLoggingListener();
-        listener.setLogLevel(SLF4JLogLevel.DEBUG);
-        listener.setQueryLogEntryCreator(formatter);
-        return listener;
     }
 }

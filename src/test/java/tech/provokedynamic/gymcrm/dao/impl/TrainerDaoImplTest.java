@@ -13,7 +13,7 @@ import tech.provokedynamic.gymcrm.entity.Training;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -94,7 +94,7 @@ class TrainerDaoImplTest extends BaseDaoTest {
         em.persist(other);
         em.flush();
 
-        var results = trainerDao.findByUsernames(List.of("bob.jones", "carol.white"));
+        var results = trainerDao.findByUsernames(Set.of("bob.jones", "carol.white"));
 
         assertThat(results).extracting("username")
                 .containsExactlyInAnyOrder("bob.jones", "carol.white");
@@ -102,21 +102,21 @@ class TrainerDaoImplTest extends BaseDaoTest {
 
     @Test
     void findByUsernames_returnsEmpty_whenNoneMatch() {
-        var results = trainerDao.findByUsernames(List.of("ghost1", "ghost2"));
+        var results = trainerDao.findByUsernames(Set.of("ghost1", "ghost2"));
 
         assertThat(results).isEmpty();
     }
 
     @Test
-    void findByUsernames_returnsEmpty_whenInputListIsEmpty() {
-        var results = trainerDao.findByUsernames(List.of());
+    void findByUsernames_returnsEmpty_whenInputIsEmpty() {
+        var results = trainerDao.findByUsernames(Set.of());
 
         assertThat(results).isEmpty();
     }
 
     @Test
     void findByUsernames_returnsOnlyExisting_whenSomeMissing() {
-        var results = trainerDao.findByUsernames(List.of("bob.jones", "ghost"));
+        var results = trainerDao.findByUsernames(Set.of("bob.jones", "ghost"));
 
         assertThat(results).hasSize(1);
         assertThat(results.getFirst().getUsername()).isEqualTo("bob.jones");

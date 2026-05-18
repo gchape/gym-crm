@@ -17,7 +17,6 @@ public class RequestValidatorImpl implements AutoCloseable, RequestValidator {
     private static final Logger log = LoggerFactory.getLogger(RequestValidatorImpl.class);
 
     private final ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-
     private final Validator validator = factory.getValidator();
 
     @Synchronized

@@ -7,6 +7,7 @@ import tech.provokedynamic.gymcrm.entity.Trainer;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface TrainerDao extends UserDao {
 
@@ -14,7 +15,7 @@ public interface TrainerDao extends UserDao {
 
     Optional<Trainer> findByUsername(String username);
 
-    List<Trainer> findByUsernames(List<String> usernames);
+    List<Trainer> findByUsernames(Set<String> usernames);
 
     List<Summary.Training> findTrainingsByUsername(
             String username,
