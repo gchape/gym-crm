@@ -13,6 +13,7 @@ import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
 import tech.provokedynamic.gymcrm.dao.TraineeDao;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dao.UserDao;
+import tech.provokedynamic.gymcrm.dao.impl.UserDaoImpl;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.service.TraineeService;
@@ -27,11 +28,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        AuthenticationValidationAspectTest.AspectConfig.class,
-        AuthenticationValidationAspect.class,
-        AnnotationPointcuts.class,
         ServicePointcuts.class,
-        TraineeServiceImpl.class
+        AnnotationPointcuts.class,
+        AuthenticationValidationAspect.class,
+        AuthenticationValidationAspectTest.AspectConfig.class,
+        TraineeServiceImpl.class,
+        UserDaoImpl.class
 })
 class AuthenticationValidationAspectTest {
 
@@ -47,7 +49,7 @@ class AuthenticationValidationAspectTest {
     @MockitoBean
     private CredentialGenerator credentialGenerator;
 
-    @MockitoBean(name = "userDaoImpl")
+    @MockitoBean
     private UserDao userDao;
 
     @Test

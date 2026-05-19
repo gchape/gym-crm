@@ -73,7 +73,7 @@ class RequestValidatorImplTest {
         var request = new Request.ChangePassword(
                 "John.Doe",
                 credentialGenerator.generatePassword(),
-                "thisistoolong"
+                "thisIsTooLong"
         );
 
         assertThatThrownBy(() -> requestValidator.validate(request))

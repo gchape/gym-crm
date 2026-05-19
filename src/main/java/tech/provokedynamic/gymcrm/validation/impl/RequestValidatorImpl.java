@@ -25,7 +25,7 @@ public class RequestValidatorImpl implements AutoCloseable, RequestValidator {
 
         if (!violations.isEmpty()) {
             String message = violations.stream()
-                    .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                    .map(ConstraintViolation::getMessage)
                     .collect(Collectors.joining(", "));
 
             log.warn("Validation failed for {}: {}", object.getClass().getSimpleName(), message);
