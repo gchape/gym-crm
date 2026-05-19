@@ -6,7 +6,6 @@ import org.aspectj.lang.annotation.Before;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dao.UserDao;
@@ -21,9 +20,7 @@ public class AuthenticationValidationAspect implements Ordered {
 
     private final UserDao userDao;
 
-    public AuthenticationValidationAspect(
-            @Qualifier("userDaoImpl") UserDao userDao
-    ) {
+    public AuthenticationValidationAspect(UserDao userDao) {
         this.userDao = userDao;
     }
 

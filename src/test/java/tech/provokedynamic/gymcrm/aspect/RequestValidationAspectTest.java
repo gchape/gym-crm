@@ -24,11 +24,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        RequestValidationAspectTest.AspectConfig.class,
-        AnnotationPointcuts.class,
         ServicePointcuts.class,
+        AnnotationPointcuts.class,
         RequestValidatorImpl.class,
         RequestValidationAspect.class,
+        RequestValidationAspectTest.AspectConfig.class,
         TrainerServiceImpl.class
 })
 class RequestValidationAspectTest {
