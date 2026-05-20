@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.dao;
+package tech.provokedynamic.gymcrm.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -6,6 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -14,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @ExtendWith(SpringExtension.class)
 @Transactional
-public abstract class BaseDaoTest {
+public abstract class BaseRepositoryTest {
 
     @PersistenceContext
     protected EntityManager em;
@@ -27,6 +28,7 @@ public abstract class BaseDaoTest {
     }
 
     @Configuration
+    @EnableJpaRepositories(basePackages = "tech.provokedynamic.gymcrm.repository")
     public static class BaseConfig {
 
         @Bean

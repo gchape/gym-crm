@@ -9,7 +9,8 @@ import static lombok.AccessLevel.PROTECTED;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = PROTECTED)
+@NoArgsConstructor(
+        access = PROTECTED)
 @org.hibernate.annotations.Immutable
 public class TrainingType {
     @Id

@@ -9,10 +9,16 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(
+        access = AccessLevel.PROTECTED)
+@AllArgsConstructor(
+        access = AccessLevel.PRIVATE)
+@EqualsAndHashCode(
+        onlyExplicitlyIncluded = true,
+        cacheStrategy = EqualsAndHashCode.CacheStrategy.LAZY)
 public class Training {
     @Id
+    @EqualsAndHashCode.Include
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(nullable = false, updatable = false)
     private Long id;

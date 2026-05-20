@@ -1,131 +1,143 @@
 package tech.provokedynamic.gymcrm.service.impl;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.provokedynamic.gymcrm.dao.TraineeDao;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dao.TrainingDao;
-import tech.provokedynamic.gymcrm.dao.TrainingTypeDao;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.entity.Training;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
+import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.repository.TraineeRepository;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("TrainingServiceImpl")
 class TrainingServiceImplTest {
 
-    private static final LocalDate FUTURE_DATE = LocalDate.now().plusDays(1);
+    @Mock
+    TrainingRepository trainingRepository;
 
     @Mock
-    private TrainingDao trainingDao;
+    TraineeRepository traineeRepository;
 
     @Mock
-    private TraineeDao traineeDao;
+    TrainerRepository trainerRepository;
 
     @Mock
-    private TrainerDao trainerDao;
-
-    @Mock
-    private TrainingTypeDao trainingTypeDao;
+    TrainingTypeRepository trainingTypeRepository;
 
     @InjectMocks
-    private TrainingServiceImpl trainingService;
+    TrainingServiceImpl service;
 
     private Request.AddTraining validRequest() {
         return new Request.AddTraining(
-                "alice.smith", "pass",
-                "bob.jones",
-                "Morning Yoga", "YOGA",
-                FUTURE_DATE, 60
+                "trainee1",
+                "trainer111",
+                "trainer1",
+                "Morning Yoga",
+                "Yoga",
+                LocalDate.of(2024, 6, 1),
+                60
         );
     }
 
-    @Test
-    void add_persistsTraining_whenAllEntitiesFound() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
+    @Nested
+    @DisplayName("add()")
+    class Add {
 
-        var yoga = new TrainingType("YOGA");
+        @Test
+        @DisplayName("persists training when all referenced entities exist")
+        void add_success() {
+            var trainee = mock(Trainee.class);
+            var trainer = mock(Trainer.class);
+            var type = new TrainingType("Yoga");
 
-        var trainer = Trainer.builder()
-                .firstName("Bob").lastName("Jones")
-                .username("bob.jones").password("pass")
-                .specialization(yoga)
-                .build();
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
+            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.of(type));
+            when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsername("bob.jones")).thenReturn(Optional.of(trainer));
-        when(trainingTypeDao.findByName("YOGA")).thenReturn(yoga);
+            service.add(validRequest());
 
-        trainingService.add(validRequest());
+            verify(trainingRepository).save(argThat(t ->
+                    t.getTrainee() == trainee &&
+                            t.getTrainer() == trainer &&
+                            t.getTrainingType() == type &&
+                            "Morning Yoga".equals(t.getTrainingName()) &&
+                            t.getTrainingDuration() == 60
+            ));
+        }
 
-        verify(trainingDao).save(any());
-    }
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void add_traineeNotFound() {
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.empty());
 
-    @Test
-    void add_throwsUserDoesNotExistException_whenTraineeNotFound() {
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> service.add(validRequest()))
+                    .isInstanceOf(UserDoesNotExistException.class);
 
-        assertThatThrownBy(() -> trainingService.add(validRequest()))
-                .isInstanceOf(UserDoesNotExistException.class);
-    }
+            verifyNoInteractions(trainerRepository, trainingTypeRepository, trainingRepository);
+        }
 
-    @Test
-    void add_throwsUserDoesNotExistException_whenTrainerNotFound() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainer not found")
+        void add_trainerNotFound() {
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(mock(Trainee.class)));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.empty());
 
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsername("bob.jones")).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> service.add(validRequest()))
+                    .isInstanceOf(UserDoesNotExistException.class);
 
-        assertThatThrownBy(() -> trainingService.add(validRequest()))
-                .isInstanceOf(UserDoesNotExistException.class);
-    }
+            verifyNoInteractions(trainingTypeRepository, trainingRepository);
+        }
 
-    @Test
-    void add_passesCorrectFieldsToTraining() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
+        @Test
+        @DisplayName("throws TrainingTypeNotFoundException when training type not found")
+        void add_typeNotFound() {
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(mock(Trainee.class)));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(mock(Trainer.class)));
+            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.empty());
 
-        var yoga = new TrainingType("YOGA");
+            assertThatThrownBy(() -> service.add(validRequest()))
+                    .isInstanceOf(TrainingTypeNotFoundException.class);
 
-        var trainer = Trainer.builder()
-                .firstName("Bob").lastName("Jones")
-                .username("bob.jones").password("pass")
-                .specialization(yoga)
-                .build();
+            verifyNoInteractions(trainingRepository);
+        }
 
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsername("bob.jones")).thenReturn(Optional.of(trainer));
-        when(trainingTypeDao.findByName("YOGA")).thenReturn(yoga);
+        @Test
+        @DisplayName("sets correct training date and duration on saved entity")
+        void add_trainingDateAndDuration() {
+            var trainee = mock(Trainee.class);
+            var trainer = mock(Trainer.class);
+            var type = new TrainingType("Yoga");
 
-        trainingService.add(validRequest());
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
+            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.of(type));
+            when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        verify(trainingDao).save(argThat(t ->
-                t.getTrainingName().equals("Morning Yoga") &&
-                        t.getTrainingDate().equals(FUTURE_DATE) &&
-                        t.getTrainingDuration() == 60 &&
-                        t.getTrainee().equals(trainee) &&
-                        t.getTrainer().equals(trainer)
-        ));
+            service.add(validRequest());
+
+            verify(trainingRepository).save(argThat(t ->
+                    LocalDate.of(2024, 6, 1).equals(t.getTrainingDate()) &&
+                            t.getTrainingDuration() == 60
+            ));
+        }
     }
 }

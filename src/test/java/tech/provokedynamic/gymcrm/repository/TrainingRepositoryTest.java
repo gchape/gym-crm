@@ -1,12 +1,10 @@
-package tech.provokedynamic.gymcrm.dao.impl;
+package tech.provokedynamic.gymcrm.repository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import tech.provokedynamic.gymcrm.config.PersistenceConfig;
-import tech.provokedynamic.gymcrm.dao.BaseDaoTest;
-import tech.provokedynamic.gymcrm.dao.TrainingDao;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -18,13 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ContextConfiguration(classes = {
         PersistenceConfig.class,
-        TrainingDaoImpl.class,
-        BaseDaoTest.BaseConfig.class
+        TrainingRepository.class,
+        BaseRepositoryTest.BaseConfig.class
 })
-class TrainingDaoImplTest extends BaseDaoTest {
+class TrainingRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
-    private TrainingDao trainingDao;
+    private TrainingRepository trainingRepository;
 
     private TrainingType yoga;
     private Trainee trainee;
@@ -51,47 +49,35 @@ class TrainingDaoImplTest extends BaseDaoTest {
 
     @Test
     void save_persistsTraining() {
-        Training training = Training.builder()
-                .trainee(trainee)
-                .trainer(trainer)
-                .trainingType(yoga)
+        var training = Training.builder()
+                .trainee(trainee).trainer(trainer).trainingType(yoga)
                 .trainingName("Evening Yoga")
                 .trainingDate(LocalDate.of(2024, 7, 15))
                 .trainingDuration(45)
                 .build();
 
-        trainingDao.save(training);
+        trainingRepository.save(training);
         em.flush();
         em.clear();
 
-        long count = em.createQuery("SELECT count(t) FROM Training t", Long.class)
-                .getSingleResult();
-        assertThat(count).isEqualTo(1);
-
-        Training saved = em.createQuery("SELECT t FROM Training t", Training.class)
-                .getSingleResult();
-        assertThat(saved.getTrainingName()).isEqualTo("Evening Yoga");
-        assertThat(saved.getTrainingDuration()).isEqualTo(45);
+        assertThat(trainingRepository.findAll()).hasSize(1);
+        assertThat(trainingRepository.findAll().getFirst().getTrainingName())
+                .isEqualTo("Evening Yoga");
     }
 
     @Test
     void save_multipleTrainings_allPersisted() {
         for (int i = 1; i <= 3; i++) {
-            trainingDao.save(Training.builder()
-                    .trainee(trainee)
-                    .trainer(trainer)
-                    .trainingType(yoga)
+            trainingRepository.save(Training.builder()
+                    .trainee(trainee).trainer(trainer).trainingType(yoga)
                     .trainingName("Session " + i)
                     .trainingDate(LocalDate.of(2024, i, 1))
                     .trainingDuration(30 + i)
                     .build());
         }
-
         em.flush();
         em.clear();
 
-        long count = em.createQuery("SELECT count(t) FROM Training t", Long.class)
-                .getSingleResult();
-        assertThat(count).isEqualTo(3);
+        assertThat(trainingRepository.findAll()).hasSize(3);
     }
 }

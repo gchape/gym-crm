@@ -1,4 +1,4 @@
 @NullMarked
-package tech.provokedynamic.gymcrm.dao.impl;
+package tech.provokedynamic.gymcrm.repository.custom;
 
 import org.jspecify.annotations.NullMarked;

@@ -1,12 +1,12 @@
 package tech.provokedynamic.gymcrm.service.impl;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.provokedynamic.gymcrm.dao.TraineeDao;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Summary;
@@ -16,6 +16,9 @@ import tech.provokedynamic.gymcrm.entity.TrainingType;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.model.Address;
+import tech.provokedynamic.gymcrm.repository.TraineeRepository;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
 import java.time.LocalDate;
@@ -26,285 +29,338 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("TraineeServiceImpl")
 class TraineeServiceImplTest {
 
     @Mock
-    private TraineeDao traineeDao;
+    TraineeRepository traineeRepository;
 
     @Mock
-    private TrainerDao trainerDao;
+    TrainerRepository trainerRepository;
 
     @Mock
-    private CredentialGenerator credentialGenerator;
+    CredentialGenerator credentialGenerator;
 
     @InjectMocks
-    private TraineeServiceImpl traineeService;
+    TraineeServiceImpl service;
 
-    @Test
-    void create_savesTrainee_andReturnsProfile() {
-        var request = new Request.CreateTrainee("Alice", "Smith", null, null);
-
-        when(credentialGenerator.generateUsername("Alice", "Smith")).thenReturn("Alice.Smith");
-        when(credentialGenerator.generatePassword()).thenReturn("secretPass1");
-
-        var result = traineeService.create(request);
-
-        verify(traineeDao).save(any(Trainee.class));
-        assertThat(result.username()).isEqualTo("Alice.Smith");
-        assertThat(result.firstName()).isEqualTo("Alice");
-        assertThat(result.lastName()).isEqualTo("Smith");
-    }
-
-    @Test
-    void create_usesGeneratedCredentials() {
-        var request = new Request.CreateTrainee("Alice", "Smith", null, null);
-
-        when(credentialGenerator.generateUsername("Alice", "Smith")).thenReturn("Alice.Smith");
-        when(credentialGenerator.generatePassword()).thenReturn("secretPass1");
-
-        traineeService.create(request);
-
-        verify(credentialGenerator).generateUsername("Alice", "Smith");
-        verify(credentialGenerator).generatePassword();
-    }
-
-    @Test
-    void getProfile_returnsProfile_whenTraineeExists() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
+    private Trainee buildTrainee() {
+        return Trainee.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("John.Doe")
+                .password("secret")
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .address(new Address("123 Main St", "New York", "USA", "10001"))
                 .build();
-
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-
-        var result = traineeService.getProfile("alice.smith");
-
-        assertThat(result.username()).isEqualTo("alice.smith");
     }
 
-    @Test
-    void getProfile_throwsUserDoesNotExistException_whenNotFound() {
-        when(traineeDao.findByUsername("ghost")).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("create()")
+    class Create {
 
-        assertThatThrownBy(() -> traineeService.getProfile("ghost"))
-                .isInstanceOf(UserDoesNotExistException.class);
+        @Test
+        @DisplayName("generates credentials, persists trainee, and returns profile")
+        void create_success() {
+            var request = new Request.CreateTrainee("John", "Doe",
+                    LocalDate.of(1990, 1, 1), new Address("123 Main St", "New York", "USA", "10001"));
+
+            when(credentialGenerator.generateUsername("John", "Doe"))
+                    .thenReturn("John.Doe");
+            when(credentialGenerator.generatePassword())
+                    .thenReturn("pass123");
+            when(traineeRepository.save(any(Trainee.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            Profile.Trainee profile = service.create(request);
+
+            assertThat(profile.username()).isEqualTo("John.Doe");
+            verify(traineeRepository).save(any(Trainee.class));
+        }
     }
 
-    @Test
-    void changePassword_delegatesToDao() {
-        var request = new Request.ChangePassword("alice.smith", "oldPass1", "newPass1");
+    @Nested
+    @DisplayName("getProfile()")
+    class GetProfile {
 
-        traineeService.changePassword(request);
+        @Test
+        @DisplayName("returns profile when trainee exists")
+        void getProfile_found() {
+            var trainee = buildTrainee();
+            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
 
-        verify(traineeDao).updatePassword("alice.smith", "newPass1");
+            Profile.Trainee profile = service.getProfile("John.Doe");
+
+            assertThat(profile.username()).isEqualTo("John.Doe");
+        }
+
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void getProfile_notFound() {
+            when(traineeRepository.findByUsername("unknown")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getProfile("unknown"))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
     }
 
-    @Test
-    void update_returnsUpdatedProfile_whenTraineeExists() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
+    @Nested
+    @DisplayName("changePassword()")
+    class ChangePassword {
 
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
+        @Test
+        @DisplayName("updates password when credentials match")
+        void changePassword_success() {
+            var trainee = buildTrainee();
+            var request = new Request.ChangePassword("John.Doe", "secret", "newPass");
 
-        var request = new Request.UpdateTrainee(
-                "alice.smith", "pass", "Alicia", "Smith", null, null);
+            when(traineeRepository.findByUsernameAndPassword("John.Doe", "secret"))
+                    .thenReturn(Optional.of(trainee));
+            when(traineeRepository.save(any(Trainee.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
 
-        var result = traineeService.update(request);
+            service.changePassword(request);
 
-        verify(traineeDao).update(any(Trainee.class));
-        assertThat(result.firstName()).isEqualTo("Alicia");
+            verify(traineeRepository).save(argThat(t -> "newPass".equals(t.getPassword())));
+        }
+
+        @Test
+        @DisplayName("throws UserDoesNotExistException when credentials do not match")
+        void changePassword_wrongCredentials() {
+            var request = new Request.ChangePassword("John.Doe", "wrong", "newPass");
+
+            when(traineeRepository.findByUsernameAndPassword("John.Doe", "wrong"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.changePassword(request))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
     }
 
-    @Test
-    void update_throwsUserDoesNotExistException_whenNotFound() {
-        when(traineeDao.findByUsername("ghost")).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("update()")
+    class Update {
 
-        var request = new Request.UpdateTrainee(
-                "ghost", "pass", "Ghost", "User", null, null);
+        @Test
+        @DisplayName("updates and returns profile when trainee exists")
+        void update_success() {
+            var trainee = buildTrainee();
 
-        assertThatThrownBy(() -> traineeService.update(request))
-                .isInstanceOf(UserDoesNotExistException.class);
+            var request = new Request.UpdateTrainee("John.Doe", "secret", "Jane", "Doe",
+                    LocalDate.of(1991, 2, 2), new Address("456 New Rd", "Boston", "USA", "02101"));
+
+            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
+            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Profile.Trainee profile = service.update(request);
+
+            assertThat(profile.firstName()).isEqualTo("Jane");
+        }
+
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void update_notFound() {
+            var request = new Request.UpdateTrainee("ghost", "secret", "Jane", "Doe",
+                    LocalDate.of(1991, 2, 2), new Address("456 New Rd", "Boston", "USA", "02101"));
+
+            when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.update(request))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
     }
 
-    @Test
-    void activate_succeeds_whenTraineeIsInactive() {
-        when(traineeDao.activateByUsername("alice.smith")).thenReturn(1);
+    @Nested
+    @DisplayName("activate()")
+    class Activate {
 
-        traineeService.activate(new Request.ToggleActive("alice.smith", "pass"));
+        @Test
+        @DisplayName("activates trainee successfully")
+        void activate_success() {
+            when(traineeRepository.activateByUsername("John.Doe")).thenReturn(1);
 
-        verify(traineeDao).activateByUsername("alice.smith");
+            service.activate(new Request.ToggleActive("John.Doe", "secret"));
+
+            verify(traineeRepository).activateByUsername("John.Doe");
+        }
+
+        @Test
+        @DisplayName("throws AlreadyActivatedException when already active")
+        void activate_alreadyActive() {
+            when(traineeRepository.activateByUsername("John.Doe")).thenReturn(0);
+
+            assertThatThrownBy(() -> service.activate(new Request.ToggleActive("John.Doe", "secret")))
+                    .isInstanceOf(AlreadyActivatedException.class);
+        }
     }
 
-    @Test
-    void activate_throwsAlreadyActivatedException_whenAlreadyActive() {
-        when(traineeDao.activateByUsername("alice.smith")).thenReturn(0);
+    @Nested
+    @DisplayName("deactivate()")
+    class Deactivate {
 
-        assertThatThrownBy(() -> traineeService.activate(
-                new Request.ToggleActive("alice.smith", "pass")))
-                .isInstanceOf(AlreadyActivatedException.class);
+        @Test
+        @DisplayName("deactivates trainee successfully")
+        void deactivate_success() {
+            when(traineeRepository.deactivateByUsername("John.Doe")).thenReturn(1);
+
+            service.deactivate(new Request.ToggleActive("John.Doe", "secret"));
+
+            verify(traineeRepository).deactivateByUsername("John.Doe");
+        }
+
+        @Test
+        @DisplayName("throws AlreadyDeactivatedException when already inactive")
+        void deactivate_alreadyInactive() {
+            when(traineeRepository.deactivateByUsername("John.Doe")).thenReturn(0);
+
+            assertThatThrownBy(() -> service.deactivate(new Request.ToggleActive("John.Doe", "secret")))
+                    .isInstanceOf(AlreadyDeactivatedException.class);
+        }
     }
 
-    @Test
-    void deactivate_succeeds_whenTraineeIsActive() {
-        when(traineeDao.deactivateByUsername("alice.smith")).thenReturn(1);
+    @Nested
+    @DisplayName("delete()")
+    class Delete {
 
-        traineeService.deactivate(new Request.ToggleActive("alice.smith", "pass"));
+        @Test
+        @DisplayName("delegates to repository delete by username")
+        void delete_success() {
+            service.delete(new Request.DeleteTrainee("John.Doe", "secret"));
 
-        verify(traineeDao).deactivateByUsername("alice.smith");
+            verify(traineeRepository).deleteByUsername("John.Doe");
+        }
     }
 
-    @Test
-    void deactivate_throwsAlreadyDeactivatedException_whenAlreadyInactive() {
-        when(traineeDao.deactivateByUsername("alice.smith")).thenReturn(0);
+    @Nested
+    @DisplayName("getTrainings()")
+    class GetTrainings {
 
-        assertThatThrownBy(() -> traineeService.deactivate(
-                new Request.ToggleActive("alice.smith", "pass")))
-                .isInstanceOf(AlreadyDeactivatedException.class);
+        @Test
+        @DisplayName("returns trainings list from repository")
+        void getTrainings_success() {
+            var summary = mock(Summary.Training.class);
+
+            when(traineeRepository.findTrainingsByUsername("John.Doe", null, null, null, null))
+                    .thenReturn(List.of(summary));
+
+            List<Summary.Training> result = service.getTrainings("John.Doe", null, null, null, null);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("passes all filter parameters to repository")
+        void getTrainings_withFilters() {
+            var from = LocalDate.of(2024, 1, 1);
+            var to = LocalDate.of(2024, 12, 31);
+
+            when(traineeRepository.findTrainingsByUsername("John.Doe", from, to, "trainer1", "Yoga"))
+                    .thenReturn(List.of());
+
+            service.getTrainings("John.Doe", from, to, "trainer1", "Yoga");
+
+            verify(traineeRepository).findTrainingsByUsername("John.Doe", from, to, "trainer1", "Yoga");
+        }
     }
 
-    @Test
-    void delete_removesTrainee_whenFound() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
+    @Nested
+    @DisplayName("getUnassignedTrainers()")
+    class GetUnassignedTrainers {
 
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
+        @Test
+        @DisplayName("returns trainers not in trainee's current list")
+        void getUnassignedTrainers_success() {
+            var trainer = mock(Trainer.class);
+            when(trainer.getId()).thenReturn(1L);
 
-        traineeService.delete(new Request.DeleteTrainee("alice.smith", "pass"));
+            var trainee = buildTrainee();
+            trainee.getTrainers().add(trainer);
 
-        verify(traineeDao).delete(trainee);
+            when(traineeRepository.findWTrainersByUsername("John.Doe"))
+                    .thenReturn(Optional.of(trainee));
+            when(trainerRepository.findAllByIdNotIn(anySet()))
+                    .thenReturn(List.of());
+
+            List<Profile.Trainer> result = service.getUnassignedTrainers("John.Doe");
+
+            assertThat(result).isEmpty();
+            verify(trainerRepository).findAllByIdNotIn(Set.of(1L));
+        }
+
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void getUnassignedTrainers_notFound() {
+            when(traineeRepository.findWTrainersByUsername("ghost")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.getUnassignedTrainers("ghost"))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
     }
 
-    @Test
-    void delete_throwsUserDoesNotExistException_whenNotFound() {
-        when(traineeDao.findByUsername("ghost")).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("updateTrainers()")
+    class UpdateTrainers {
 
-        assertThatThrownBy(() -> traineeService.delete(
-                new Request.DeleteTrainee("ghost", "pass")))
-                .isInstanceOf(UserDoesNotExistException.class);
-    }
+        @Test
+        @DisplayName("replaces trainer list and returns updated profiles")
+        void updateTrainers_success() {
+            var trainee = buildTrainee();
+            var trainer = mock(Trainer.class);
+            var trainingType = mock(TrainingType.class);
 
-    @Test
-    void getTrainings_delegatesToDao_withAllFilters() {
-        var from = LocalDate.of(2024, 1, 1);
-        var to = LocalDate.of(2024, 6, 1);
-        var expected = List.of(new Summary.Training("Yoga", from, 60, "bob.jones"));
+            when(trainer.getUsername())
+                    .thenReturn("trainer1");
+            when(trainer.getFirstName())
+                    .thenReturn("Jane");
+            when(trainer.getLastName())
+                    .thenReturn("Smith");
+            when(trainer.getSpecialization())
+                    .thenReturn(trainingType);
+            when(trainingType.getTrainingTypeName())
+                    .thenReturn("Yoga");
 
-        when(traineeDao.findTrainingsByUsername("alice.smith", from, to, "bob.jones", "YOGA"))
-                .thenReturn(expected);
+            var request = new Request.UpdateTraineeTrainers("John.Doe", "secret", List.of("trainer1"));
 
-        var result = traineeService.getTrainings("alice.smith", from, to, "bob.jones", "YOGA");
+            when(traineeRepository.findByUsername("John.Doe"))
+                    .thenReturn(Optional.of(trainee));
+            when(trainerRepository.findAllByUsernameIn(List.of("trainer1")))
+                    .thenReturn(List.of(trainer));
+            when(traineeRepository.save(any(Trainee.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
 
-        assertThat(result).isEqualTo(expected);
-    }
+            List<Profile.Trainer> result = service.updateTrainers(request);
 
-    @Test
-    void getTrainings_delegatesToDao_withNullFilters() {
-        when(traineeDao.findTrainingsByUsername("alice.smith", null, null, null, null))
-                .thenReturn(List.of());
+            assertThat(result).hasSize(1);
+            verify(traineeRepository).save(trainee);
+        }
 
-        var result = traineeService.getTrainings("alice.smith", null, null, null, null);
+        @Test
+        @DisplayName("throws UserDoesNotExistException when one or more trainer usernames are invalid")
+        void updateTrainers_missingTrainer() {
+            var trainee = buildTrainee();
+            var request = new Request.UpdateTraineeTrainers("John.Doe", "secret",
+                    List.of("trainer1", "trainer2"));
 
-        assertThat(result).isEmpty();
-    }
+            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
+            // Only one trainer found instead of two
+            when(trainerRepository.findAllByUsernameIn(anyList())).thenReturn(List.of(mock(Trainer.class)));
 
-    @Test
-    void getUnassignedTrainers_returnsResultFromDao() {
-        var trainer = new Profile.Trainer("Bob", "Jones", "bob.jones", "YOGA");
-        when(traineeDao.findUnassignedTrainers("alice.smith")).thenReturn(List.of(trainer));
+            assertThatThrownBy(() -> service.updateTrainers(request))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
 
-        var result = traineeService.getUnassignedTrainers("alice.smith");
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void updateTrainers_traineeNotFound() {
+            when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-        assertThat(result).containsExactly(trainer);
-    }
-
-    @Test
-    void updateTrainers_replacesTrainers_andReturnsAssigned() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
-
-        var yoga = new TrainingType("YOGA");
-        var trainer = Trainer.builder()
-                .firstName("Bob").lastName("Jones")
-                .username("bob.jones").password("pass")
-                .specialization(yoga)
-                .build();
-
-        var assigned = List.of(new Profile.Trainer("Bob", "Jones", "bob.jones", "YOGA"));
-
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(Set.of("bob.jones"))).thenReturn(List.of(trainer));
-        when(traineeDao.findAssignedTrainers("alice.smith")).thenReturn(assigned);
-
-        var request = new Request.UpdateTraineeTrainers(
-                "alice.smith", "pass", List.of("bob.jones"));
-
-        var result = traineeService.updateTrainers(request);
-
-        verify(traineeDao).update(trainee);
-        assertThat(result).isEqualTo(assigned);
-    }
-
-    @Test
-    void updateTrainers_throwsUserDoesNotExistException_whenTraineeNotFound() {
-        when(traineeDao.findByUsername("ghost")).thenReturn(Optional.empty());
-
-        var request = new Request.UpdateTraineeTrainers(
-                "ghost", "pass", List.of("bob.jones"));
-
-        assertThatThrownBy(() -> traineeService.updateTrainers(request))
-                .isInstanceOf(UserDoesNotExistException.class);
-    }
-
-    @Test
-    void updateTrainers_throwsUserDoesNotExistException_whenSomeTrainersNotFound() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
-
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(Set.of("bob.jones", "ghost"))).thenReturn(List.of());
-
-        var request = new Request.UpdateTraineeTrainers(
-                "alice.smith", "pass", List.of("bob.jones", "ghost"));
-
-        assertThatThrownBy(() -> traineeService.updateTrainers(request))
-                .isInstanceOf(UserDoesNotExistException.class);
-    }
-
-    @Test
-    void updateTrainers_deduplicatesRequestedUsernames() {
-        var trainee = Trainee.builder()
-                .firstName("Alice").lastName("Smith")
-                .username("alice.smith").password("pass")
-                .build();
-
-        var yoga = new TrainingType("YOGA");
-        var trainer = Trainer.builder()
-                .firstName("Bob").lastName("Jones")
-                .username("bob.jones").password("pass")
-                .specialization(yoga)
-                .build();
-
-        when(traineeDao.findByUsername("alice.smith")).thenReturn(Optional.of(trainee));
-        when(trainerDao.findByUsernames(Set.of("bob.jones"))).thenReturn(List.of(trainer));
-        when(traineeDao.findAssignedTrainers("alice.smith")).thenReturn(List.of());
-
-        var request = new Request.UpdateTraineeTrainers(
-                "alice.smith", "pass", List.of("bob.jones", "bob.jones"));
-
-        traineeService.updateTrainers(request);
-
-        verify(trainerDao).findByUsernames(Set.of("bob.jones"));
+            assertThatThrownBy(() -> service.updateTrainers(
+                    new Request.UpdateTraineeTrainers("ghost", "secret", List.of())))
+                    .isInstanceOf(UserDoesNotExistException.class);
+        }
     }
 }

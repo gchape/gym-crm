@@ -12,12 +12,18 @@ import java.util.Set;
 
 @Entity
 @Getter
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@DiscriminatorValue("trainer")
+@SuperBuilder(
+        toBuilder = true)
+@NoArgsConstructor(
+        access = AccessLevel.PROTECTED)
+@DiscriminatorValue(
+        value = "trainer")
 public class Trainer extends User {
     @ManyToMany(mappedBy = "trainers")
     private final Set<Trainee> trainees = new HashSet<>();
+
+    @OneToMany(mappedBy = "trainer")
+    private final Set<Training> trainings = new HashSet<>();
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

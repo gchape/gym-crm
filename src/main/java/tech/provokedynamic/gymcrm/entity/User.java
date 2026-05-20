@@ -13,15 +13,22 @@ import static org.hibernate.annotations.SoftDeleteType.ACTIVE;
 
 @Entity
 @Table(name = "\"user\"")
-@Getter(AccessLevel.PUBLIC)
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+@SuperBuilder(
+        toBuilder = true)
+@NoArgsConstructor(
+        access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(
         onlyExplicitlyIncluded = true,
         cacheStrategy = EqualsAndHashCode.CacheStrategy.LAZY)
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(discriminatorType = DiscriminatorType.STRING, name = "u_type")
-@org.hibernate.annotations.SoftDelete(strategy = ACTIVE, columnName = "is_active")
+@Inheritance(
+        strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(
+        name = "u_type",
+        discriminatorType = DiscriminatorType.STRING)
+@org.hibernate.annotations.SoftDelete(
+        strategy = ACTIVE,
+        columnName = "is_active")
 public abstract class User {
     @Id
     @EqualsAndHashCode.Include
