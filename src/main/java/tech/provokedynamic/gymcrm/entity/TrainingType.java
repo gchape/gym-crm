@@ -14,7 +14,7 @@ import static lombok.AccessLevel.PROTECTED;
 public class TrainingType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false, insertable = false)
+    @Column(nullable = false, updatable = false)
     private Long id;
 
     @NotNull

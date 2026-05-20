@@ -1,6 +1,8 @@
 package tech.provokedynamic.gymcrm.validation.impl;
 
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,17 +22,21 @@ class RequestValidatorImplTest {
 
     private static RequestValidator requestValidator;
 
+    private static ValidatorFactory validatorFactory;
+
     private static CredentialGenerator credentialGenerator;
 
     @BeforeAll
     static void beforeAll() {
-        requestValidator = new RequestValidatorImpl();
+        validatorFactory = Validation.buildDefaultValidatorFactory();
+        requestValidator = new RequestValidatorImpl(validatorFactory.getValidator());
+
         credentialGenerator = new CredentialGenerator(mock(UserDao.class));
     }
 
     @AfterAll
-    static void afterAll() throws Exception {
-        ((AutoCloseable) requestValidator).close();
+    static void afterAll() {
+        validatorFactory.close();
     }
 
     @Test
