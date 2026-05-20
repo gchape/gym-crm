@@ -11,6 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
+import tech.provokedynamic.gymcrm.config.ValidationConfig;
 import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dao.TrainingTypeDao;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -24,11 +25,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
+        ValidationConfig.class,
+
         ServicePointcuts.class,
         AnnotationPointcuts.class,
+
         RequestValidatorImpl.class,
         RequestValidationAspect.class,
         RequestValidationAspectTest.AspectConfig.class,
+
         TrainerServiceImpl.class
 })
 class RequestValidationAspectTest {
