@@ -18,7 +18,7 @@ import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.service.impl.TrainerServiceImpl;
-import tech.provokedynamic.gymcrm.util.RepositoryCredentialGenerator;
+import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
 import tech.provokedynamic.gymcrm.validation.RequestValidator;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,7 +51,7 @@ class RequestValidationAspectTest {
     private TrainingTypeRepository trainingTypeRepository;
 
     @MockitoBean
-    private RepositoryCredentialGenerator credentialGenerator;
+    private DBCredentialGenerator credentialGenerator;
 
     @Test
     void validate_doesNotThrow_whenRequestIsValid() {
