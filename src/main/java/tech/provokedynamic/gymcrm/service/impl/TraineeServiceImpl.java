@@ -1,8 +1,8 @@
 package tech.provokedynamic.gymcrm.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.annotation.Authenticated;
@@ -25,24 +25,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class TraineeServiceImpl implements TraineeService {
-
-    private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
-    private final CredentialGenerator credentialGenerator;
 
-    public TraineeServiceImpl(
-            TraineeRepository traineeRepository,
-            TrainerRepository trainerRepository,
-            CredentialGenerator credentialGenerator
-    ) {
-        this.trainerRepository = trainerRepository;
-        this.traineeRepository = traineeRepository;
-        this.credentialGenerator = credentialGenerator;
-    }
+    private final CredentialGenerator credentialGenerator;
 
     @Override
     @Validate

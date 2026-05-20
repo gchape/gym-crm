@@ -19,7 +19,7 @@ import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.model.Address;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
-import tech.provokedynamic.gymcrm.util.CredentialGenerator;
+import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,7 +43,7 @@ class TraineeServiceImplTest {
     TrainerRepository trainerRepository;
 
     @Mock
-    CredentialGenerator credentialGenerator;
+    DBCredentialGenerator credentialGenerator;
 
     @InjectMocks
     TraineeServiceImpl service;
