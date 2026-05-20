@@ -6,8 +6,8 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.provokedynamic.gymcrm.dao.UserDao;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 import tech.provokedynamic.gymcrm.validation.RequestValidator;
 
@@ -31,7 +31,7 @@ class RequestValidatorImplTest {
         validatorFactory = Validation.buildDefaultValidatorFactory();
         requestValidator = new RequestValidatorImpl(validatorFactory.getValidator());
 
-        credentialGenerator = new CredentialGenerator(mock(UserDao.class));
+        credentialGenerator = new CredentialGenerator(mock(UserRepository.class));
     }
 
     @AfterAll

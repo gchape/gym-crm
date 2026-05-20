@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
-import tech.provokedynamic.gymcrm.dao.TraineeDao;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Summary;
@@ -18,30 +16,31 @@ import tech.provokedynamic.gymcrm.entity.User;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.repository.TraineeRepository;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
 
     private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
-    private final TraineeDao traineeDao;
-    private final TrainerDao trainerDao;
+    private final TraineeRepository traineeRepository;
+    private final TrainerRepository trainerRepository;
     private final CredentialGenerator credentialGenerator;
 
     public TraineeServiceImpl(
-            TraineeDao traineeDao,
-            TrainerDao trainerDao,
+            TraineeRepository traineeRepository,
+            TrainerRepository trainerRepository,
             CredentialGenerator credentialGenerator
     ) {
-        this.traineeDao = traineeDao;
-        this.trainerDao = trainerDao;
+        this.trainerRepository = trainerRepository;
+        this.traineeRepository = traineeRepository;
         this.credentialGenerator = credentialGenerator;
     }
 
@@ -61,7 +60,7 @@ public class TraineeServiceImpl implements TraineeService {
                 .address(request.address())
                 .build();
 
-        traineeDao.save(trainee);
+        traineeRepository.save(trainee);
 
         log.info("Created trainee profile for username '{}'", username);
 
@@ -73,7 +72,7 @@ public class TraineeServiceImpl implements TraineeService {
     public Profile.Trainee getProfile(String username) {
         log.debug("Fetching profile for trainee '{}'", username);
 
-        var profile = traineeDao.findByUsername(username)
+        var profile = traineeRepository.findByUsername(username)
                 .map(Profile.Trainee::from)
                 .orElseThrow(() -> new UserDoesNotExistException(username));
 
@@ -89,7 +88,16 @@ public class TraineeServiceImpl implements TraineeService {
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainee '{}'", request.username());
 
-        traineeDao.updatePassword(request.username(), request.newPassword());
+        var trainee = traineeRepository.findByUsernameAndPassword(request.username(), request.password());
+
+        if (trainee.isPresent()) {
+            var updated = trainee.map(Trainee::toBuilder)
+                    .get()
+                    .password(request.newPassword())
+                    .build();
+
+            traineeRepository.save(updated);
+        } else throw new UserDoesNotExistException(request.username());
 
         log.debug("Password changed for trainee '{}'", request.username());
     }
@@ -101,17 +109,17 @@ public class TraineeServiceImpl implements TraineeService {
     public Profile.Trainee update(Request.UpdateTrainee request) {
         log.debug("Updating trainee profile for '{}'", request.username());
 
-        Trainee trainee = traineeDao.findByUsername(request.username())
+        var trainee = traineeRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        Trainee updated = trainee.toBuilder()
+        var updated = trainee.toBuilder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .dateOfBirth(request.dateOfBirth())
                 .address(request.address())
                 .build();
 
-        traineeDao.update(updated);
+        traineeRepository.save(updated);
 
         log.info("Updated trainee profile for username '{}'", request.username());
 
@@ -127,7 +135,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.debug("Activating trainee '{}'", username);
 
-        if (traineeDao.activateByUsername(username) == 0) {
+        if (traineeRepository.activateByUsername(username) == 0) {
             log.warn("Trainee '{}' is already active", username);
             throw new AlreadyActivatedException(username);
         }
@@ -144,7 +152,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.debug("Deactivating trainee '{}'", username);
 
-        if (traineeDao.deactivateByUsername(username) == 0) {
+        if (traineeRepository.deactivateByUsername(username) == 0) {
             log.warn("Trainee '{}' is already inactive", username);
             throw new AlreadyDeactivatedException(username);
         }
@@ -161,10 +169,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.debug("Deleting trainee '{}'", username);
 
-        Trainee trainee = traineeDao.findByUsername(username)
-                .orElseThrow(() -> new UserDoesNotExistException(username));
-
-        traineeDao.delete(trainee);
+        traineeRepository.deleteByUsername(request.username());
 
         log.info("Deleted trainee '{}'", username);
     }
@@ -181,7 +186,7 @@ public class TraineeServiceImpl implements TraineeService {
         log.debug("Fetching trainings for trainee '{}' [from={}, to={}, trainer={}, type={}]",
                 username, from, to, trainerUsername, trainingType);
 
-        var trainings = traineeDao.findTrainingsByUsername(username, from, to, trainerUsername, trainingType);
+        var trainings = traineeRepository.findTrainingsByUsername(username, from, to, trainerUsername, trainingType);
 
         log.debug("Found {} trainings for trainee '{}'", trainings.size(), username);
 
@@ -193,11 +198,18 @@ public class TraineeServiceImpl implements TraineeService {
     public List<Profile.Trainer> getUnassignedTrainers(String username) {
         log.debug("Fetching unassigned trainers for trainee '{}'", username);
 
-        var trainers = traineeDao.findUnassignedTrainers(username);
+        var trainee = traineeRepository.findWTrainersByUsername(username)
+                .orElseThrow(() -> new UserDoesNotExistException(username));
+
+        var ids = trainee.getTrainers().stream()
+                .map(Trainer::getId)
+                .collect(Collectors.toSet());
+
+        var trainers = trainerRepository.findAllByIdNotIn(ids);
 
         log.debug("Found {} unassigned trainers for trainee '{}'", trainers.size(), username);
 
-        return trainers;
+        return trainers.stream().map(Profile.Trainer::from).toList();
     }
 
     @Override
@@ -207,11 +219,11 @@ public class TraineeServiceImpl implements TraineeService {
     public List<Profile.Trainer> updateTrainers(Request.UpdateTraineeTrainers request) {
         log.debug("Updating trainers for trainee '{}'", request.username());
 
-        Trainee trainee = traineeDao.findByUsername(request.username())
+        var trainee = traineeRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        Set<String> usernames = new HashSet<>(request.trainerUsernames());
-        List<Trainer> newTrainers = trainerDao.findByUsernames(usernames);
+        var usernames = request.trainerUsernames();
+        var newTrainers = trainerRepository.findAllByUsernameIn(usernames);
 
         if (newTrainers.size() != usernames.size()) {
             log.warn("Some trainer usernames not found, requested={}, found={}",
@@ -221,10 +233,10 @@ public class TraineeServiceImpl implements TraineeService {
 
         trainee.getTrainers().clear();
         trainee.getTrainers().addAll(newTrainers);
-        traineeDao.update(trainee);
+        traineeRepository.save(trainee);
 
         log.info("Updated trainers for trainee '{}': {}", request.username(), usernames);
 
-        return traineeDao.findAssignedTrainers(request.username());
+        return newTrainers.stream().map(Profile.Trainer::from).toList();
     }
 }
