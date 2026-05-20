@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.validation.RequestValidator;
+import tech.provokedynamic.gymcrm.validation.Validator;
 
 @Aspect
 @Component
@@ -17,9 +17,9 @@ public class RequestValidationAspect implements Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(RequestValidationAspect.class);
 
-    private final RequestValidator validator;
+    private final Validator<Request> validator;
 
-    public RequestValidationAspect(RequestValidator validator) {
+    public RequestValidationAspect(Validator<Request> validator) {
         this.validator = validator;
     }
 

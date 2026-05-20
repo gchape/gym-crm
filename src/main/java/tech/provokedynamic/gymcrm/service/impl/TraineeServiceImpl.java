@@ -32,6 +32,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
+
     private final CredentialGenerator credentialGenerator;
 
     public TraineeServiceImpl(

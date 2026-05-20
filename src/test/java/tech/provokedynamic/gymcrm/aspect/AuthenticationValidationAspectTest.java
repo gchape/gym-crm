@@ -18,6 +18,7 @@ import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.service.impl.TraineeServiceImpl;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
+import tech.provokedynamic.gymcrm.util.RepositoryCredentialGenerator;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = {
         ServicePointcuts.class,
         AnnotationPointcuts.class,
+        RepositoryCredentialGenerator.class,
         AuthenticationValidationAspect.class,
         AuthenticationValidationAspectTest.AspectConfig.class,
         TraineeServiceImpl.class,

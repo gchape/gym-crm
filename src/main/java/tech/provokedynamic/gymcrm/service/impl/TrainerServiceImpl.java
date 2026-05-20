@@ -30,6 +30,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     private final TrainerRepository trainerRepository;
     private final TrainingTypeRepository trainingTypeRepository;
+    
     private final CredentialGenerator credentialGenerator;
 
     public TrainerServiceImpl(

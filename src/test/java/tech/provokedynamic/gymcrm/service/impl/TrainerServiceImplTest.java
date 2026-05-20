@@ -67,10 +67,14 @@ class TrainerServiceImplTest {
             var request = new Request.CreateTrainer("Alice", "Smith", "Yoga");
             var type = new TrainingType("Yoga");
 
-            when(credentialGenerator.generateUsername("Alice", "Smith")).thenReturn("Alice.Smith");
-            when(credentialGenerator.generatePassword()).thenReturn("pass123");
-            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.of(type));
-            when(trainerRepository.save(any(Trainer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(credentialGenerator.generateUsername("Alice", "Smith"))
+                    .thenReturn("Alice.Smith");
+            when(credentialGenerator.generatePassword())
+                    .thenReturn("pass123");
+            when(trainingTypeRepository.findByTrainingTypeName("Yoga"))
+                    .thenReturn(Optional.of(type));
+            when(trainerRepository.save(any(Trainer.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             Profile.Trainer profile = service.create(request);
 
@@ -83,9 +87,12 @@ class TrainerServiceImplTest {
         void create_unknownSpecialization() {
             var request = new Request.CreateTrainer("Alice", "Smith", "Unknown");
 
-            when(credentialGenerator.generateUsername(any(), any())).thenReturn("Alice.Smith");
-            when(credentialGenerator.generatePassword()).thenReturn("pass");
-            when(trainingTypeRepository.findByTrainingTypeName("Unknown")).thenReturn(Optional.empty());
+            when(credentialGenerator.generateUsername(any(), any()))
+                    .thenReturn("Alice.Smith");
+            when(credentialGenerator.generatePassword())
+                    .thenReturn("pass");
+            when(trainingTypeRepository.findByTrainingTypeName("Unknown"))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.create(request))
                     .isInstanceOf(TrainingTypeNotFoundException.class);
@@ -110,7 +117,8 @@ class TrainerServiceImplTest {
         @Test
         @DisplayName("throws UserDoesNotExistException when trainer not found")
         void getProfile_notFound() {
-            when(trainerRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+            when(trainerRepository.findByUsername("ghost"))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.getProfile("ghost"))
                     .isInstanceOf(UserDoesNotExistException.class);
@@ -129,7 +137,8 @@ class TrainerServiceImplTest {
 
             when(trainerRepository.findByUsernameAndPassword("Alice.Smith", "secret"))
                     .thenReturn(Optional.of(trainer));
-            when(trainerRepository.save(any(Trainer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(trainerRepository.save(any(Trainer.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             service.changePassword(request);
 
@@ -140,6 +149,7 @@ class TrainerServiceImplTest {
         @DisplayName("throws UserDoesNotExistException when credentials do not match")
         void changePassword_wrongCredentials() {
             var request = new Request.ChangePassword("Alice.Smith", "wrong", "newPass");
+
             when(trainerRepository.findByUsernameAndPassword("Alice.Smith", "wrong"))
                     .thenReturn(Optional.empty());
 
@@ -159,9 +169,12 @@ class TrainerServiceImplTest {
             var type = new TrainingType("Pilates");
             var request = new Request.UpdateTrainer("Alice.Smith", "aliceSmith", "Alice", "Jones", "Pilates");
 
-            when(trainerRepository.findByUsername("Alice.Smith")).thenReturn(Optional.of(trainer));
-            when(trainingTypeRepository.findByTrainingTypeName("Pilates")).thenReturn(Optional.of(type));
-            when(trainerRepository.save(any(Trainer.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(trainerRepository.findByUsername("Alice.Smith"))
+                    .thenReturn(Optional.of(trainer));
+            when(trainingTypeRepository.findByTrainingTypeName("Pilates"))
+                    .thenReturn(Optional.of(type));
+            when(trainerRepository.save(any(Trainer.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
 
             Profile.Trainer profile = service.update(request);
 
@@ -184,7 +197,8 @@ class TrainerServiceImplTest {
             when(trainerRepository.findByUsername("Alice.Smith"))
                     .thenReturn(Optional.of(buildTrainer()));
 
-            when(trainingTypeRepository.findByTrainingTypeName("Unknown")).thenReturn(Optional.empty());
+            when(trainingTypeRepository.findByTrainingTypeName("Unknown"))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() ->
                     service.update(new Request.UpdateTrainer("Alice.Smith", "aliceSmith", "A", "B", "Unknown")))
@@ -248,6 +262,7 @@ class TrainerServiceImplTest {
         @DisplayName("returns trainings list from repository")
         void getTrainings_success() {
             var summary = mock(Summary.Training.class);
+
             when(trainerRepository.findTrainingsByUsername("Alice.Smith", null, null, null))
                     .thenReturn(List.of(summary));
 
