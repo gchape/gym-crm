@@ -8,8 +8,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
-import tech.provokedynamic.gymcrm.util.CredentialGenerator;
+import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
 import tech.provokedynamic.gymcrm.validation.RequestValidator;
+import tech.provokedynamic.gymcrm.validation.Validator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,18 +21,18 @@ import static org.mockito.Mockito.mock;
 
 class RequestValidatorImplTest {
 
-    private static RequestValidator requestValidator;
-
     private static ValidatorFactory validatorFactory;
 
-    private static CredentialGenerator credentialGenerator;
+    private static Validator<Request> requestValidator;
+
+    private static DBCredentialGenerator credentialGenerator;
 
     @BeforeAll
     static void beforeAll() {
         validatorFactory = Validation.buildDefaultValidatorFactory();
-        requestValidator = new RequestValidatorImpl(validatorFactory.getValidator());
+        requestValidator = new RequestValidator(validatorFactory.getValidator());
 
-        credentialGenerator = new CredentialGenerator(mock(UserRepository.class));
+        credentialGenerator = new DBCredentialGenerator(mock(UserRepository.class));
     }
 
     @AfterAll
