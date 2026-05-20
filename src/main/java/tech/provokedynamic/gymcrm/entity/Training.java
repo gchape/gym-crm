@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public class Training {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(nullable = false, insertable = false)
+    @Column(nullable = false, updatable = false)
     private Long id;
 
     @NotNull
