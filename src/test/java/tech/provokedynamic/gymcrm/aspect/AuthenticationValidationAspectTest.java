@@ -10,12 +10,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
-import tech.provokedynamic.gymcrm.dao.TraineeDao;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dao.UserDao;
-import tech.provokedynamic.gymcrm.dao.impl.UserDaoImpl;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.exception.AuthenticationException;
+import tech.provokedynamic.gymcrm.repository.TraineeRepository;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.service.impl.TraineeServiceImpl;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.when;
         AuthenticationValidationAspect.class,
         AuthenticationValidationAspectTest.AspectConfig.class,
         TraineeServiceImpl.class,
-        UserDaoImpl.class
+        UserRepository.class
 })
 class AuthenticationValidationAspectTest {
 
@@ -41,20 +40,20 @@ class AuthenticationValidationAspectTest {
     private TraineeService traineeService;
 
     @MockitoBean
-    private TraineeDao traineeDao;
+    private TraineeRepository traineeRepository;
 
     @MockitoBean
-    private TrainerDao trainerDao;
+    private TrainerRepository trainerRepository;
 
     @MockitoBean
     private CredentialGenerator credentialGenerator;
 
     @MockitoBean
-    private UserDao userDao;
+    private UserRepository userRepository;
 
     @Test
     void authenticate_throws_whenCredentialsAreInvalid() {
-        when(userDao.existsByUsernameAndPassword("John.Doe", "password"))
+        when(userRepository.existsByUsernameAndPassword("John.Doe", "password"))
                 .thenReturn(false);
 
         var request = new Request.ToggleActive("John.Doe", "password");
@@ -62,15 +61,15 @@ class AuthenticationValidationAspectTest {
         assertThatThrownBy(() -> traineeService.activate(request))
                 .isInstanceOf(AuthenticationException.class);
 
-        verify(userDao).existsByUsernameAndPassword(any(), any());
+        verify(userRepository).existsByUsernameAndPassword(any(), any());
     }
 
     @Test
     void authenticate_doesNotThrow_whenCredentialsAreValid() {
-        when(userDao.existsByUsernameAndPassword("John.Doe", "password"))
+        when(userRepository.existsByUsernameAndPassword("John.Doe", "password"))
                 .thenReturn(true);
 
-        when(traineeDao.activateByUsername("John.Doe"))
+        when(traineeRepository.activateByUsername("John.Doe"))
                 .thenReturn(1);
 
         var request = new Request.ToggleActive("John.Doe", "password");

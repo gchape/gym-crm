@@ -3,7 +3,7 @@ package tech.provokedynamic.gymcrm.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import tech.provokedynamic.gymcrm.dao.UserDao;
+import tech.provokedynamic.gymcrm.repository.UserRepository;
 
 import java.security.SecureRandom;
 import java.util.Random;
@@ -17,22 +17,22 @@ public class CredentialGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(CredentialGenerator.class);
 
-    private final UserDao userDao;
+    private final UserRepository userRepository;
 
-    public CredentialGenerator(UserDao userDao) {
-        this.userDao = userDao;
+    public CredentialGenerator(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     public String generateUsername(String firstName, String lastName) {
         String base = firstName + "." + lastName;
 
-        if (!userDao.existsByUsernameIncludingDeleted(base)) {
+        if (!userRepository.existsByUsernameIncludingDeleted(base)) {
             log.debug("Generated username '{}'", base);
             return base;
         }
 
         int suffix = 1;
-        while (userDao.existsByUsernameIncludingDeleted(base + suffix)) {
+        while (userRepository.existsByUsernameIncludingDeleted(base + suffix)) {
             suffix++;
         }
 

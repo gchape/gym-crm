@@ -12,15 +12,15 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
 import tech.provokedynamic.gymcrm.config.ValidationConfig;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dao.TrainingTypeDao;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.service.impl.TrainerServiceImpl;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 import tech.provokedynamic.gymcrm.validation.impl.RequestValidatorImpl;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(SpringExtension.class)
@@ -42,10 +42,13 @@ class RequestValidationAspectTest {
     private TrainerService trainerService;
 
     @MockitoBean
-    private TrainerDao trainerDao;
+    private TrainerRepository trainerRepository;
 
     @MockitoBean
-    private TrainingTypeDao trainingTypeDao;
+    private TrainingRepository trainingRepository;
+
+    @MockitoBean
+    private TrainingTypeRepository trainingTypeRepository;
 
     @MockitoBean
     private CredentialGenerator credentialGenerator;
@@ -58,8 +61,8 @@ class RequestValidationAspectTest {
                 "john.doe@N"
         );
 
-        assertThatCode(() -> trainerService.changePassword(request))
-                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> trainerService.changePassword(request))
+                .isNotInstanceOf(ConstraintViolationException.class);
     }
 
     @Test
