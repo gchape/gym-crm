@@ -3,16 +3,14 @@ package tech.provokedynamic.gymcrm.validation;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import tech.provokedynamic.gymcrm.dto.Request;
 
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 public class RequestValidator implements Validator<Request> {
-
-    private final static Logger log = LoggerFactory.getLogger(RequestValidator.class);
 
     private final jakarta.validation.Validator validator;
 

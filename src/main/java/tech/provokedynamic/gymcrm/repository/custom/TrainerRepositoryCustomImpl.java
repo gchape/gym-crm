@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.repository.custom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
 import tech.provokedynamic.gymcrm.dto.Summary;
@@ -14,13 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class TrainerRepositoryCustomImpl implements TrainerRepositoryCustom {
 
     private final EntityManager em;
-
-    public TrainerRepositoryCustomImpl(EntityManager em) {
-        this.em = em;
-    }
 
     @Override
     public List<Summary.Training> findTrainingsByUsername(

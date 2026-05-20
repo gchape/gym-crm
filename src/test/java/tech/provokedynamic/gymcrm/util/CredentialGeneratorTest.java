@@ -17,7 +17,7 @@ class CredentialGeneratorTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private RepositoryCredentialGenerator credentialGenerator;
+    private DBCredentialGenerator credentialGenerator;
 
     @Test
     void generatePassword_returnsExactlyTenCharacters() {

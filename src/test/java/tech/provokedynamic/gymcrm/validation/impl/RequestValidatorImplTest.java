@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
-import tech.provokedynamic.gymcrm.util.RepositoryCredentialGenerator;
+import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
 import tech.provokedynamic.gymcrm.validation.RequestValidator;
 import tech.provokedynamic.gymcrm.validation.Validator;
 
@@ -25,14 +25,14 @@ class RequestValidatorImplTest {
 
     private static Validator<Request> requestValidator;
 
-    private static RepositoryCredentialGenerator credentialGenerator;
+    private static DBCredentialGenerator credentialGenerator;
 
     @BeforeAll
     static void beforeAll() {
         validatorFactory = Validation.buildDefaultValidatorFactory();
         requestValidator = new RequestValidator(validatorFactory.getValidator());
 
-        credentialGenerator = new RepositoryCredentialGenerator(mock(UserRepository.class));
+        credentialGenerator = new DBCredentialGenerator(mock(UserRepository.class));
     }
 
     @AfterAll

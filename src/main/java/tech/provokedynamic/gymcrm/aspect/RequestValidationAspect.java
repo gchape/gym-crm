@@ -1,5 +1,6 @@
 package tech.provokedynamic.gymcrm.aspect;
 
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -13,15 +14,12 @@ import tech.provokedynamic.gymcrm.validation.Validator;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class RequestValidationAspect implements Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(RequestValidationAspect.class);
 
     private final Validator<Request> validator;
-
-    public RequestValidationAspect(Validator<Request> validator) {
-        this.validator = validator;
-    }
 
     @Before("tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts.validateInService()")
     public void validate(@NonNull JoinPoint joinPoint) {

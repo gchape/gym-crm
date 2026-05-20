@@ -1,5 +1,6 @@
 package tech.provokedynamic.gymcrm.aspect;
 
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -12,17 +13,14 @@ import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
 
-@Component
 @Aspect
+@Component
+@RequiredArgsConstructor
 public class AuthenticationValidationAspect implements Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationValidationAspect.class);
 
     private final UserRepository userRepository;
-
-    public AuthenticationValidationAspect(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Before("tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts.authenticatedInService()")
     public void authenticate(@NonNull JoinPoint joinPoint) {
