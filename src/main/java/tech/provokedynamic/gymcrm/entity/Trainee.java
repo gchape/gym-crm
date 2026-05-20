@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.OnDeleteAction;
-import org.hibernate.jpa.AvailableHints;
 import tech.provokedynamic.gymcrm.model.Address;
 
 import java.time.LocalDate;
@@ -16,23 +15,14 @@ import java.util.Set;
 
 @Entity
 @Getter
-@DiscriminatorValue("trainee")
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.OnDelete(action = OnDeleteAction.CASCADE)
-@NamedEntityGraph(
-        name = "Trainee.withTrainers",
-        attributeNodes = @NamedAttributeNode(value = "trainers", subgraph = "trainers.specialization"),
-        subgraphs = @NamedSubgraph(
-                name = "trainers.specialization",
-                attributeNodes = @NamedAttributeNode("specialization")
-        )
-)
-@NamedQuery(
-        name = "Trainee.findWithTrainersByUsername",
-        query = "SELECT t FROM Trainee t WHERE t.username = :username",
-        hints = @QueryHint(name = AvailableHints.HINT_SPEC_FETCH_GRAPH, value = "Trainee.withTrainers")
-)
+@SuperBuilder(
+        toBuilder = true)
+@NoArgsConstructor(
+        access = AccessLevel.PROTECTED)
+@DiscriminatorValue(
+        value = "trainee")
+@org.hibernate.annotations.OnDelete(
+        action = OnDeleteAction.CASCADE)
 public class Trainee extends User {
     @ManyToMany
     @JoinTable(
@@ -41,6 +31,9 @@ public class Trainee extends User {
             inverseJoinColumns = @JoinColumn(name = "trainer_id")
     )
     private final Set<Trainer> trainers = new HashSet<>();
+
+    @OneToMany(mappedBy = "trainee")
+    private final Set<Training> trainings = new HashSet<>();
 
     @Nullable
     @Column(name = "dob")

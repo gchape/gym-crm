@@ -7,15 +7,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
-import tech.provokedynamic.gymcrm.dao.TrainerDao;
-import tech.provokedynamic.gymcrm.dao.TrainingTypeDao;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
+import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
@@ -27,17 +28,17 @@ public class TrainerServiceImpl implements TrainerService {
 
     private static final Logger log = LoggerFactory.getLogger(TrainerServiceImpl.class);
 
-    private final TrainerDao trainerDao;
-    private final TrainingTypeDao trainingTypeDao;
+    private final TrainerRepository trainerRepository;
+    private final TrainingTypeRepository trainingTypeRepository;
     private final CredentialGenerator credentialGenerator;
 
     public TrainerServiceImpl(
-            TrainerDao trainerDao,
-            TrainingTypeDao trainingTypeDao,
+            TrainerRepository trainerRepository,
+            TrainingTypeRepository trainingTypeRepository,
             CredentialGenerator credentialGenerator
     ) {
-        this.trainerDao = trainerDao;
-        this.trainingTypeDao = trainingTypeDao;
+        this.trainerRepository = trainerRepository;
+        this.trainingTypeRepository = trainingTypeRepository;
         this.credentialGenerator = credentialGenerator;
     }
 
@@ -47,7 +48,9 @@ public class TrainerServiceImpl implements TrainerService {
     public Profile.Trainer create(Request.CreateTrainer request) {
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
         var password = credentialGenerator.generatePassword();
-        var specialization = trainingTypeDao.findByName(request.specialization());
+
+        var specialization = trainingTypeRepository.findByTrainingTypeName(request.specialization())
+                .orElseThrow(() -> new TrainingTypeNotFoundException(request.specialization()));
 
         var trainer = Trainer.builder()
                 .firstName(request.firstName())
@@ -57,7 +60,7 @@ public class TrainerServiceImpl implements TrainerService {
                 .specialization(specialization)
                 .build();
 
-        trainerDao.save(trainer);
+        trainerRepository.save(trainer);
 
         log.info("Created trainer profile for username '{}'", username);
 
@@ -69,7 +72,7 @@ public class TrainerServiceImpl implements TrainerService {
     public Profile.Trainer getProfile(String username) {
         log.debug("Fetching profile for trainer '{}'", username);
 
-        var profile = trainerDao.findByUsername(username)
+        var profile = trainerRepository.findByUsername(username)
                 .map(Profile.Trainer::from)
                 .orElseThrow(() -> new UserDoesNotExistException(username));
 
@@ -85,7 +88,16 @@ public class TrainerServiceImpl implements TrainerService {
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainer '{}'", request.username());
 
-        trainerDao.updatePassword(request.username(), request.newPassword());
+        var trainee = trainerRepository.findByUsernameAndPassword(request.username(), request.password());
+
+        if (trainee.isPresent()) {
+            var updated = trainee.map(Trainer::toBuilder)
+                    .get()
+                    .password(request.newPassword())
+                    .build();
+
+            trainerRepository.save(updated);
+        } else throw new UserDoesNotExistException(request.username());
 
         log.debug("Password changed for trainer '{}'", request.username());
     }
@@ -97,18 +109,19 @@ public class TrainerServiceImpl implements TrainerService {
     public Profile.Trainer update(Request.UpdateTrainer request) {
         log.debug("Updating trainer profile for '{}'", request.username());
 
-        Trainer trainer = trainerDao.findByUsername(request.username())
+        var trainer = trainerRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        var specialization = trainingTypeDao.findByName(request.specialization());
+        var specialization = trainingTypeRepository.findByTrainingTypeName(request.specialization())
+                .orElseThrow(() -> new TrainingTypeNotFoundException(request.specialization()));
 
-        Trainer updated = trainer.toBuilder()
+        var updated = trainer.toBuilder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .specialization(specialization)
                 .build();
 
-        trainerDao.update(updated);
+        trainerRepository.save(updated);
 
         log.info("Updated trainer profile for username '{}'", request.username());
 
@@ -122,7 +135,7 @@ public class TrainerServiceImpl implements TrainerService {
     public void activate(Request.ToggleActive request) {
         String username = request.username();
 
-        if (trainerDao.activateByUsername(username) == 0) {
+        if (trainerRepository.activateByUsername(username) == 0) {
             log.warn("Trainer '{}' is already active", username);
             throw new AlreadyActivatedException(username);
         }
@@ -137,7 +150,7 @@ public class TrainerServiceImpl implements TrainerService {
     public void deactivate(Request.ToggleActive request) {
         String username = request.username();
 
-        if (trainerDao.deactivateByUsername(username) == 0) {
+        if (trainerRepository.deactivateByUsername(username) == 0) {
             log.warn("Trainer '{}' is already inactive", username);
             throw new AlreadyDeactivatedException(username);
         }
@@ -155,8 +168,11 @@ public class TrainerServiceImpl implements TrainerService {
     ) {
         log.debug("Fetching trainings for trainer '{}' [from={}, to={}, trainee={}]",
                 username, from, to, traineeUsername);
-        var trainings = trainerDao.findTrainingsByUsername(username, from, to, traineeUsername);
+
+        var trainings = trainerRepository.findTrainingsByUsername(username, from, to, traineeUsername);
+
         log.debug("Found {} trainings for trainer '{}'", trainings.size(), username);
+
         return trainings;
     }
 }

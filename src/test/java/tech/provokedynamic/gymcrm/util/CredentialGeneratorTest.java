@@ -5,7 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.provokedynamic.gymcrm.dao.UserDao;
+import tech.provokedynamic.gymcrm.repository.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 class CredentialGeneratorTest {
 
     @Mock
-    private UserDao userDao;
+    private UserRepository userRepository;
 
     @InjectMocks
     private CredentialGenerator credentialGenerator;
@@ -40,7 +40,7 @@ class CredentialGeneratorTest {
         var lastName = "Doe";
         var base = firstName + "." + lastName;
 
-        when(userDao.existsByUsernameIncludingDeleted(base)).thenReturn(false);
+        when(userRepository.existsByUsernameIncludingDeleted(base)).thenReturn(false);
 
         var result = credentialGenerator.generateUsername(firstName, lastName);
 
@@ -53,8 +53,8 @@ class CredentialGeneratorTest {
         var lastName = "Doe";
         var base = firstName + "." + lastName;
 
-        when(userDao.existsByUsernameIncludingDeleted(base)).thenReturn(true);
-        when(userDao.existsByUsernameIncludingDeleted(base + "1")).thenReturn(false);
+        when(userRepository.existsByUsernameIncludingDeleted(base)).thenReturn(true);
+        when(userRepository.existsByUsernameIncludingDeleted(base + "1")).thenReturn(false);
 
         var result = credentialGenerator.generateUsername(firstName, lastName);
 
@@ -67,9 +67,9 @@ class CredentialGeneratorTest {
         var lastName = "Doe";
         var base = firstName + "." + lastName;
 
-        when(userDao.existsByUsernameIncludingDeleted(base)).thenReturn(true);
-        when(userDao.existsByUsernameIncludingDeleted(base + "1")).thenReturn(true);
-        when(userDao.existsByUsernameIncludingDeleted(base + "2")).thenReturn(false);
+        when(userRepository.existsByUsernameIncludingDeleted(base)).thenReturn(true);
+        when(userRepository.existsByUsernameIncludingDeleted(base + "1")).thenReturn(true);
+        when(userRepository.existsByUsernameIncludingDeleted(base + "2")).thenReturn(false);
 
         var result = credentialGenerator.generateUsername(firstName, lastName);
 
