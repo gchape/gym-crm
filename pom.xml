@@ -17,10 +17,12 @@
 
         <spring.version>7.0.7</spring.version>
         <spring-data-jpa.version>4.0.5</spring-data-jpa.version>
+        <springdoc.openapi.version>3.0.3</springdoc.openapi.version>
         <hibernate.version>7.3.4.Final</hibernate.version>
         <hibernate.validator.version>9.1.0.Final</hibernate.validator.version>
         <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
         <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
+        <jakarta.servler-api.version>6.1.0</jakarta.servler-api.version>
         <postgresql.version>42.7.11</postgresql.version>
 
         <lombok.version>1.18.46</lombok.version>
@@ -81,6 +83,17 @@
             <artifactId>spring-data-jpa</artifactId>
             <version>${spring-data-jpa.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- SpringDoc -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.openapi.version}</version>
+        </dependency>
 
         <!-- Lombok -->
         <dependency>
@@ -133,6 +146,11 @@
         </dependency>
 
         <!-- Jakarta -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servler-api.version}</version>
+        </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
