@@ -107,4 +107,7 @@ public sealed interface Response {
             );
         }
     }
+
+    record TrainingType(Long id, String trainingTypeName) {
+    }
 }
