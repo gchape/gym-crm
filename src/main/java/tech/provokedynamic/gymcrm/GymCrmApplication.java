@@ -27,6 +27,7 @@ public class GymCrmApplication {
             "tech.provokedynamic.gymcrm.aspect",
             "tech.provokedynamic.gymcrm.validation",
             "tech.provokedynamic.gymcrm.service",
+            "tech.provokedynamic.gymcrm.controller",
             "tech.provokedynamic.gymcrm.config",
     };
 
