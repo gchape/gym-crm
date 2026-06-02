@@ -146,6 +146,15 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
     ) implements Request, Authenticated {
     }
 
+    record ToggleActive2(
+            @NotBlank(message = "Password is required")
+            String password,
+
+            @NotNull(message = "isActive is required")
+            Boolean isActive
+    ) {
+    }
+
     record AddTraining(
             @NotBlank(message = "Trainee username is required")
             String traineeUsername,
