@@ -79,4 +79,32 @@ public sealed interface Response {
             );
         }
     }
+
+    record TraineeSummary(
+            String username,
+            String firstName,
+            String lastName
+    ) {
+        public static TraineeSummary from(Profile.Trainee profile) {
+            return new TraineeSummary(profile.username(), profile.firstName(), profile.lastName());
+        }
+    }
+
+    record TrainerProfile(
+            String firstName,
+            String lastName,
+            String specialization,
+            boolean isActive,
+            List<TraineeSummary> trainees
+    ) {
+        public static TrainerProfile from(Profile.Trainer profile) {
+            return new TrainerProfile(
+                    profile.firstName(),
+                    profile.lastName(),
+                    profile.specialization(),
+                    true,
+                    List.of()
+            );
+        }
+    }
 }
