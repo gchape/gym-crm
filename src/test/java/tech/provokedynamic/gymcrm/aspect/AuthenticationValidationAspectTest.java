@@ -58,7 +58,7 @@ class AuthenticationValidationAspectTest {
         when(userRepository.existsByUsernameAndPassword("John.Doe", "password"))
                 .thenReturn(false);
 
-        var request = new Request.ToggleActive("John.Doe", "password");
+        var request = new Request.ToggleActive("John.Doe", "password", true);
 
         assertThatThrownBy(() -> traineeService.activate(request))
                 .isInstanceOf(AuthenticationException.class);
@@ -74,7 +74,7 @@ class AuthenticationValidationAspectTest {
         when(traineeRepository.activateByUsername("John.Doe"))
                 .thenReturn(1);
 
-        var request = new Request.ToggleActive("John.Doe", "password");
+        var request = new Request.ToggleActive("John.Doe", "password", true);
 
         assertThatCode(() -> traineeService.activate(request))
                 .doesNotThrowAnyException();
