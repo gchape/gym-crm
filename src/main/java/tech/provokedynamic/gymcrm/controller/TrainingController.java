@@ -29,22 +29,14 @@ public class TrainingController {
             @ApiResponse(responseCode = "200", description = "Training added"),
             @ApiResponse(responseCode = "400", description = "Validation error"),
             @ApiResponse(responseCode = "401", description = "Authentication failed"),
-            @ApiResponse(responseCode = "404", description = "Trainee, trainer, or training type not found")
+            @ApiResponse(responseCode = "404", description = "Trainee or trainer not found")
     })
     @PostMapping
     public ResponseEntity<Void> add(@Valid @RequestBody Request.AddTraining body) {
         log.info("POST /api/trainings - trainee={} trainer={} name={}",
                 body.traineeUsername(), body.trainerUsername(), body.trainingName());
 
-        trainingService.add(new Request.AddTraining(
-                body.traineeUsername(),
-                body.traineePassword(),
-                body.trainerUsername(),
-                body.trainingName(),
-                body.trainingType(),
-                body.trainingDate(),
-                body.trainingDuration()
-        ));
+        trainingService.add(body);
 
         log.info("POST /api/trainings - added successfully");
         return ResponseEntity.ok().build();

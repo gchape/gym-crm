@@ -4,13 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.UserService;
@@ -44,6 +44,23 @@ public class UserController {
         }
 
         log.info("GET /api/login - success username={}", username);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Change login password")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Authentication failed"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @PutMapping("/api/login")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody Request.ChangePassword body) {
+        log.info("PUT /api/login - changing password username={}", body.username());
+
+        userService.updatePassword(body);
+
+        log.info("PUT /api/login - password changed username={}", body.username());
         return ResponseEntity.ok().build();
     }
 
