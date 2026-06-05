@@ -46,4 +46,7 @@ public abstract class User {
     @NotNull
     @Setter
     private String password;
+
+    @Column(name = "is_active", insertable = false, updatable = false)
+    private boolean isActive;
 }
