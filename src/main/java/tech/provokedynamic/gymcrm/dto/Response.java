@@ -29,6 +29,16 @@ public sealed interface Response {
         }
     }
 
+    record TraineeSummary(
+            String username,
+            String firstName,
+            String lastName
+    ) {
+        public static TraineeSummary from(Profile.Trainee profile) {
+            return new TraineeSummary(profile.username(), profile.firstName(), profile.lastName());
+        }
+    }
+
     record TraineeProfile(
             String firstName,
             String lastName,
@@ -37,14 +47,36 @@ public sealed interface Response {
             boolean isActive,
             List<TrainerSummary> trainers
     ) implements Response {
+
         public static TraineeProfile from(Profile.Trainee profile) {
             return new TraineeProfile(
                     profile.firstName(),
                     profile.lastName(),
                     profile.dateOfBirth(),
                     profile.address(),
-                    true,
-                    List.of()
+                    profile.isActive(),
+                    profile.trainers().stream().map(TrainerSummary::from).toList()
+            );
+        }
+    }
+
+    record TrainerProfile(
+            String username,
+            String firstName,
+            String lastName,
+            String specialization,
+            boolean isActive,
+            List<TraineeSummary> trainees
+    ) implements Response {
+
+        public static TrainerProfile from(Profile.Trainer profile) {
+            return new TrainerProfile(
+                    profile.username(),
+                    profile.firstName(),
+                    profile.lastName(),
+                    profile.specialization(),
+                    profile.isActive(),
+                    profile.trainees().stream().map(TraineeSummary::from).toList()
             );
         }
     }
@@ -56,12 +88,13 @@ public sealed interface Response {
             Integer trainingDuration,
             String trainerName,
             String traineeName
-    ) {
+    ) implements Response {
+
         public static TrainingSummary fromTrainee(Summary.Training training) {
             return new TrainingSummary(
                     training.trainingName(),
                     training.trainingDate(),
-                    null,
+                    training.trainingType(),
                     training.trainingDuration(),
                     training.trainerUsername(),
                     null
@@ -72,42 +105,14 @@ public sealed interface Response {
             return new TrainingSummary(
                     training.trainingName(),
                     training.trainingDate(),
-                    null,
+                    training.trainingType(),
                     training.trainingDuration(),
                     null,
-                    training.trainerUsername()
+                    training.traineeUsername()
             );
         }
     }
 
-    record TraineeSummary(
-            String username,
-            String firstName,
-            String lastName
-    ) {
-        public static TraineeSummary from(Profile.Trainee profile) {
-            return new TraineeSummary(profile.username(), profile.firstName(), profile.lastName());
-        }
-    }
-
-    record TrainerProfile(
-            String firstName,
-            String lastName,
-            String specialization,
-            boolean isActive,
-            List<TraineeSummary> trainees
-    ) {
-        public static TrainerProfile from(Profile.Trainer profile) {
-            return new TrainerProfile(
-                    profile.firstName(),
-                    profile.lastName(),
-                    profile.specialization(),
-                    true,
-                    List.of()
-            );
-        }
-    }
-
-    record TrainingType(Long id, String trainingTypeName) {
+    record TrainingType(Long id, String trainingTypeName) implements Response {
     }
 }
