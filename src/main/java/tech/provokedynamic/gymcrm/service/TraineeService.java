@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.service;
 import jakarta.annotation.Nullable;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 
 import java.time.LocalDate;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public interface TraineeService {
 
-    Profile.Trainee create(Request.CreateTrainee request);
+    Response.CreatedUser create(Request.CreateTrainee request);
 
     Profile.Trainee getProfile(String username);
 
