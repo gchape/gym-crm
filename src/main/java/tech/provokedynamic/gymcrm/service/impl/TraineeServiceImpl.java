@@ -9,6 +9,7 @@ import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
@@ -38,7 +39,7 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @Validate
     @Transactional
-    public Profile.Trainee create(Request.CreateTrainee request) {
+    public Response.CreatedUser create(Request.CreateTrainee request) {
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
         var password = credentialGenerator.generatePassword();
 
@@ -55,7 +56,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.info("Created trainee profile for username '{}'", username);
 
-        return Profile.Trainee.from(trainee);
+        return new Response.CreatedUser(username, password);
     }
 
     @Override

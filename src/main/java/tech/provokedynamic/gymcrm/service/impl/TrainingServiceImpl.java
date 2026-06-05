@@ -8,12 +8,10 @@ import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Training;
-import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
-import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainingService;
 
 @Slf4j
@@ -24,7 +22,6 @@ public class TrainingServiceImpl implements TrainingService {
     private final TrainingRepository trainingRepository;
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
-    private final TrainingTypeRepository trainingTypeRepository;
 
     @Override
     @Validate
@@ -40,13 +37,10 @@ public class TrainingServiceImpl implements TrainingService {
         var trainer = trainerRepository.findByUsername(request.trainerUsername())
                 .orElseThrow(() -> new UserDoesNotExistException(request.trainerUsername()));
 
-        var trainingType = trainingTypeRepository.findByTrainingTypeName(request.trainingType())
-                .orElseThrow(() -> new TrainingTypeNotFoundException(request.trainingType()));
-
         var training = Training.builder()
                 .trainee(trainee)
                 .trainer(trainer)
-                .trainingType(trainingType)
+                .trainingType(trainer.getSpecialization())
                 .trainingName(request.trainingName())
                 .trainingDate(request.trainingDate())
                 .trainingDuration(request.trainingDuration())
