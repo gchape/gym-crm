@@ -12,12 +12,10 @@ import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
-import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
-import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -39,20 +37,16 @@ class TrainingServiceImplTest {
     @Mock
     TrainerRepository trainerRepository;
 
-    @Mock
-    TrainingTypeRepository trainingTypeRepository;
-
     @InjectMocks
     TrainingServiceImpl service;
 
     private Request.AddTraining validRequest() {
         return new Request.AddTraining(
                 "trainee1",
-                "trainer111",
+                "pass123456",   // traineePassword
                 "trainer1",
                 "Morning Yoga",
-                "Yoga",
-                LocalDate.of(2024, 6, 1),
+                LocalDate.of(2025, 8, 1),  // future-or-present
                 60
         );
     }
@@ -62,26 +56,46 @@ class TrainingServiceImplTest {
     class Add {
 
         @Test
-        @DisplayName("persists training when all referenced entities exist")
+        @DisplayName("persists training when trainee and trainer both exist")
         void add_success() {
             var trainee = mock(Trainee.class);
             var trainer = mock(Trainer.class);
-            var type = new TrainingType("Yoga");
+            var type = mock(TrainingType.class);
+            when(trainer.getSpecialization()).thenReturn(type);
 
             when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
             when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
-            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.of(type));
             when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
 
             service.add(validRequest());
 
             verify(trainingRepository).save(argThat(t ->
-                    t.getTrainee() == trainee &&
-                            t.getTrainer() == trainer &&
-                            t.getTrainingType() == type &&
-                            "Morning Yoga".equals(t.getTrainingName()) &&
-                            t.getTrainingDuration() == 60
+                    t.getTrainee() == trainee
+                            && t.getTrainer() == trainer
+                            && t.getTrainingType() == type
+                            && "Morning Yoga".equals(t.getTrainingName())
+                            && LocalDate.of(2025, 8, 1).equals(t.getTrainingDate())
+                            && t.getTrainingDuration() == 60
             ));
+        }
+
+        @Test
+        @DisplayName("uses trainer's specialization as the training type — no separate type lookup")
+        void add_trainingTypeComesFromTrainerSpecialization() {
+            var trainee = mock(Trainee.class);
+            var trainer = mock(Trainer.class);
+            var yoga = mock(TrainingType.class);
+            when(trainer.getSpecialization()).thenReturn(yoga);
+
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
+            when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.add(validRequest());
+
+            // specialization must be read exactly once to populate the saved entity
+            verify(trainer, times(1)).getSpecialization();
+            verify(trainingRepository).save(argThat(t -> t.getTrainingType() == yoga));
         }
 
         @Test
@@ -92,7 +106,7 @@ class TrainingServiceImplTest {
             assertThatThrownBy(() -> service.add(validRequest()))
                     .isInstanceOf(UserDoesNotExistException.class);
 
-            verifyNoInteractions(trainerRepository, trainingTypeRepository, trainingRepository);
+            verifyNoInteractions(trainerRepository, trainingRepository);
         }
 
         @Test
@@ -104,40 +118,30 @@ class TrainingServiceImplTest {
             assertThatThrownBy(() -> service.add(validRequest()))
                     .isInstanceOf(UserDoesNotExistException.class);
 
-            verifyNoInteractions(trainingTypeRepository, trainingRepository);
-        }
-
-        @Test
-        @DisplayName("throws TrainingTypeNotFoundException when training type not found")
-        void add_typeNotFound() {
-            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(mock(Trainee.class)));
-            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(mock(Trainer.class)));
-            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.add(validRequest()))
-                    .isInstanceOf(TrainingTypeNotFoundException.class);
-
             verifyNoInteractions(trainingRepository);
         }
 
         @Test
-        @DisplayName("sets correct training date and duration on saved entity")
-        void add_trainingDateAndDuration() {
-            var trainee = mock(Trainee.class);
-            var trainer = mock(Trainer.class);
-            var type = new TrainingType("Yoga");
+        @DisplayName("does not save anything when trainee lookup fails")
+        void add_noSaveWhenTraineeMissing() {
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.empty());
 
-            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
-            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
-            when(trainingTypeRepository.findByTrainingTypeName("Yoga")).thenReturn(Optional.of(type));
-            when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
+            assertThatThrownBy(() -> service.add(validRequest()))
+                    .isInstanceOf(UserDoesNotExistException.class);
 
-            service.add(validRequest());
+            verify(trainingRepository, never()).save(any());
+        }
 
-            verify(trainingRepository).save(argThat(t ->
-                    LocalDate.of(2024, 6, 1).equals(t.getTrainingDate()) &&
-                            t.getTrainingDuration() == 60
-            ));
+        @Test
+        @DisplayName("does not save anything when trainer lookup fails")
+        void add_noSaveWhenTrainerMissing() {
+            when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(mock(Trainee.class)));
+            when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.add(validRequest()))
+                    .isInstanceOf(UserDoesNotExistException.class);
+
+            verify(trainingRepository, never()).save(any());
         }
     }
 }
