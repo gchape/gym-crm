@@ -40,12 +40,10 @@ public class TrainerController {
     public ResponseEntity<Response.CreatedUser> register(@Valid @RequestBody Request.CreateTrainer body) {
         log.info("POST /api/trainers - registering trainer firstName={} lastName={}", body.firstName(), body.lastName());
 
-        var request = new Request.CreateTrainer(body.firstName(), body.lastName(), body.specialization());
-        var profile = trainerService.create(request);
+        var credentials = trainerService.create(body);
 
-        log.info("POST /api/trainers - trainer registered username={}", profile.username());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new Response.CreatedUser(profile.username(), null));
+        log.info("POST /api/trainers - trainer registered username={}", credentials.username());
+        return ResponseEntity.status(HttpStatus.CREATED).body(credentials);
     }
 
     @Operation(summary = "Get trainer profile by username")
@@ -59,15 +57,15 @@ public class TrainerController {
         log.info("GET /api/trainers/{} - fetching profile", username);
 
         var profile = trainerService.getProfile(username);
-        var response = Response.TrainerProfile.from(profile);
 
         log.info("GET /api/trainers/{} - profile returned", username);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Response.TrainerProfile.from(profile));
     }
 
     @Operation(summary = "Update trainer profile")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profile updated"),
+            @ApiResponse(responseCode = "200", description = "Profile updated",
+                    content = @Content(schema = @Schema(implementation = Response.TrainerProfile.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
             @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content)
@@ -81,7 +79,7 @@ public class TrainerController {
         var request = new Request.UpdateTrainer(
                 username, body.password(),
                 body.firstName(), body.lastName(),
-                body.specialization());
+                body.specialization(), body.isActive());
         var profile = trainerService.update(request);
 
         log.info("PUT /api/trainers/{} - profile updated", username);
@@ -89,6 +87,11 @@ public class TrainerController {
     }
 
     @Operation(summary = "Change trainer password")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content)
+    })
     @PutMapping("/{username}/password")
     public ResponseEntity<Void> changePassword(
             @PathVariable String username,
@@ -101,14 +104,20 @@ public class TrainerController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Activate or deactivate a trainer")
+    @Operation(summary = "Activate or deactivate a trainer (not idempotent)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status updated"),
+            @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Already in requested state", content = @Content)
+    })
     @PatchMapping("/{username}/active")
-    public ResponseEntity<Void> toggleActive(
+    public ResponseEntity<Void> setActive(
             @PathVariable String username,
-            @Valid @RequestBody Request.ToggleActive2 body) {
+            @Valid @RequestBody Request.ToggleActive body) {
         log.info("PATCH /api/trainers/{}/active - isActive={}", username, body.isActive());
 
-        var req = new Request.ToggleActive(username, body.password());
+        var req = new Request.ToggleActive(username, body.password(), body.isActive());
         if (body.isActive()) {
             trainerService.activate(req);
         } else {
@@ -120,6 +129,10 @@ public class TrainerController {
     }
 
     @Operation(summary = "Get trainer's training list")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trainings returned"),
+            @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content)
+    })
     @GetMapping("/{username}/trainings")
     public ResponseEntity<List<Response.TrainingSummary>> getTrainings(
             @PathVariable String username,

@@ -15,7 +15,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.service.TraineeService;
@@ -42,40 +41,25 @@ public class TraineeController {
     public ResponseEntity<Response.CreatedUser> register(@Valid @RequestBody Request.CreateTrainee body) {
         log.info("POST /api/trainees - registering trainee firstName={} lastName={}", body.firstName(), body.lastName());
 
-        var request = new Request.CreateTrainee(
-                body.firstName(), body.lastName(), body.dateOfBirth(), body.address());
+        var credentials = traineeService.create(body);
 
-        var profile = traineeService.create(request);
-
-        log.info("POST /api/trainees - trainee registered username={}", profile.username());
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new Response.CreatedUser(profile.username(), null));
+        log.info("POST /api/trainees - trainee registered username={}", credentials.username());
+        return ResponseEntity.status(HttpStatus.CREATED).body(credentials);
     }
 
     @Operation(summary = "Get trainee profile by username")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Profile found",
-                    content = @Content(schema = @Schema(implementation = Profile.Trainee.class))),
+                    content = @Content(schema = @Schema(implementation = Response.TraineeProfile.class))),
             @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
     })
     @GetMapping("/{username}")
     public ResponseEntity<Response.TraineeProfile> getProfile(
-            @Parameter(description = "Trainee username")
-            @PathVariable String username
-    ) {
+            @Parameter(description = "Trainee username") @PathVariable String username) {
         log.info("GET /api/trainees/{} - fetching profile", username);
 
         var profile = traineeService.getProfile(username);
-        var trainers = traineeService.getUnassignedTrainers(username);
-        var response = new Response.TraineeProfile(
-                profile.firstName(),
-                profile.lastName(),
-                profile.dateOfBirth(),
-                profile.address(),
-                true,
-                trainers.stream().map(Response.TrainerSummary::from).toList()
-        );
+        var response = Response.TraineeProfile.from(profile);
 
         log.info("GET /api/trainees/{} - profile returned", username);
         return ResponseEntity.ok(response);
@@ -83,7 +67,8 @@ public class TraineeController {
 
     @Operation(summary = "Update trainee profile")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profile updated"),
+            @ApiResponse(responseCode = "200", description = "Profile updated",
+                    content = @Content(schema = @Schema(implementation = Response.TraineeProfile.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
             @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
@@ -97,15 +82,15 @@ public class TraineeController {
         var request = new Request.UpdateTrainee(
                 username, body.password(),
                 body.firstName(), body.lastName(),
-                body.dateOfBirth(), body.address());
+                body.dateOfBirth(), body.address(),
+                body.isActive());
         var profile = traineeService.update(request);
-        var response = Response.TraineeProfile.from(profile);
 
         log.info("PUT /api/trainees/{} - profile updated", username);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Response.TraineeProfile.from(profile));
     }
 
-    @Operation(summary = "Delete trainee profile")
+    @Operation(summary = "Delete trainee profile (hard delete, cascades trainings)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Trainee deleted"),
             @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
@@ -141,19 +126,20 @@ public class TraineeController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Activate or deactivate a trainee")
+    @Operation(summary = "Activate or deactivate a trainee (not idempotent)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status updated"),
             @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Already in requested state", content = @Content)
     })
     @PatchMapping("/{username}/active")
-    public ResponseEntity<Void> toggleActive(
+    public ResponseEntity<Void> setActive(
             @PathVariable String username,
-            @Valid @RequestBody Request.ToggleActive2 body) {
+            @Valid @RequestBody Request.ToggleActive body) {
         log.info("PATCH /api/trainees/{}/active - isActive={}", username, body.isActive());
 
-        var req = new Request.ToggleActive(username, body.password());
+        var req = new Request.ToggleActive(username, body.password(), body.isActive());
         if (body.isActive()) {
             traineeService.activate(req);
         } else {
@@ -165,6 +151,10 @@ public class TraineeController {
     }
 
     @Operation(summary = "Get trainee's training list")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trainings returned"),
+            @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
+    })
     @GetMapping("/{username}/trainings")
     public ResponseEntity<List<Response.TrainingSummary>> getTrainings(
             @PathVariable String username,
@@ -183,7 +173,11 @@ public class TraineeController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get trainers not assigned to this trainee")
+    @Operation(summary = "Get active trainers not assigned to this trainee")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Unassigned trainers returned"),
+            @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
+    })
     @GetMapping("/{username}/unassigned-trainers")
     public ResponseEntity<List<Response.TrainerSummary>> getUnassignedTrainers(
             @PathVariable String username) {
@@ -197,6 +191,12 @@ public class TraineeController {
     }
 
     @Operation(summary = "Update trainee's trainer list")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Trainer list updated"),
+            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
+            @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Trainee or trainer not found", content = @Content)
+    })
     @PutMapping("/{username}/trainers")
     public ResponseEntity<List<Response.TrainerSummary>> updateTrainers(
             @PathVariable String username,
