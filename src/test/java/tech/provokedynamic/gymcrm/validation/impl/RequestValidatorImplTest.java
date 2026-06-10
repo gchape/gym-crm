@@ -31,7 +31,6 @@ class RequestValidatorImplTest {
     static void beforeAll() {
         validatorFactory = Validation.buildDefaultValidatorFactory();
         requestValidator = new RequestValidator(validatorFactory.getValidator());
-
         credentialGenerator = new DBCredentialGenerator(mock(UserRepository.class));
     }
 
@@ -181,7 +180,6 @@ class RequestValidatorImplTest {
                 credentialGenerator.generatePassword(),
                 "Jane.Smith",
                 "Morning Session",
-                "YOGA",
                 LocalDate.now(),
                 60
         );
@@ -196,7 +194,6 @@ class RequestValidatorImplTest {
                 credentialGenerator.generatePassword(),
                 "Jane.Smith",
                 "Morning Session",
-                "YOGA",
                 LocalDate.now().minusDays(1),
                 60
         );
@@ -207,13 +204,11 @@ class RequestValidatorImplTest {
 
     @Test
     void validate_throws_whenAddTrainingDurationExceedsMax() {
-        @SuppressWarnings("DataFlowIssue")
         var request = new Request.AddTraining(
                 "John.Doe",
                 credentialGenerator.generatePassword(),
                 "Jane.Smith",
                 "Morning Session",
-                "YOGA",
                 LocalDate.now(),
                 481
         );
@@ -224,13 +219,11 @@ class RequestValidatorImplTest {
 
     @Test
     void validate_throws_whenAddTrainingDurationIsZero() {
-        @SuppressWarnings("DataFlowIssue")
         var request = new Request.AddTraining(
                 "John.Doe",
                 credentialGenerator.generatePassword(),
                 "Jane.Smith",
                 "Morning Session",
-                "YOGA",
                 LocalDate.now(),
                 0
         );
@@ -246,7 +239,6 @@ class RequestValidatorImplTest {
                 credentialGenerator.generatePassword(),
                 "Jane.Smith",
                 "A".repeat(101),
-                "YOGA",
                 LocalDate.now(),
                 60
         );

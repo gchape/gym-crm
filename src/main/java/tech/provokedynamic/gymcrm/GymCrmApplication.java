@@ -1,10 +1,11 @@
 package tech.provokedynamic.gymcrm;
 
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.context.annotation.PropertySource;
+import org.springdoc.core.configuration.SpringDocConfiguration;
+import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
+import org.springdoc.webmvc.ui.SwaggerConfig;
+import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration(
         proxyBeanMethods = false)
@@ -13,13 +14,20 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = {
         "tech.provokedynamic.gymcrm.repository"
 })
+@Import(value = {
+        SpringDocConfiguration.class,
+        SpringDocWebMvcConfiguration.class,
+        SwaggerConfig.class
+})
 @EnableAspectJAutoProxy
+@EnableWebMvc
 public class GymCrmApplication {
 
     private static final String[] basePackages = {
             "tech.provokedynamic.gymcrm.aspect",
             "tech.provokedynamic.gymcrm.validation",
             "tech.provokedynamic.gymcrm.service",
+            "tech.provokedynamic.gymcrm.controller",
             "tech.provokedynamic.gymcrm.config",
     };
 
