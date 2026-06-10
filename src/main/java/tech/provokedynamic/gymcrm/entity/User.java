@@ -2,10 +2,7 @@ package tech.provokedynamic.gymcrm.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static jakarta.persistence.GenerationType.SEQUENCE;
@@ -47,5 +44,9 @@ public abstract class User {
     private String username;
 
     @NotNull
+    @Setter
     private String password;
+
+    @Column(name = "is_active", insertable = false, updatable = false)
+    private boolean isActive;
 }

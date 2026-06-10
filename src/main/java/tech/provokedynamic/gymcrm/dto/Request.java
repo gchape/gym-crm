@@ -8,9 +8,21 @@ import tech.provokedynamic.gymcrm.model.Address;
 import java.time.LocalDate;
 import java.util.List;
 
-public sealed interface Request permits Request.AddTraining, Request.Authenticated, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.DeleteTrainee, Request.ToggleActive, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
+public sealed interface Request permits
+        Request.AddTraining,
+        Request.Authenticated,
+        Request.ChangePassword,
+        Request.CreateTrainee,
+        Request.CreateTrainer,
+        Request.DeleteTrainee,
+        Request.ToggleActive,
+        Request.UpdateTrainee,
+        Request.UpdateTraineeTrainers,
+        Request.UpdateTrainer {
 
-    sealed interface Authenticated extends Request permits AddTraining, ChangePassword, DeleteTrainee, ToggleActive, UpdateTrainee, UpdateTraineeTrainers, UpdateTrainer {
+    sealed interface Authenticated extends Request permits
+            AddTraining, ChangePassword, DeleteTrainee, ToggleActive,
+            UpdateTrainee, UpdateTraineeTrainers, UpdateTrainer {
         String username();
 
         String password();
@@ -60,7 +72,10 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
 
             @Nullable
             @Valid
-            Address address
+            Address address,
+
+            @NotNull(message = "isActive is required")
+            Boolean isActive
     ) implements Request, Authenticated {
     }
 
@@ -120,7 +135,10 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
             String lastName,
 
             @NotBlank(message = "Specialization is required")
-            String specialization
+            String specialization,
+
+            @NotNull(message = "isActive is required")
+            Boolean isActive
     ) implements Request, Authenticated {
     }
 
@@ -142,7 +160,10 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
             String username,
 
             @NotBlank(message = "Password is required")
-            String password
+            String password,
+
+            @NotNull(message = "isActive is required")
+            Boolean isActive
     ) implements Request, Authenticated {
     }
 
@@ -159,9 +180,6 @@ public sealed interface Request permits Request.AddTraining, Request.Authenticat
             @NotBlank(message = "Training name is required")
             @Size(max = 100, message = "Training name must not exceed 100 characters")
             String trainingName,
-
-            @NotBlank(message = "Training type is required")
-            String trainingType,
 
             @NotNull(message = "Training date is required")
             @FutureOrPresent(message = "Training date cannot be in the past")

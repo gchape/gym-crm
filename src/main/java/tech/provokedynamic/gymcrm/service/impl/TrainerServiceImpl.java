@@ -9,6 +9,7 @@ import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
@@ -36,7 +37,7 @@ public class TrainerServiceImpl implements TrainerService {
     @Override
     @Validate
     @Transactional
-    public Profile.Trainer create(Request.CreateTrainer request) {
+    public Response.CreatedUser create(Request.CreateTrainer request) {
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
         var password = credentialGenerator.generatePassword();
 
@@ -55,7 +56,7 @@ public class TrainerServiceImpl implements TrainerService {
 
         log.info("Created trainer profile for username '{}'", username);
 
-        return Profile.Trainer.from(trainer);
+        return new Response.CreatedUser(username, password);
     }
 
     @Override
@@ -79,10 +80,10 @@ public class TrainerServiceImpl implements TrainerService {
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainer '{}'", request.username());
 
-        var trainee = trainerRepository.findByUsernameAndPassword(request.username(), request.password());
+        var trainer = trainerRepository.findByUsernameAndPassword(request.username(), request.password());
 
-        if (trainee.isPresent()) {
-            var updated = trainee.map(Trainer::toBuilder)
+        if (trainer.isPresent()) {
+            var updated = trainer.map(Trainer::toBuilder)
                     .get()
                     .password(request.newPassword())
                     .build();

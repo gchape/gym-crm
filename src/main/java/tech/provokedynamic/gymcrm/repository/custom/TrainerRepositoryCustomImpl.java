@@ -33,12 +33,15 @@ public class TrainerRepositoryCustomImpl implements TrainerRepositoryCustom {
 
         Join<Training, Trainer> trainerJoin = root.join(Training_.trainer);
         Join<Training, Trainee> traineeJoin = root.join(Training_.trainee);
+        Join<Training, TrainingType> typeJoin = root.join(Training_.trainingType);
 
         cq.select(cb.construct(
                 Summary.Training.class,
                 root.get(Training_.trainingName),
                 root.get(Training_.trainingDate),
+                typeJoin.get(TrainingType_.trainingTypeName),
                 root.get(Training_.trainingDuration),
+                trainerJoin.get(Trainer_.username),
                 traineeJoin.get(Trainee_.username)
         ));
 
