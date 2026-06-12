@@ -1,0 +1,11 @@
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  info:
+    title: Gym CRM API
+    description: Gym management system
+    version: "1.0"
+    contact:
+      email: chapidze.giorgi@proton.me
