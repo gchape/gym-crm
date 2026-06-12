@@ -5,7 +5,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 public final class SharedPostgres {
 
     static final PostgreSQLContainer INSTANCE =
-            new PostgreSQLContainer("postgres:18.3");
+            new PostgreSQLContainer("postgres:18.4");
 
     static {
         INSTANCE.start();

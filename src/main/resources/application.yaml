@@ -1,11 +1,19 @@
 springdoc:
   api-docs:
     path: /api-docs
+    groups:
+      enabled: true
   swagger-ui:
     path: /swagger-ui.html
-  info:
-    title: Gym CRM API
-    description: Gym management system
-    version: "1.0"
-    contact:
-      email: chapidze.giorgi@proton.me
+
+spring:
+  datasource:
+    url: postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
