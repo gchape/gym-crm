@@ -11,7 +11,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
-import tech.provokedynamic.gymcrm.config.ValidationConfig;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
