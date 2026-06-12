@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Configuration(
         proxyBeanMethods = false)
 @PropertySource(
-        "classpath:application.properties")
+        "classpath:application.yaml")
 @EnableJpaRepositories(basePackages = {
         "tech.provokedynamic.gymcrm.repository"
 })
