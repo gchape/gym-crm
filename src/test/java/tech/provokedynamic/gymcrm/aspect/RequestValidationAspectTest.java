@@ -4,11 +4,13 @@ import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -24,15 +26,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {
-        ValidationConfig.class,
-
+        RequestValidationAspectTest.AspectConfig.class,
         ServicePointcuts.class,
         AnnotationPointcuts.class,
-
         RequestValidator.class,
         RequestValidationAspect.class,
-        RequestValidationAspectTest.AspectConfig.class,
-
         TrainerServiceImpl.class
 })
 class RequestValidationAspectTest {
@@ -91,5 +89,10 @@ class RequestValidationAspectTest {
     @Configuration
     @EnableAspectJAutoProxy
     static class AspectConfig {
+
+        @Bean
+        public jakarta.validation.Validator validator() {
+            return new LocalValidatorFactoryBean();
+        }
     }
 }
