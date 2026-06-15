@@ -51,13 +51,5 @@ CREATE TABLE trainee_trainer
     PRIMARY KEY (trainee_id, trainer_id)
 );
 
-CREATE TABLE user_roles
-(
-    user_id   BIGINT       NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
-    role      VARCHAR(255) NOT NULL,
-    is_active BOOLEAN      NOT NULL DEFAULT TRUE,
-    PRIMARY KEY (user_id, role)
-);
-
 CREATE SEQUENCE user_seq START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE training_seq START WITH 1 INCREMENT BY 50;
