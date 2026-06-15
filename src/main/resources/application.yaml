@@ -26,6 +26,10 @@ spring:
     password: postgres
     driver-class-name: org.postgresql.Driver
 
+jwt:
+  secret: xyz123
+  expiration: 86400000
+
 ---
 spring:
   config:
@@ -36,3 +40,7 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000

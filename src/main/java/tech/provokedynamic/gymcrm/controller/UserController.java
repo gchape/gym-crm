@@ -35,13 +35,13 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "Authentication failed"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    @PutMapping("/api/login")
+    @PutMapping("/api/password")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody Request.ChangePassword body) {
-        log.info("PUT /api/login - changing password username={}", body.username());
+        log.info("PUT /api/password - changing password username={}", body.username());
 
         userService.updatePassword(body);
 
-        log.info("PUT /api/login - password changed username={}", body.username());
+        log.info("PUT /api/password - password changed username={}", body.username());
         return ResponseEntity.ok().build();
     }
 
