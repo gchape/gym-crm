@@ -1,6 +1,7 @@
 package tech.provokedynamic.gymcrm.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,18 +13,22 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tech.provokedynamic.gymcrm.security.GymCRMUserDetailsService;
+import tech.provokedynamic.gymcrm.security.JwtFilter;
 
 import java.security.SecureRandom;
 import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     private final GymCRMUserDetailsService userDetailsService;
+    private final JwtFilter jwtFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -63,24 +68,18 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(
                         auth -> auth
-                                // public: registration and login
                                 .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
                                 .requestMatchers("/api/training-types").permitAll()
-                                // swagger
                                 .requestMatchers(
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**"
                                 ).permitAll()
-                                // everything else requires authentication
                                 .anyRequest().authenticated()
                 )
-                .httpBasic(
-                        basic -> basic
-                                .realmName("GymCRM")
-                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
