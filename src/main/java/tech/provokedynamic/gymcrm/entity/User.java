@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Set;
+
 import static jakarta.persistence.GenerationType.SEQUENCE;
 import static org.hibernate.annotations.SoftDeleteType.ACTIVE;
 
@@ -46,6 +48,11 @@ public abstract class User {
     @NotNull
     @Setter
     private String password;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "role")
+    private Set<String> roles;
 
     @Column(name = "is_active", insertable = false, updatable = false)
     private boolean isActive;
