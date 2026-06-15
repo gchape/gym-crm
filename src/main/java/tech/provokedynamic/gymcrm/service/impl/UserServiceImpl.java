@@ -2,9 +2,11 @@ package tech.provokedynamic.gymcrm.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.service.UserService;
@@ -15,6 +17,7 @@ import tech.provokedynamic.gymcrm.service.UserService;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -29,28 +32,13 @@ public class UserServiceImpl implements UserService {
                     return new UserDoesNotExistException(username);
                 });
 
-        String oldPassword = user.getPassword();
-        String newPassword = request.newPassword();
-
-        if (oldPassword.equals(newPassword)) {
-            log.warn("Password update ignored: new password is same as old username={}", username);
-            return;
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            log.warn("Password update rejected for username={}: current password mismatch", username);
+            throw new AuthenticationException("Invalid current password");
         }
 
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
 
         log.info("Password updated successfully for username={}", username);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean checkCredentials(String username, String password) {
-        log.debug("checkCredentials called for username={}", username);
-
-        boolean valid = userRepository.existsByUsernameAndPassword(username, password);
-
-        log.info("Credentials check completed username={} result={}", username, valid);
-
-        return valid;
     }
 }
