@@ -49,26 +49,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
-                .cors(configurer -> configurer.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .authorizeHttpRequests(auth -> auth
-                        // public: registration and login
-                        .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/login").permitAll()
-                        .requestMatchers("/api/training-types").permitAll()
-                        // swagger
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-                        // everything else requires authentication
-                        .anyRequest().authenticated()
+                .cors(
+                        configurer -> configurer
+                                .configurationSource(corsConfigurationSource())
                 )
-                .httpBasic(basic -> basic.realmName("GymCRM"))
+                .csrf(
+                        AbstractHttpConfigurer::disable
+                )
+                .sessionManagement(
+                        session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(
+                        auth -> auth
+                                // public: registration and login
+                                .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/login").permitAll()
+                                .requestMatchers("/api/training-types").permitAll()
+                                // swagger
+                                .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                ).permitAll()
+                                // everything else requires authentication
+                                .anyRequest().authenticated()
+                )
+                .httpBasic(
+                        basic -> basic
+                                .realmName("GymCRM")
+                )
                 .build();
     }
 
