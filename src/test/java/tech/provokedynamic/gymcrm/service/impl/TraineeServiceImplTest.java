@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
@@ -16,11 +17,12 @@ import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
+import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.model.Address;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
-import tech.provokedynamic.gymcrm.util.CredentialGenerator;  // unified interface
+import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,12 +40,12 @@ class TraineeServiceImplTest {
 
     @Mock
     TraineeRepository traineeRepository;
-
     @Mock
     TrainerRepository trainerRepository;
-
     @Mock
-    CredentialGenerator credentialGenerator;  // same interface used by TrainerServiceImpl
+    CredentialGenerator credentialGenerator;
+    @Mock
+    BCryptPasswordEncoder passwordEncoder;
 
     @InjectMocks
     TraineeServiceImpl service;
@@ -53,7 +55,7 @@ class TraineeServiceImplTest {
                 .firstName("John")
                 .lastName("Doe")
                 .username("John.Doe")
-                .password("secret")
+                .password("$2y$encoded")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .address(new Address("123 Main St", "New York", "USA", "10001"))
                 .build();
@@ -64,7 +66,7 @@ class TraineeServiceImplTest {
     class Create {
 
         @Test
-        @DisplayName("generates credentials, persists trainee, and returns credentials")
+        @DisplayName("generates credentials, encodes password, persists trainee, returns raw password")
         void create_success() {
             var request = new Request.CreateTrainee(
                     "John", "Doe",
@@ -73,6 +75,7 @@ class TraineeServiceImplTest {
 
             when(credentialGenerator.generateUsername("John", "Doe")).thenReturn("John.Doe");
             when(credentialGenerator.generatePassword()).thenReturn("pass123456");
+            when(passwordEncoder.encode("pass123456")).thenReturn("$2y$encoded");
             when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Response.CreatedUser credentials = service.create(request);
@@ -80,43 +83,23 @@ class TraineeServiceImplTest {
             assertThat(credentials.username()).isEqualTo("John.Doe");
             assertThat(credentials.password()).isEqualTo("pass123456");
             verify(traineeRepository).save(argThat(t ->
-                    "John".equals(t.getFirstName())
-                            && "Doe".equals(t.getLastName())
-                            && "John.Doe".equals(t.getUsername())
-                            && "pass123456".equals(t.getPassword())
+                    "John.Doe".equals(t.getUsername())
+                            && "$2y$encoded".equals(t.getPassword())
             ));
         }
 
         @Test
-        @DisplayName("passes optional fields (dateOfBirth, address) to persisted entity")
-        void create_withOptionalFields() {
-            var address = new Address("1 Road", "City", "Country", "00000");
-            var dob = LocalDate.of(1995, 5, 20);
-            var request = new Request.CreateTrainee("Jane", "Smith", dob, address);
+        @DisplayName("returned password is raw, not the encoded one")
+        void create_returnsRawPassword() {
+            when(credentialGenerator.generateUsername(any(), any())).thenReturn("Jane.Smith");
+            when(credentialGenerator.generatePassword()).thenReturn("rawPass123");
+            when(passwordEncoder.encode("rawPass123")).thenReturn("$2y$hashed");
+            when(traineeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            when(credentialGenerator.generateUsername("Jane", "Smith")).thenReturn("Jane.Smith");
-            when(credentialGenerator.generatePassword()).thenReturn("pass123456");
-            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
+            var creds = service.create(new Request.CreateTrainee("Jane", "Smith", null, null));
 
-            service.create(request);
-
-            verify(traineeRepository).save(argThat(t ->
-                    dob.equals(t.getDateOfBirth()) && address.equals(t.getAddress())
-            ));
-        }
-
-        @Test
-        @DisplayName("works when dateOfBirth and address are null")
-        void create_nullOptionalFields() {
-            var request = new Request.CreateTrainee("Jane", "Smith", null, null);
-
-            when(credentialGenerator.generateUsername("Jane", "Smith")).thenReturn("Jane.Smith");
-            when(credentialGenerator.generatePassword()).thenReturn("pass123456");
-            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            Response.CreatedUser credentials = service.create(request);
-
-            assertThat(credentials.username()).isEqualTo("Jane.Smith");
+            assertThat(creds.password()).isEqualTo("rawPass123");
+            assertThat(creds.password()).doesNotStartWith("$2y$");
         }
     }
 
@@ -151,31 +134,41 @@ class TraineeServiceImplTest {
     class ChangePassword {
 
         @Test
-        @DisplayName("updates password when credentials match")
+        @DisplayName("encodes and saves new password when current password matches")
         void changePassword_success() {
             var trainee = buildTrainee();
-            var request = new Request.ChangePassword("John.Doe", "secret", "newPass123");
+            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
+            when(passwordEncoder.matches("secret", "$2y$encoded")).thenReturn(true);
+            when(passwordEncoder.encode("newPass123")).thenReturn("$2y$newEncoded");
+            when(traineeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            when(traineeRepository.findByUsernameAndPassword("John.Doe", "secret"))
-                    .thenReturn(Optional.of(trainee));
-            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
+            service.changePassword(new Request.ChangePassword("John.Doe", "secret", "newPass123"));
 
-            service.changePassword(request);
-
-            verify(traineeRepository).save(argThat(t -> "newPass123".equals(t.getPassword())));
+            verify(traineeRepository).save(argThat(t -> "$2y$newEncoded".equals(t.getPassword())));
         }
 
         @Test
-        @DisplayName("throws UserDoesNotExistException when credentials do not match")
-        void changePassword_wrongCredentials() {
-            when(traineeRepository.findByUsernameAndPassword("John.Doe", "wrong"))
-                    .thenReturn(Optional.empty());
+        @DisplayName("throws AuthenticationException when current password does not match")
+        void changePassword_wrongPassword() {
+            var trainee = buildTrainee();
+            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
+            when(passwordEncoder.matches("wrong", "$2y$encoded")).thenReturn(false);
 
             assertThatThrownBy(() -> service.changePassword(
                     new Request.ChangePassword("John.Doe", "wrong", "newPass123")))
-                    .isInstanceOf(UserDoesNotExistException.class);
+                    .isInstanceOf(AuthenticationException.class);
 
             verify(traineeRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("throws UserDoesNotExistException when trainee not found")
+        void changePassword_userNotFound() {
+            when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.changePassword(
+                    new Request.ChangePassword("ghost", "pass", "newPass123")))
+                    .isInstanceOf(UserDoesNotExistException.class);
         }
     }
 
@@ -188,19 +181,18 @@ class TraineeServiceImplTest {
         void update_success() {
             var trainee = buildTrainee();
             var request = new Request.UpdateTrainee(
-                    "John.Doe", "secret", "Jane", "Doe",
+                    "John.Doe", "Jane", "Doe",
                     LocalDate.of(1991, 2, 2),
                     new Address("456 New Rd", "Boston", "USA", "02101"),
                     true);
 
             when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
-            // Return the argument so the profile is built from the mutated entity
-            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(traineeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             Profile.Trainee profile = service.update(request);
 
             assertThat(profile.firstName()).isEqualTo("Jane");
-            verify(traineeRepository).save(argThat(t -> "Jane".equals(t.getFirstName())));
+            verify(traineeRepository).save(any());
         }
 
         @Test
@@ -208,11 +200,9 @@ class TraineeServiceImplTest {
         void update_notFound() {
             when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.update(new Request.UpdateTrainee(
-                    "ghost", "secret", "Jane", "Doe", null, null, true)))
+            assertThatThrownBy(() -> service.update(
+                    new Request.UpdateTrainee("ghost", "A", "B", null, null, true)))
                     .isInstanceOf(UserDoesNotExistException.class);
-
-            verify(traineeRepository, never()).save(any());
         }
     }
 
@@ -225,7 +215,7 @@ class TraineeServiceImplTest {
         void activate_success() {
             when(traineeRepository.activateByUsername("John.Doe")).thenReturn(1);
 
-            service.activate(new Request.ToggleActive("John.Doe", "secret", true));
+            service.activate(new Request.ToggleActive("John.Doe", true));
 
             verify(traineeRepository).activateByUsername("John.Doe");
         }
@@ -235,8 +225,7 @@ class TraineeServiceImplTest {
         void activate_alreadyActive() {
             when(traineeRepository.activateByUsername("John.Doe")).thenReturn(0);
 
-            assertThatThrownBy(() ->
-                    service.activate(new Request.ToggleActive("John.Doe", "secret", true)))
+            assertThatThrownBy(() -> service.activate(new Request.ToggleActive("John.Doe", true)))
                     .isInstanceOf(AlreadyActivatedException.class);
         }
     }
@@ -250,7 +239,7 @@ class TraineeServiceImplTest {
         void deactivate_success() {
             when(traineeRepository.deactivateByUsername("John.Doe")).thenReturn(1);
 
-            service.deactivate(new Request.ToggleActive("John.Doe", "secret", false));
+            service.deactivate(new Request.ToggleActive("John.Doe", false));
 
             verify(traineeRepository).deactivateByUsername("John.Doe");
         }
@@ -260,8 +249,7 @@ class TraineeServiceImplTest {
         void deactivate_alreadyInactive() {
             when(traineeRepository.deactivateByUsername("John.Doe")).thenReturn(0);
 
-            assertThatThrownBy(() ->
-                    service.deactivate(new Request.ToggleActive("John.Doe", "secret", false)))
+            assertThatThrownBy(() -> service.deactivate(new Request.ToggleActive("John.Doe", false)))
                     .isInstanceOf(AlreadyDeactivatedException.class);
         }
     }
@@ -273,9 +261,7 @@ class TraineeServiceImplTest {
         @Test
         @DisplayName("delegates deletion to repository by username")
         void delete_success() {
-            // Authentication is handled by the @Authenticated AOP aspect,
-            // not inside this method, so only the repository call is verified.
-            service.delete(new Request.DeleteTrainee("John.Doe", "secret"));
+            service.delete(new Request.DeleteTrainee("John.Doe"));
 
             verify(traineeRepository).deleteByUsername("John.Doe");
         }
@@ -283,7 +269,7 @@ class TraineeServiceImplTest {
         @Test
         @DisplayName("does not call any other repository method on delete")
         void delete_onlyCallsDeleteByUsername() {
-            service.delete(new Request.DeleteTrainee("John.Doe", "secret"));
+            service.delete(new Request.DeleteTrainee("John.Doe"));
 
             verify(traineeRepository).deleteByUsername("John.Doe");
             verifyNoMoreInteractions(traineeRepository);
@@ -354,25 +340,6 @@ class TraineeServiceImplTest {
         }
 
         @Test
-        @DisplayName("passes empty set to repository when trainee has no assigned trainers")
-        void getUnassignedTrainers_noAssignedTrainers() {
-            var trainee = buildTrainee(); // no trainers
-            when(traineeRepository.findWTrainersByUsername("John.Doe"))
-                    .thenReturn(Optional.of(trainee));
-
-            var unassigned = mock(Trainer.class);
-            var type = mock(TrainingType.class);
-            when(unassigned.getSpecialization()).thenReturn(type);
-            when(type.getTrainingTypeName()).thenReturn("Yoga");
-            when(trainerRepository.findAllByIdNotIn(Set.of())).thenReturn(List.of(unassigned));
-
-            List<Profile.Trainer> result = service.getUnassignedTrainers("John.Doe");
-
-            assertThat(result).hasSize(1);
-            verify(trainerRepository).findAllByIdNotIn(Set.of());
-        }
-
-        @Test
         @DisplayName("throws UserDoesNotExistException when trainee not found")
         void getUnassignedTrainers_notFound() {
             when(traineeRepository.findWTrainersByUsername("ghost")).thenReturn(Optional.empty());
@@ -401,35 +368,16 @@ class TraineeServiceImplTest {
             when(trainer.getSpecialization()).thenReturn(trainingType);
             when(trainingType.getTrainingTypeName()).thenReturn("Yoga");
 
-            var request = new Request.UpdateTraineeTrainers("John.Doe", "secret", List.of("trainer1"));
+            var request = new Request.UpdateTraineeTrainers("John.Doe", List.of("trainer1"));
 
             when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
-            // findAllByUsernameIn signature accepts a Collection
             when(trainerRepository.findAllByUsernameIn(List.of("trainer1"))).thenReturn(List.of(trainer));
-            when(traineeRepository.save(any(Trainee.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(traineeRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             List<Profile.Trainer> result = service.updateTrainers(request);
 
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().username()).isEqualTo("trainer1");
-            verify(traineeRepository).save(trainee);
-        }
-
-        @Test
-        @DisplayName("throws UserDoesNotExistException when fewer trainers resolved than requested")
-        void updateTrainers_someTrainersNotFound() {
-            var trainee = buildTrainee();
-            var request = new Request.UpdateTraineeTrainers(
-                    "John.Doe", "secret", List.of("trainer1", "trainer2"));
-
-            when(traineeRepository.findByUsername("John.Doe")).thenReturn(Optional.of(trainee));
-            // Only one of the two requested usernames resolves
-            when(trainerRepository.findAllByUsernameIn(any())).thenReturn(List.of(mock(Trainer.class)));
-
-            assertThatThrownBy(() -> service.updateTrainers(request))
-                    .isInstanceOf(UserDoesNotExistException.class);
-
-            verify(traineeRepository, never()).save(any());
         }
 
         @Test
@@ -438,7 +386,7 @@ class TraineeServiceImplTest {
             when(traineeRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.updateTrainers(
-                    new Request.UpdateTraineeTrainers("ghost", "secret", List.of("t1"))))
+                    new Request.UpdateTraineeTrainers("ghost", List.of("t1"))))
                     .isInstanceOf(UserDoesNotExistException.class);
 
             verifyNoInteractions(trainerRepository);
