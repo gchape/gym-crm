@@ -30,10 +30,8 @@ class TrainingServiceImplTest {
 
     @Mock
     TrainingRepository trainingRepository;
-
     @Mock
     TraineeRepository traineeRepository;
-
     @Mock
     TrainerRepository trainerRepository;
 
@@ -43,10 +41,9 @@ class TrainingServiceImplTest {
     private Request.AddTraining validRequest() {
         return new Request.AddTraining(
                 "trainee1",
-                "pass123456",   // traineePassword
                 "trainer1",
                 "Morning Yoga",
-                LocalDate.of(2025, 8, 1),  // future-or-present
+                LocalDate.of(2025, 8, 1),
                 60
         );
     }
@@ -80,7 +77,7 @@ class TrainingServiceImplTest {
         }
 
         @Test
-        @DisplayName("uses trainer's specialization as the training type — no separate type lookup")
+        @DisplayName("uses trainer's specialization as the training type")
         void add_trainingTypeComesFromTrainerSpecialization() {
             var trainee = mock(Trainee.class);
             var trainer = mock(Trainer.class);
@@ -89,11 +86,10 @@ class TrainingServiceImplTest {
 
             when(traineeRepository.findByUsername("trainee1")).thenReturn(Optional.of(trainee));
             when(trainerRepository.findByUsername("trainer1")).thenReturn(Optional.of(trainer));
-            when(trainingRepository.save(any(Training.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(trainingRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             service.add(validRequest());
 
-            // specialization must be read exactly once to populate the saved entity
             verify(trainer, times(1)).getSpecialization();
             verify(trainingRepository).save(argThat(t -> t.getTrainingType() == yoga));
         }
