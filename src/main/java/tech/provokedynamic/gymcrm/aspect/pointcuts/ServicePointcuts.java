@@ -13,8 +13,4 @@ public final class ServicePointcuts {
     @Pointcut("tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts.validateAnnotated() && inServiceLayer()")
     public void validateInService() {
     }
-
-    @Pointcut("tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts.authenticatedAnnotated() && inServiceLayer()")
-    public void authenticatedInService() {
-    }
 }
