@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -25,7 +24,6 @@ public class TrainingServiceImpl implements TrainingService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void add(Request.AddTraining request) {
         log.debug("Adding training '{}' for trainee '{}' with trainer '{}'",
