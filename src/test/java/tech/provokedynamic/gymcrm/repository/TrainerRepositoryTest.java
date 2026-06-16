@@ -3,8 +3,8 @@ package tech.provokedynamic.gymcrm.repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import tech.provokedynamic.gymcrm.config.PersistenceConfig;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -15,11 +15,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ContextConfiguration(classes = {
-        PersistenceConfig.class,
-        TrainerRepository.class,
-        BaseRepositoryTest.BaseConfig.class
-})
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class TrainerRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
