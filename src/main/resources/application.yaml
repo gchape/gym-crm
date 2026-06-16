@@ -11,6 +11,8 @@ spring:
     hibernate:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+  profiles:
+    active: dev
 
 ---
 spring:
