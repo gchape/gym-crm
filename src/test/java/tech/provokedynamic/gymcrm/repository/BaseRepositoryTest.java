@@ -1,20 +1,19 @@
 package tech.provokedynamic.gymcrm.repository;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(SpringExtension.class)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Transactional
+@ExtendWith(SpringExtension.class)
 public abstract class BaseRepositoryTest {
 
     @PersistenceContext
@@ -22,18 +21,8 @@ public abstract class BaseRepositoryTest {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("db.url", SharedPostgres.INSTANCE::getJdbcUrl);
-        registry.add("db.user", SharedPostgres.INSTANCE::getUsername);
-        registry.add("db.password", SharedPostgres.INSTANCE::getPassword);
-    }
-
-    @Configuration
-    @EnableJpaRepositories(basePackages = "tech.provokedynamic.gymcrm.repository")
-    public static class BaseConfig {
-
-        @Bean
-        public JpaTransactionManager transactionManager(EntityManagerFactory emf) {
-            return new JpaTransactionManager(emf);
-        }
+        registry.add("spring.datasource.url", SharedPostgres.INSTANCE::getJdbcUrl);
+        registry.add("spring.datasource.username", SharedPostgres.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", SharedPostgres.INSTANCE::getPassword);
     }
 }
