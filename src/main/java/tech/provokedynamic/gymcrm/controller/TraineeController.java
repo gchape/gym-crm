@@ -80,7 +80,7 @@ public class TraineeController {
         log.info("PUT /api/trainees/{} - updating profile", username);
 
         var request = new Request.UpdateTrainee(
-                username, body.password(),
+                username,
                 body.firstName(), body.lastName(),
                 body.dateOfBirth(), body.address(),
                 body.isActive());
@@ -97,12 +97,10 @@ public class TraineeController {
             @ApiResponse(responseCode = "404", description = "Trainee not found", content = @Content)
     })
     @DeleteMapping("/{username}")
-    public ResponseEntity<Void> delete(
-            @PathVariable String username,
-            @RequestParam String password) {
+    public ResponseEntity<Void> delete(@PathVariable String username) {
         log.info("DELETE /api/trainees/{} - deleting", username);
 
-        traineeService.delete(new Request.DeleteTrainee(username, password));
+        traineeService.delete(new Request.DeleteTrainee(username));
 
         log.info("DELETE /api/trainees/{} - deleted", username);
         return ResponseEntity.ok().build();
@@ -139,7 +137,7 @@ public class TraineeController {
             @Valid @RequestBody Request.ToggleActive body) {
         log.info("PATCH /api/trainees/{}/active - isActive={}", username, body.isActive());
 
-        var req = new Request.ToggleActive(username, body.password(), body.isActive());
+        var req = new Request.ToggleActive(username, body.isActive());
         if (body.isActive()) {
             traineeService.activate(req);
         } else {
@@ -203,7 +201,7 @@ public class TraineeController {
             @Valid @RequestBody Request.UpdateTraineeTrainers body) {
         log.info("PUT /api/trainees/{}/trainers", username);
 
-        var request = new Request.UpdateTraineeTrainers(username, body.password(), body.trainerUsernames());
+        var request = new Request.UpdateTraineeTrainers(username, body.trainerUsernames());
         var trainers = traineeService.updateTrainers(request)
                 .stream().map(Response.TrainerSummary::from).toList();
 

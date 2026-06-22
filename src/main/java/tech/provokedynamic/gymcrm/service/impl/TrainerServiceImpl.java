@@ -3,19 +3,16 @@ package tech.provokedynamic.gymcrm.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainer;
-import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
-import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
-import tech.provokedynamic.gymcrm.exception.TrainingTypeNotFoundException;
-import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.exception.*;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainerService;
@@ -31,15 +28,15 @@ public class TrainerServiceImpl implements TrainerService {
 
     private final TrainerRepository trainerRepository;
     private final TrainingTypeRepository trainingTypeRepository;
-
     private final CredentialGenerator credentialGenerator;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Validate
     @Transactional
     public Response.CreatedUser create(Request.CreateTrainer request) {
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
-        var password = credentialGenerator.generatePassword();
+        var rawPassword = credentialGenerator.generatePassword();
 
         var specialization = trainingTypeRepository.findByTrainingTypeName(request.specialization())
                 .orElseThrow(() -> new TrainingTypeNotFoundException(request.specialization()));
@@ -48,7 +45,7 @@ public class TrainerServiceImpl implements TrainerService {
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .username(username)
-                .password(password)
+                .password(passwordEncoder.encode(rawPassword))
                 .specialization(specialization)
                 .build();
 
@@ -56,7 +53,7 @@ public class TrainerServiceImpl implements TrainerService {
 
         log.info("Created trainer profile for username '{}'", username);
 
-        return new Response.CreatedUser(username, password);
+        return new Response.CreatedUser(username, rawPassword);
     }
 
     @Override
@@ -75,28 +72,29 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainer '{}'", request.username());
 
-        var trainer = trainerRepository.findByUsernameAndPassword(request.username(), request.password());
+        var trainer = trainerRepository.findByUsername(request.username())
+                .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        if (trainer.isPresent()) {
-            var updated = trainer.map(Trainer::toBuilder)
-                    .get()
-                    .password(request.newPassword())
-                    .build();
+        if (!passwordEncoder.matches(request.password(), trainer.getPassword())) {
+            log.warn("Password change rejected for trainer '{}': current password mismatch", request.username());
+            throw new AuthenticationException("Invalid current password");
+        }
 
-            trainerRepository.save(updated);
-        } else throw new UserDoesNotExistException(request.username());
+        var updated = trainer.toBuilder()
+                .password(passwordEncoder.encode(request.newPassword()))
+                .build();
+
+        trainerRepository.save(updated);
 
         log.debug("Password changed for trainer '{}'", request.username());
     }
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public Profile.Trainer update(Request.UpdateTrainer request) {
         log.debug("Updating trainer profile for '{}'", request.username());
@@ -122,7 +120,6 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void activate(Request.ToggleActive request) {
         String username = request.username();
@@ -137,7 +134,6 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void deactivate(Request.ToggleActive request) {
         String username = request.username();
