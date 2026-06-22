@@ -10,7 +10,6 @@ import java.util.List;
 
 public sealed interface Request permits
         Request.AddTraining,
-        Request.Authenticated,
         Request.ChangePassword,
         Request.CreateTrainee,
         Request.CreateTrainer,
@@ -19,14 +18,6 @@ public sealed interface Request permits
         Request.UpdateTrainee,
         Request.UpdateTraineeTrainers,
         Request.UpdateTrainer {
-
-    sealed interface Authenticated extends Request permits
-            AddTraining, ChangePassword, DeleteTrainee, ToggleActive,
-            UpdateTrainee, UpdateTraineeTrainers, UpdateTrainer {
-        String username();
-
-        String password();
-    }
 
     record CreateTrainee(
             @NotBlank(message = "First name is required")
@@ -53,9 +44,6 @@ public sealed interface Request permits
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "Password is required")
-            String password,
-
             @NotBlank(message = "First name is required")
             @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
             @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
@@ -76,29 +64,23 @@ public sealed interface Request permits
 
             @NotNull(message = "isActive is required")
             Boolean isActive
-    ) implements Request, Authenticated {
+    ) implements Request {
     }
 
     record DeleteTrainee(
             @NotBlank(message = "Username is required")
-            String username,
-
-            @NotBlank(message = "Password is required")
-            String password
-    ) implements Request, Authenticated {
+            String username
+    ) implements Request {
     }
 
     record UpdateTraineeTrainers(
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "Password is required")
-            String password,
-
             @NotNull(message = "Trainer list is required")
             @Size(min = 1, message = "At least one trainer username must be provided")
             List<@NotBlank(message = "Trainer username must not be blank") String> trainerUsernames
-    ) implements Request, Authenticated {
+    ) implements Request {
     }
 
     record CreateTrainer(
@@ -121,9 +103,6 @@ public sealed interface Request permits
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "Password is required")
-            String password,
-
             @NotBlank(message = "First name is required")
             @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
             @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
@@ -139,7 +118,7 @@ public sealed interface Request permits
 
             @NotNull(message = "isActive is required")
             Boolean isActive
-    ) implements Request, Authenticated {
+    ) implements Request {
     }
 
     record ChangePassword(
@@ -152,27 +131,21 @@ public sealed interface Request permits
             @NotBlank(message = "New password is required")
             @Size(min = 10, max = 10, message = "New password must be exactly 10 characters")
             String newPassword
-    ) implements Request, Authenticated {
+    ) implements Request {
     }
 
     record ToggleActive(
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "Password is required")
-            String password,
-
             @NotNull(message = "isActive is required")
             Boolean isActive
-    ) implements Request, Authenticated {
+    ) implements Request {
     }
 
     record AddTraining(
             @NotBlank(message = "Trainee username is required")
             String traineeUsername,
-
-            @NotBlank(message = "Trainee password is required")
-            String traineePassword,
 
             @NotBlank(message = "Trainer username is required")
             String trainerUsername,
@@ -189,16 +162,6 @@ public sealed interface Request permits
             @Positive(message = "Training duration must be greater than zero")
             @Max(value = 480, message = "Training duration cannot exceed 480 minutes (8 hours)")
             Integer trainingDuration
-    ) implements Request, Authenticated {
-
-        @Override
-        public String username() {
-            return traineeUsername();
-        }
-
-        @Override
-        public String password() {
-            return traineePassword();
-        }
+    ) implements Request {
     }
 }

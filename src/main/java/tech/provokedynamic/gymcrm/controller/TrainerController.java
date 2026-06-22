@@ -77,7 +77,7 @@ public class TrainerController {
         log.info("PUT /api/trainers/{} - updating profile", username);
 
         var request = new Request.UpdateTrainer(
-                username, body.password(),
+                username,
                 body.firstName(), body.lastName(),
                 body.specialization(), body.isActive());
         var profile = trainerService.update(request);
@@ -117,7 +117,7 @@ public class TrainerController {
             @Valid @RequestBody Request.ToggleActive body) {
         log.info("PATCH /api/trainers/{}/active - isActive={}", username, body.isActive());
 
-        var req = new Request.ToggleActive(username, body.password(), body.isActive());
+        var req = new Request.ToggleActive(username, body.isActive());
         if (body.isActive()) {
             trainerService.activate(req);
         } else {
