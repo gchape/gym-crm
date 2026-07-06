@@ -3,9 +3,9 @@ package tech.provokedynamic.gymcrm.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tech.provokedynamic.gymcrm.annotation.Authenticated;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -16,6 +16,7 @@ import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.User;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
+import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
@@ -33,21 +34,21 @@ public class TraineeServiceImpl implements TraineeService {
 
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
-
     private final CredentialGenerator credentialGenerator;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Validate
     @Transactional
     public Response.CreatedUser create(Request.CreateTrainee request) {
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
-        var password = credentialGenerator.generatePassword();
+        var rawPassword = credentialGenerator.generatePassword();
 
         var trainee = Trainee.builder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .username(username)
-                .password(password)
+                .password(passwordEncoder.encode(rawPassword))
                 .dateOfBirth(request.dateOfBirth())
                 .address(request.address())
                 .build();
@@ -56,7 +57,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.info("Created trainee profile for username '{}'", username);
 
-        return new Response.CreatedUser(username, password);
+        return new Response.CreatedUser(username, rawPassword);
     }
 
     @Override
@@ -75,28 +76,29 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainee '{}'", request.username());
 
-        var trainee = traineeRepository.findByUsernameAndPassword(request.username(), request.password());
+        var trainee = traineeRepository.findByUsername(request.username())
+                .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
-        if (trainee.isPresent()) {
-            var updated = trainee.map(Trainee::toBuilder)
-                    .get()
-                    .password(request.newPassword())
-                    .build();
+        if (!passwordEncoder.matches(request.password(), trainee.getPassword())) {
+            log.warn("Password change rejected for trainee '{}': current password mismatch", request.username());
+            throw new AuthenticationException("Invalid current password");
+        }
 
-            traineeRepository.save(updated);
-        } else throw new UserDoesNotExistException(request.username());
+        var updated = trainee.toBuilder()
+                .password(passwordEncoder.encode(request.newPassword()))
+                .build();
+
+        traineeRepository.save(updated);
 
         log.debug("Password changed for trainee '{}'", request.username());
     }
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public Profile.Trainee update(Request.UpdateTrainee request) {
         log.debug("Updating trainee profile for '{}'", request.username());
@@ -120,7 +122,6 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void activate(Request.ToggleActive request) {
         String username = request.username();
@@ -137,7 +138,6 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void deactivate(Request.ToggleActive request) {
         String username = request.username();
@@ -154,14 +154,13 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public void delete(Request.DeleteTrainee request) {
         String username = request.username();
 
         log.debug("Deleting trainee '{}'", username);
 
-        traineeRepository.deleteByUsername(request.username());
+        traineeRepository.deleteByUsername(username);
 
         log.info("Deleted trainee '{}'", username);
     }
@@ -206,7 +205,6 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Validate
-    @Authenticated
     @Transactional
     public List<Profile.Trainer> updateTrainers(Request.UpdateTraineeTrainers request) {
         log.debug("Updating trainers for trainee '{}'", request.username());

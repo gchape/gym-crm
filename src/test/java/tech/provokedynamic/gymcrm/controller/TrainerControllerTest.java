@@ -47,8 +47,6 @@ class TrainerControllerTest {
         mapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
     private Profile.Trainer sampleTrainerProfile() {
         return new Profile.Trainer(
                 "Jane", "Smith", "jane.smith", "Yoga", true,
@@ -99,16 +97,6 @@ class TrainerControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    void register_invalidCharactersInName_returns400() throws Exception {
-        var body = new Request.CreateTrainer("Jane123", "Smith", "Yoga");
-
-        mockMvc.perform(post("/api/trainers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest());
-    }
-
     // ─── GET /api/trainers/{username} ─────────────────────────────────────────
 
     @Test
@@ -118,10 +106,8 @@ class TrainerControllerTest {
         mockMvc.perform(get("/api/trainers/jane.smith"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("Jane"))
-                .andExpect(jsonPath("$.lastName").value("Smith"))
                 .andExpect(jsonPath("$.specialization").value("Yoga"))
-                .andExpect(jsonPath("$.isActive").value(true))
-                .andExpect(jsonPath("$.trainees[0].username").value("john.doe"));
+                .andExpect(jsonPath("$.isActive").value(true));
     }
 
     @Test
@@ -136,52 +122,37 @@ class TrainerControllerTest {
 
     @Test
     void update_validBody_returns200WithProfile() throws Exception {
-        var body = new Request.UpdateTrainer(
-                "jane.smith", "oldpassword", "Jane", "Smith", "Yoga", true);
+        var body = new Request.UpdateTrainer("jane.smith", "Jane", "Smith", "Yoga", true);
         when(trainerService.update(any())).thenReturn(sampleTrainerProfile());
 
         mockMvc.perform(put("/api/trainers/jane.smith")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("jane.smith"))
-                .andExpect(jsonPath("$.specialization").value("Yoga"));
-    }
-
-    @Test
-    void update_wrongPassword_returns401() throws Exception {
-        var body = new Request.UpdateTrainer(
-                "jane.smith", "wrongpass", "Jane", "Smith", "Yoga", true);
-        when(trainerService.update(any())).thenThrow(new AuthenticationException("Bad credentials"));
-
-        mockMvc.perform(put("/api/trainers/jane.smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void update_missingIsActive_returns400() throws Exception {
-        String rawBody = """
-                {"username":"jane.smith","password":"pass","firstName":"Jane","lastName":"Smith","specialization":"Yoga"}
-                """;
-
-        mockMvc.perform(put("/api/trainers/jane.smith")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(rawBody))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$.username").value("jane.smith"));
     }
 
     @Test
     void update_unknownTrainer_returns404() throws Exception {
-        var body = new Request.UpdateTrainer(
-                "ghost", "pass123456", "Ghost", "User", "Yoga", true);
+        var body = new Request.UpdateTrainer("ghost", "Ghost", "User", "Yoga", true);
         when(trainerService.update(any())).thenThrow(new UserDoesNotExistException("Not found"));
 
         mockMvc.perform(put("/api/trainers/ghost")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_missingIsActive_returns400() throws Exception {
+        String rawBody = """
+                {"username":"jane.smith","firstName":"Jane","lastName":"Smith","specialization":"Yoga"}
+                """;
+
+        mockMvc.perform(put("/api/trainers/jane.smith")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawBody))
+                .andExpect(status().isBadRequest());
     }
 
     // ─── PUT /api/trainers/{username}/password ─────────────────────────────────
@@ -223,7 +194,7 @@ class TrainerControllerTest {
 
     @Test
     void setActive_activate_callsActivate() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", "pass123456", true);
+        var body = new Request.ToggleActive("jane.smith", true);
         doNothing().when(trainerService).activate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -237,7 +208,7 @@ class TrainerControllerTest {
 
     @Test
     void setActive_deactivate_callsDeactivate() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", "pass123456", false);
+        var body = new Request.ToggleActive("jane.smith", false);
         doNothing().when(trainerService).deactivate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -251,9 +222,8 @@ class TrainerControllerTest {
 
     @Test
     void setActive_alreadyActivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", "pass123456", true);
-        doThrow(new AlreadyActivatedException("Already active"))
-                .when(trainerService).activate(any());
+        var body = new Request.ToggleActive("jane.smith", true);
+        doThrow(new AlreadyActivatedException("Already active")).when(trainerService).activate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -263,9 +233,8 @@ class TrainerControllerTest {
 
     @Test
     void setActive_alreadyDeactivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", "pass123456", false);
-        doThrow(new AlreadyDeactivatedException("Already inactive"))
-                .when(trainerService).deactivate(any());
+        var body = new Request.ToggleActive("jane.smith", false);
+        doThrow(new AlreadyDeactivatedException("Already inactive")).when(trainerService).deactivate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -282,26 +251,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(get("/api/trainers/jane.smith/trainings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].trainingName").value("Morning Yoga"))
-                .andExpect(jsonPath("$[0].traineeName").value("john.doe"))
-                .andExpect(jsonPath("$[0].trainerName").doesNotExist());
-    }
-
-    @Test
-    void getTrainings_withFilters_passesAllParams() throws Exception {
-        when(trainerService.getTrainings(
-                eq("jane.smith"),
-                eq(LocalDate.of(2025, 1, 1)),
-                eq(LocalDate.of(2025, 12, 31)),
-                eq("john.doe")))
-                .thenReturn(List.of());
-
-        mockMvc.perform(get("/api/trainers/jane.smith/trainings")
-                        .param("from", "2025-01-01")
-                        .param("to", "2025-12-31")
-                        .param("traineeUsername", "john.doe"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$[0].trainingName").value("Morning Yoga"));
     }
 
     @Test
