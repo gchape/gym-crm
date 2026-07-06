@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -40,13 +41,10 @@ class RequestValidationAspectTest {
 
     @MockitoBean
     private TrainerRepository trainerRepository;
-
     @MockitoBean
     private TrainingRepository trainingRepository;
-
     @MockitoBean
     private TrainingTypeRepository trainingTypeRepository;
-
     @MockitoBean
     private DBCredentialGenerator credentialGenerator;
 
@@ -89,10 +87,14 @@ class RequestValidationAspectTest {
     @Configuration
     @EnableAspectJAutoProxy
     static class AspectConfig {
-
         @Bean
         public jakarta.validation.Validator validator() {
             return new LocalValidatorFactoryBean();
+        }
+
+        @Bean
+        public BCryptPasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
         }
     }
 }

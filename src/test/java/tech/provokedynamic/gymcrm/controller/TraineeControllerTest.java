@@ -135,7 +135,7 @@ class TraineeControllerTest {
     @Test
     void update_validBody_returns200WithProfile() throws Exception {
         var body = new Request.UpdateTrainee(
-                "john.doe", "oldpassword", "John", "Doe",
+                "john.doe", "John", "Doe",
                 LocalDate.of(1990, 1, 15), null, true);
         when(traineeService.update(any())).thenReturn(sampleTraineeProfile());
 
@@ -147,21 +147,22 @@ class TraineeControllerTest {
     }
 
     @Test
-    void update_wrongPassword_returns401() throws Exception {
+    void update_unknownUser_returns404() throws Exception {
         var body = new Request.UpdateTrainee(
-                "john.doe", "wrongpass", "John", "Doe", null, null, true);
-        when(traineeService.update(any())).thenThrow(new AuthenticationException("Bad credentials"));
+                "ghost", "Ghost", "User",
+                LocalDate.of(1990, 1, 15), null, true);
+        when(traineeService.update(any())).thenThrow(new UserDoesNotExistException("Not found"));
 
-        mockMvc.perform(put("/api/trainees/john.doe")
+        mockMvc.perform(put("/api/trainees/ghost")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void update_missingIsActive_returns400() throws Exception {
         String rawBody = """
-                {"username":"john.doe","password":"pass","firstName":"John","lastName":"Doe"}
+                {"username":"john.doe","firstName":"John","lastName":"Doe"}
                 """;
 
         mockMvc.perform(put("/api/trainees/john.doe")
@@ -173,21 +174,19 @@ class TraineeControllerTest {
     // ─── DELETE /api/trainees/{username} ─────────────────────────────────────
 
     @Test
-    void delete_validCredentials_returns200() throws Exception {
+    void delete_validUsername_returns200() throws Exception {
         doNothing().when(traineeService).delete(any());
 
-        mockMvc.perform(delete("/api/trainees/john.doe")
-                        .param("password", "pass123456"))
+        mockMvc.perform(delete("/api/trainees/john.doe"))
                 .andExpect(status().isOk());
     }
 
     @Test
-    void delete_wrongPassword_returns401() throws Exception {
+    void delete_authenticationFailure_returns401() throws Exception {
         doThrow(new AuthenticationException("Bad credentials"))
                 .when(traineeService).delete(any());
 
-        mockMvc.perform(delete("/api/trainees/john.doe")
-                        .param("password", "wrongpass"))
+        mockMvc.perform(delete("/api/trainees/john.doe"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -196,8 +195,7 @@ class TraineeControllerTest {
         doThrow(new UserDoesNotExistException("Not found"))
                 .when(traineeService).delete(any());
 
-        mockMvc.perform(delete("/api/trainees/ghost")
-                        .param("password", "pass"))
+        mockMvc.perform(delete("/api/trainees/ghost"))
                 .andExpect(status().isNotFound());
     }
 
@@ -228,7 +226,7 @@ class TraineeControllerTest {
 
     @Test
     void setActive_activate_returns200() throws Exception {
-        var body = new Request.ToggleActive("john.doe", "pass123456", true);
+        var body = new Request.ToggleActive("john.doe", true);
         doNothing().when(traineeService).activate(any());
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
@@ -242,7 +240,7 @@ class TraineeControllerTest {
 
     @Test
     void setActive_deactivate_returns200() throws Exception {
-        var body = new Request.ToggleActive("john.doe", "pass123456", false);
+        var body = new Request.ToggleActive("john.doe", false);
         doNothing().when(traineeService).deactivate(any());
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
@@ -256,7 +254,7 @@ class TraineeControllerTest {
 
     @Test
     void setActive_alreadyActivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("john.doe", "pass123456", true);
+        var body = new Request.ToggleActive("john.doe", true);
         doThrow(new AlreadyActivatedException("Already active"))
                 .when(traineeService).activate(any());
 
@@ -268,7 +266,7 @@ class TraineeControllerTest {
 
     @Test
     void setActive_alreadyDeactivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("john.doe", "pass123456", false);
+        var body = new Request.ToggleActive("john.doe", false);
         doThrow(new AlreadyDeactivatedException("Already inactive"))
                 .when(traineeService).deactivate(any());
 
@@ -334,7 +332,7 @@ class TraineeControllerTest {
 
     @Test
     void updateTrainers_validBody_returns200() throws Exception {
-        var body = new Request.UpdateTraineeTrainers("john.doe", "pass123456", List.of("jane.smith"));
+        var body = new Request.UpdateTraineeTrainers("john.doe", List.of("jane.smith"));
         var trainer = new Profile.Trainer("Jane", "Smith", "jane.smith", "Yoga", true, List.of());
         when(traineeService.updateTrainers(any())).thenReturn(List.of(trainer));
 
@@ -347,7 +345,7 @@ class TraineeControllerTest {
 
     @Test
     void updateTrainers_emptyList_returns400() throws Exception {
-        var body = new Request.UpdateTraineeTrainers("john.doe", "pass123456", List.of());
+        var body = new Request.UpdateTraineeTrainers("john.doe", List.of());
 
         mockMvc.perform(put("/api/trainees/john.doe/trainers")
                         .contentType(MediaType.APPLICATION_JSON)

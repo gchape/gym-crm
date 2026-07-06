@@ -30,7 +30,6 @@ class UserControllerTest {
 
     @Mock
     UserService userService;
-
     @Mock
     TrainingTypeRepository trainingTypeRepository;
 
@@ -46,58 +45,14 @@ class UserControllerTest {
         mapper = new ObjectMapper();
     }
 
-    // ─── GET /api/login ───────────────────────────────────────────────────────
-
-    @Test
-    void login_validCredentials_returns200() throws Exception {
-        when(userService.checkCredentials("john.doe", "pass123456")).thenReturn(true);
-
-        mockMvc.perform(get("/api/login")
-                        .param("username", "john.doe")
-                        .param("password", "pass123456"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void login_invalidCredentials_returns401() throws Exception {
-        when(userService.checkCredentials("john.doe", "wrongpass")).thenReturn(false);
-
-        mockMvc.perform(get("/api/login")
-                        .param("username", "john.doe")
-                        .param("password", "wrongpass"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void login_missingUsername_returns400() throws Exception {
-        mockMvc.perform(get("/api/login")
-                        .param("password", "pass123456"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void login_missingPassword_returns400() throws Exception {
-        mockMvc.perform(get("/api/login")
-                        .param("username", "john.doe"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void login_blankUsername_returns400() throws Exception {
-        mockMvc.perform(get("/api/login")
-                        .param("username", "   ")
-                        .param("password", "pass123456"))
-                .andExpect(status().isBadRequest());
-    }
-
-    // ─── PUT /api/login ───────────────────────────────────────────────────────
+    // ─── PUT /api/password ────────────────────────────────────────────────────
 
     @Test
     void changePassword_validBody_returns200() throws Exception {
         var body = new Request.ChangePassword("john.doe", "oldpassword", "newpass123");
         doNothing().when(userService).updatePassword(any());
 
-        mockMvc.perform(put("/api/login")
+        mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isOk());
@@ -109,7 +64,7 @@ class UserControllerTest {
         doThrow(new AuthenticationException("Bad credentials"))
                 .when(userService).updatePassword(any());
 
-        mockMvc.perform(put("/api/login")
+        mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isUnauthorized());
@@ -121,7 +76,7 @@ class UserControllerTest {
         doThrow(new UserDoesNotExistException("Not found"))
                 .when(userService).updatePassword(any());
 
-        mockMvc.perform(put("/api/login")
+        mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isNotFound());
@@ -131,7 +86,7 @@ class UserControllerTest {
     void changePassword_newPasswordTooShort_returns400() throws Exception {
         var body = new Request.ChangePassword("john.doe", "oldpassword", "short");
 
-        mockMvc.perform(put("/api/login")
+        mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
@@ -143,7 +98,7 @@ class UserControllerTest {
                 {"username":"","password":"oldpassword","newPassword":"newpass123"}
                 """;
 
-        mockMvc.perform(put("/api/login")
+        mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rawBody))
                 .andExpect(status().isBadRequest());
