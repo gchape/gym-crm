@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import static jakarta.persistence.GenerationType.SEQUENCE;
+import static jakarta.persistence.GenerationType.IDENTITY;
 import static org.hibernate.annotations.SoftDeleteType.ACTIVE;
 
 @Entity
@@ -29,7 +29,7 @@ import static org.hibernate.annotations.SoftDeleteType.ACTIVE;
 public abstract class User {
     @Id
     @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = SEQUENCE)
+    @GeneratedValue(strategy = IDENTITY)
     @Column(nullable = false, updatable = false)
     private Long id;
 

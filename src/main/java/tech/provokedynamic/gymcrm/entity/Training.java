@@ -6,6 +6,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 
+import static jakarta.persistence.GenerationType.IDENTITY;
+
 @Entity
 @Getter
 @Builder
@@ -19,7 +21,7 @@ import java.time.LocalDate;
 public class Training {
     @Id
     @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = IDENTITY)
     @Column(nullable = false, updatable = false)
     private Long id;
 
