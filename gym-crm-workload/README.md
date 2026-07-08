@@ -1,88 +1,91 @@
 # gym-crm-workload
 
-Secondary microservice responsible for tracking and calculating trainers' monthly working hours, built with Spring Boot.
+Trainer workload tracking service for the `gym-crm` microservices ecosystem — maintains an in-memory summary of
+each trainer's monthly training hours, updated via events reported by `gym-crm`.
 
 ## Purpose
 
-Every time a training session is planned or cancelled for a trainer in the main `gym-crm` application, that event is
-sent to this microservice. It maintains an in-memory summary of each trainer's total training duration, broken down by
-year and month, and exposes an endpoint to query that summary on demand.
+`gym-crm` reports a workload delta (`ADD` or `DELETE`) to this service every time a training session is added,
+cancelled, or a trainee (with trainings) is deleted. This service aggregates those deltas per trainer, per
+year, per month, and exposes the running totals over a small REST API. It does not persist to a database — all
+state lives in memory for the lifetime of the process.
 
 ## Tech Stack
 
-- Spring Boot 4.1.0
-- Spring Cloud Netflix Eureka Client 2025.1.2
-- Spring Cloud Circuit Breaker (Resilience4j) 2025.1.2
-- Spring AOP (for operation-level logging)
-- In-memory storage — `ConcurrentHashMap` + `AtomicInteger` (no database)
+- Java 25
+- Spring Boot 4.1.0 (Web MVC, Validation, Actuator, AOP)
+- Spring Cloud (2025.1.2): Netflix Eureka Client, Config Client, Circuit Breaker (Resilience4j)
+- jjwt — JWT verification for service-to-service auth
+- Lombok
+- JUnit 5 for testing
 
-## Architecture
-
-```
-gym-crm ──► POST /api/trainers/workload ──► gym-crm-workload
-                                                    │
-                                                    ▼
-                                     ConcurrentHashMap<username, TrainerWorkloadSummary>
-                                                    │
-gym-crm ──► GET /api/trainers/workload/{username} ─┘
-```
-
-- Registers with `gym-crm-eureka-server` for service discovery.
-- Fetches its own configuration (port, Eureka settings) from `gym-crm-config-server`.
-- Does not persist data to a database — all workload data lives in memory and is lost on restart, per the task's "
-  in-memory saved structure" requirement.
-
-## REST API
-
-Follows Richardson Maturity Level 2: proper HTTP verbs, resource-based URLs, meaningful status codes.
-
-### Submit a workload event
+## How It Works
 
 ```
-POST /api/trainers/workload
-Content-Type: application/json
+gym-crm ──POST /api/trainers/workload──► gym-crm-workload
+                                              │
+                                    BearerAuthFilter validates
+                                    service-to-service JWT
+                                              │
+                                    TransactionIdFilter propagates
+                                    X-Transaction-Id via MDC
+                                              │
+                                    OperationLoggingAspect logs
+                                    request/response/status
+                                              │
+                                    WorkloadServiceImpl updates
+                                    in-memory trainer summary
 ```
 
-**Request body:**
+Workload data is stored as a nested, thread-safe in-memory structure:
+
+```
+TrainerWorkloadSummary (per trainer, keyed by username)
+└── YearSummary (per year)
+    └── MonthSummary (per month) — holds an AtomicInteger of total training minutes
+```
+
+`ADD` actions increase a month's duration; `DELETE` actions decrease it (never below zero).
+
+## API
+
+### `POST /api/trainers/workload`
+
+Reports a workload delta for a trainer. Called by `gym-crm` whenever a training is added or removed.
+
+Request body (`WorkloadRequest`):
+
+| Field              | Type              | Notes                      |
+|--------------------|-------------------|----------------------------|
+| `trainerUsername`  | String            | required                   |
+| `trainerFirstName` | String            | required                   |
+| `trainerLastName`  | String            | required                   |
+| `isActive`         | Boolean           | required                   |
+| `trainingDate`     | LocalDate         | required                   |
+| `trainingDuration` | Integer           | required, must be positive |
+| `actionType`       | `ADD` \| `DELETE` | required                   |
+
+Returns `200 OK` on success.
+
+### `GET /api/trainers/workload/{username}`
+
+Returns the aggregated workload summary for a trainer, broken down by year and month.
+
+Returns `200 OK` with a `TrainerWorkloadResponse`, or `404 Not Found` if no summary exists for that username yet.
 
 ```json
 {
-  "trainerUsername": "john.smith",
-  "trainerFirstName": "John",
-  "trainerLastName": "Smith",
-  "isActive": true,
-  "trainingDate": "2026-07-08",
-  "trainingDuration": 60,
-  "actionType": "ADD"
-}
-```
-
-- `actionType`: `ADD` (training scheduled) or `DELETE` (training cancelled) — `DELETE` subtracts the duration from that
-  month's total rather than removing history.
-
-**Response:** `200 OK` (empty body)
-
-### Get a trainer's monthly summary
-
-```
-GET /api/trainers/workload/{username}
-```
-
-**Response:**
-
-```json
-{
-  "trainerUsername": "john.smith",
-  "trainerFirstName": "John",
+  "trainerUsername": "jane.smith",
+  "trainerFirstName": "Jane",
   "trainerLastName": "Smith",
   "trainerStatus": true,
   "years": [
     {
-      "year": 2026,
+      "year": 2025,
       "months": [
         {
-          "month": 7,
-          "trainingSummaryDuration": 120
+          "month": 8,
+          "trainingSummaryDuration": 180
         }
       ]
     }
@@ -90,61 +93,47 @@ GET /api/trainers/workload/{username}
 }
 ```
 
-Returns `404 Not Found` if the trainer has no recorded workload data.
+## Authentication
 
-## Thread Safety
+- All requests must include a valid `Bearer` JWT in the `Authorization` header (`BearerAuthFilter`).
+- Tokens are signed with a shared secret (`jwt.secret`) that **must match** the one used by `gym-crm` to issue
+  the service-to-service token — both are sourced from `gym-crm-config-server`.
+- Unlike `gym-crm`, this service performs no user login of its own; it only validates tokens issued elsewhere.
 
-- Top-level trainer storage uses `ConcurrentHashMap` with atomic `computeIfAbsent` for safe concurrent trainer creation.
-- Per-month duration accumulation uses `AtomicInteger` to avoid race conditions when multiple requests update the same
-  trainer/month concurrently.
+## Cross-cutting Concerns
 
-## Transaction Logging (Two-Level)
-
-**Transaction level** — `TransactionIdFilter`:
-
-- Reads an incoming `X-Transaction-Id` header if present (propagated from `gym-crm`), or generates a new UUID if absent.
-- Places it in SLF4J MDC under `transactionId`, so every log line during the request automatically includes it.
-- Echoes it back in the response header.
-
-**Operation level** — `OperationLoggingAspect`:
-
-- Wraps all controller methods.
-- Logs the endpoint called, the incoming request payload, and the resulting response status (200) or error message on
-  failure.
-
-Console log pattern includes the transaction ID:
-
-```
-2026-07-08 10:14:15 [http-nio-8082-exec-1] INFO  [txId=3f9a1b2c-...] t.p.g.controller.WorkloadController - ...
-```
+- **`TransactionIdFilter`** (`@Order(0)`) — reads or generates an `X-Transaction-Id` header and puts it in the
+  SLF4J MDC, so logs here can be correlated with the originating request in `gym-crm`.
+- **`BearerAuthFilter`** (`@Order(1)`) — rejects any request without a valid bearer token with `401 Unauthorized`.
+- **`OperationLoggingAspect`** — logs method entry, exit, and status for everything in `controller..*`.
 
 ## Running Locally
 
-Requires `gym-crm-eureka-server` (port 8761) and `gym-crm-config-server` (port 8071) to be running first.
+Start dependencies first:
 
 ```bash
+# 1. Config server (port 8071)
+cd gym-crm-config-server && ./mvnw spring-boot:run
+
+# 2. Eureka server (port 8761)
+cd gym-crm-eureka-server && ./mvnw spring-boot:run
+
+# 3. This service (port 8082)
 ./mvnw spring-boot:run
 ```
 
-Starts on **port 8082** (configured via the config server).
+Verify it's up:
 
-## Configuration
-
-This service holds almost no local configuration — everything comes from `gym-crm-config-server`'s
-`config/gym-crm-workload.yaml`:
-
-```yaml
-spring:
-  application:
-    name: gym-crm-workload
-  profiles:
-    active: dev
-  config:
-    import: "configserver:http://localhost:8071"
+```bash
+curl http://localhost:8082/actuator/health
 ```
 
-## Not Yet Implemented
+## Notes
 
-- JWT bearer token validation on incoming requests (currently unauthenticated)
-- Circuit breaker usage (dependency present, not yet wired to any outbound call — this service doesn't call anything
-  downstream yet)
+- **In-memory only**: workload data is lost on restart. There is no persistence layer or database dependency for
+  this service.
+- Called by `gym-crm` through a **load-balanced RestClient** (Eureka-resolved) wrapped in a **Resilience4j circuit
+  breaker** (`workloadService` instance, configured in `gym-crm-config-server`), so transient failures here don't
+  fail the caller's request — `gym-crm` logs a fallback and moves on.
+- Registers with Eureka and fetches its configuration from `gym-crm-config-server`, matching the pattern used by
+  `gym-crm`.
