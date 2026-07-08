@@ -4,9 +4,9 @@ Centralized configuration server for the `gym-crm` microservices ecosystem, buil
 
 ## Purpose
 
-Provides distributed configuration management for all `gym-crm` microservices. Instead of each service holding its own
-environment-specific settings (database credentials, JWT secrets, feature flags, etc.) locally, they fetch this
-configuration remotely from this server at startup.
+Provides distributed configuration management for all `gym-crm` microservices. Instead of each service holding its
+own environment-specific settings (database credentials, JWT secrets, feature flags, Eureka registration details,
+etc.) locally, they fetch this configuration remotely from this server at startup.
 
 ## Tech Stack
 
@@ -16,8 +16,8 @@ configuration remotely from this server at startup.
 
 ## How It Works
 
-This server reads configuration files from `src/main/resources/config/` and serves them over HTTP to any client that
-requests them, based on:
+This server reads configuration files from `src/main/resources/config/` and serves them over HTTP to any client
+that requests them, based on:
 
 - **Application name** (`spring.application.name` on the client)
 - **Active profile** (`spring.profiles.active` on the client)
@@ -53,6 +53,30 @@ Located under `src/main/resources/config/`:
 
 Each file can contain multiple `---`-separated YAML documents, using `spring.config.activate.on-profile` to scope
 sections to specific profiles (`dev`, `prod`, etc.).
+
+### What each client gets
+
+**`gym-crm.yaml`** (served to `gym-crm`):
+
+- Server port (`8081`), Eureka client registration flags
+- Resilience4j circuit breaker settings for the `workloadService` instance (sliding window, failure threshold,
+  wait duration, half-open call permits)
+- springdoc/Swagger paths
+- Hibernate snake-case naming strategy, PostgreSQL driver class
+- `dev` profile: local Postgres connection, `ddl-auto: create-drop`, local Eureka URL, fast heartbeat intervals
+- `prod` profile: connection details and JWT secret sourced from environment variables
+  (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`), `ddl-auto: validate`, Eureka URL defaulting to the
+  in-cluster hostname
+
+**`gym-crm-workload.yaml`** (served to `gym-crm-workload`):
+
+- Server port (`8082`), Eureka client registration flags
+- `dev` profile: hardcoded JWT secret, local Eureka URL, fast heartbeat intervals
+- `prod` profile: `JWT_SECRET` and `EUREKA_URL` sourced from environment variables
+
+⚠️ Both clients' JWT secrets **must match** (they validate/sign the same service-to-service tokens used for the
+workload API), so keep the `dev` values in sync and set the same `JWT_SECRET` environment variable for both in
+`prod`.
 
 ## Running Locally
 
@@ -99,17 +123,22 @@ spring:
 
 Production profile blocks reference environment variables instead of hardcoded values:
 
-| Variable      | Used for            |
-|---------------|---------------------|
-| `DB_URL`      | Datasource JDBC URL |
-| `DB_USERNAME` | Database username   |
-| `DB_PASSWORD` | Database password   |
-| `JWT_SECRET`  | JWT signing secret  |
+| Variable      | Used for                                                         | Required by                   |
+|---------------|------------------------------------------------------------------|-------------------------------|
+| `DB_URL`      | Datasource JDBC URL                                              | `gym-crm`                     |
+| `DB_USERNAME` | Database username                                                | `gym-crm`                     |
+| `DB_PASSWORD` | Database password                                                | `gym-crm`                     |
+| `JWT_SECRET`  | JWT signing secret                                               | `gym-crm`, `gym-crm-workload` |
+| `EUREKA_URL`  | Eureka server address (defaults to in-cluster hostname if unset) | `gym-crm`, `gym-crm-workload` |
 
-⚠️ These must be set on the **client's** runtime environment (e.g. `gym-crm`'s host/container), not on this config
-server — the config server only serves the raw `${VAR}` placeholder text; resolution happens client-side.
+⚠️ These must be set on the **client's** runtime environment (e.g. `gym-crm`'s or `gym-crm-workload`'s
+host/container), not on this config server — the config server only serves the raw `${VAR}` placeholder text;
+resolution happens client-side.
 
 ## Notes
 
 - This server does not register with Eureka (kept simple — clients use a hardcoded URL to reach it).
-- Uses `native` profile (`spring.profiles.active: native`) to read from the local classpath instead of a Git repository.
+- Uses `native` profile (`spring.profiles.active: native`) to read from the local classpath instead of a Git
+  repository.
+- Actuator is on the classpath (via `spring-boot-starter-actuator`) for health/monitoring endpoints, but no custom
+  actuator configuration is currently applied here.
