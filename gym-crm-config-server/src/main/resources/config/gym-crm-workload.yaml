@@ -1,0 +1,24 @@
+server:
+  port: 8082
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 10
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://gym-crm-eureka-server:8761/eureka/}
