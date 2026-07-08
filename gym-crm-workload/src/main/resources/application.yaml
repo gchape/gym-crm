@@ -1,3 +1,7 @@
 spring:
   application:
     name: gym-crm-workload
+  profiles:
+    active: dev
+  config:
+    import: "configserver:http://localhost:8071"
