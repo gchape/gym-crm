@@ -5,8 +5,10 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
+import tech.provokedynamic.gymcrmworkload.config.JwtProperties;
 
 @SpringBootConfiguration(
         proxyBeanMethods = false)
@@ -14,6 +16,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrmworkload"
 })
+@EnableConfigurationProperties(JwtProperties.class)
 @EnableDiscoveryClient
 public class GymCrmWorkloadApplication {
 

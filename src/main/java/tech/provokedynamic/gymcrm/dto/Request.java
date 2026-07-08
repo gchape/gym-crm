@@ -8,16 +8,13 @@ import tech.provokedynamic.gymcrm.model.Address;
 import java.time.LocalDate;
 import java.util.List;
 
-public sealed interface Request permits
-        Request.AddTraining,
-        Request.ChangePassword,
-        Request.CreateTrainee,
-        Request.CreateTrainer,
-        Request.DeleteTrainee,
-        Request.ToggleActive,
-        Request.UpdateTrainee,
-        Request.UpdateTraineeTrainers,
-        Request.UpdateTrainer {
+public sealed interface Request permits Request.AddTraining, Request.CancelTraining, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.DeleteTrainee, Request.ToggleActive, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
+
+    record CancelTraining(
+            @NotNull(message = "Training id is required")
+            Long trainingId
+    ) implements Request {
+    }
 
     record CreateTrainee(
             @NotBlank(message = "First name is required")
