@@ -1,3 +1,31 @@
 spring:
   application:
     name: gym-crm-eureka-server
+  profiles:
+    active: dev
+
+server:
+  port: 8761
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+---
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+eureka:
+  server:
+    enable-self-preservation: false
+---
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+eureka:
+  server:
+    enable-self-preservation: true
