@@ -1,3 +1,16 @@
 spring:
   application:
     name: gym-crm-config-server
+
+  profiles:
+    active: native
+
+  cloud:
+    config:
+      charset: UTF-8
+      server:
+        native:
+          search-locations: classpath:/config
+
+server:
+  port: 8071
