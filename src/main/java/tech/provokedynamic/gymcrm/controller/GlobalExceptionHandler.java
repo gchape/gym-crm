@@ -93,4 +93,10 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", ex);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
     }
+
+    @ExceptionHandler(TrainingNotFoundException.class)
+    public ProblemDetail handleTrainingNotFound(TrainingNotFoundException ex) {
+        log.warn("Training not found: {}", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
 }

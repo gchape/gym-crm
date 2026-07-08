@@ -5,4 +5,6 @@ import tech.provokedynamic.gymcrm.dto.Request;
 public interface TrainingService {
 
     void add(Request.AddTraining request);
+
+    void cancel(Request.CancelTraining request);
 }

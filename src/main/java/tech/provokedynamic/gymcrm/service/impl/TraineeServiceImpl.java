@@ -7,6 +7,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.annotation.Validate;
+import tech.provokedynamic.gymcrm.client.WorkloadClient;
+import tech.provokedynamic.gymcrm.client.WorkloadRequest;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
@@ -20,6 +22,7 @@ import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
@@ -34,8 +37,12 @@ public class TraineeServiceImpl implements TraineeService {
 
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
+    private final TrainingRepository trainingRepository;
+
     private final CredentialGenerator credentialGenerator;
     private final BCryptPasswordEncoder passwordEncoder;
+
+    private final WorkloadClient workloadClient;
 
     @Override
     @Validate
@@ -157,10 +164,20 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void delete(Request.DeleteTrainee request) {
         String username = request.username();
-
         log.debug("Deleting trainee '{}'", username);
 
+        var trainings = trainingRepository.findAllByTraineeUsernameWithTrainer(username);
+
         traineeRepository.deleteByUsername(username);
+
+        trainings.forEach(training -> {
+            var trainer = training.getTrainer();
+            workloadClient.sendWorkload(new WorkloadRequest(
+                    trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
+                    trainer.isActive(), training.getTrainingDate(), training.getTrainingDuration(),
+                    WorkloadRequest.ActionType.DELETE
+            ));
+        });
 
         log.info("Deleted trainee '{}'", username);
     }

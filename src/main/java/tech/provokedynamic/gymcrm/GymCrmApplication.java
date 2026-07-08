@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import tech.provokedynamic.gymcrm.config.JwtProperties;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
@@ -18,9 +19,12 @@ import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
         "tech.provokedynamic.gymcrm.config",
         "tech.provokedynamic.gymcrm.security",
         "tech.provokedynamic.gymcrm.repository",
+        "tech.provokedynamic.gymcrm.client",
+        "tech.provokedynamic.gymcrm.filter",
 }, proxyBeanMethods = false)
 @EntityScan("tech.provokedynamic.gymcrm.entity")
 @EnableConfigurationProperties(JwtProperties.class)
+@EnableDiscoveryClient
 public class GymCrmApplication {
 
     static void main(String[] args) {
