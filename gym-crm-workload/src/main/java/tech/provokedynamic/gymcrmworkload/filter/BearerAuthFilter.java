@@ -13,7 +13,7 @@ import tech.provokedynamic.gymcrmworkload.security.JwtValidationService;
 import java.io.IOException;
 
 @Component
-@Order(0)
+@Order(1)
 @RequiredArgsConstructor
 public class BearerAuthFilter extends HttpFilter {
 

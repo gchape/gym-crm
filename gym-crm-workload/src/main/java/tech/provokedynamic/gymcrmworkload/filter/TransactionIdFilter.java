@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Component
-@Order(1)
+@Order(0)
 public class TransactionIdFilter extends HttpFilter {
 
     public static final String TRANSACTION_ID_HEADER = "X-Transaction-Id";

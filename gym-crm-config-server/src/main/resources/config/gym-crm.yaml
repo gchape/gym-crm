@@ -14,10 +14,6 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
-  timelimiter:
-    instances:
-      workloadService:
-        timeoutDuration: 3s
 springdoc:
   api-docs:
     path: /api-docs
