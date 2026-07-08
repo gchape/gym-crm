@@ -13,6 +13,7 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrmconfigserver",
+        "tech.provokedynamic.gymcrmconfigserver.config",
 })
 @EnableConfigServer
 public class GymCrmConfigServerApplication {
