@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: gym-crm-workload
+  profiles:
+    active: dev
+  config:
+    import: "configserver:http://localhost:8071"
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [txId=%X{transactionId}] %logger{36} - %msg%n"

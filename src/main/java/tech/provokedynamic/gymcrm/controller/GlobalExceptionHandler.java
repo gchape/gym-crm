@@ -64,6 +64,12 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ProblemDetail handleForbidden(ForbiddenException ex) {
+        log.warn("Forbidden: {}", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
     @ExceptionHandler(UserDoesNotExistException.class)
     public ProblemDetail handleUserNotFound(UserDoesNotExistException ex) {
         log.warn("User not found: {}", ex.getMessage());
@@ -92,5 +98,11 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGeneric(Exception ex) {
         log.error("Unexpected error", ex);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+    }
+
+    @ExceptionHandler(TrainingNotFoundException.class)
+    public ProblemDetail handleTrainingNotFound(TrainingNotFoundException ex) {
+        log.warn("Training not found: {}", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 }
