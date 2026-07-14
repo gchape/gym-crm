@@ -39,7 +39,7 @@ COLUMN street TYPE TEXT,
     ALTER
 COLUMN city TYPE TEXT,
     ALTER
-COLUMN zip TYPE TEXT,
+COLUMN postal_code TYPE TEXT,
     ALTER
 COLUMN country TYPE TEXT;
 
@@ -48,8 +48,8 @@ ALTER TABLE trainee
         CHECK (street IS NULL OR char_length(street) <= 255),
     ADD CONSTRAINT chk_trainee_city_length
         CHECK (city IS NULL OR char_length(city) <= 255),
-    ADD CONSTRAINT chk_trainee_zip_length
-        CHECK (zip IS NULL OR char_length(zip) <= 50),
+    ADD CONSTRAINT chk_trainee_postal_code_length
+        CHECK (postal_code IS NULL OR char_length(postal_code) <= 50),
     ADD CONSTRAINT chk_trainee_country_length
         CHECK (country IS NULL OR char_length(country) <= 100);
 
