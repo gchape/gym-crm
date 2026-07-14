@@ -6,6 +6,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.client.WorkloadClient;
 import tech.provokedynamic.gymcrm.client.WorkloadRequest;
@@ -15,6 +17,7 @@ import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
+import tech.provokedynamic.gymcrm.entity.Training;
 import tech.provokedynamic.gymcrm.entity.User;
 import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
 import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
@@ -25,6 +28,7 @@ import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
+import tech.provokedynamic.gymcrm.util.SecurityUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -87,6 +91,12 @@ public class TraineeServiceImpl implements TraineeService {
     public void changePassword(Request.ChangePassword request) {
         log.debug("Changing password for trainee '{}'", request.username());
 
+        // Defense in depth: the current-password check below already prevents
+        // anyone who doesn't know the password from changing it, but this
+        // keeps the ownership rule explicit and consistent with the other
+        // mutating endpoints.
+        SecurityUtils.requireSelf(request.username());
+
         var trainee = traineeRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
 
@@ -109,6 +119,8 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public Profile.Trainee update(Request.UpdateTrainee request) {
         log.debug("Updating trainee profile for '{}'", request.username());
+
+        SecurityUtils.requireSelf(request.username());
 
         var trainee = traineeRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
@@ -133,6 +145,8 @@ public class TraineeServiceImpl implements TraineeService {
     public void activate(Request.ToggleActive request) {
         String username = request.username();
 
+        SecurityUtils.requireSelf(username);
+
         log.debug("Activating trainee '{}'", username);
 
         if (traineeRepository.activateByUsername(username) == 0) {
@@ -149,6 +163,8 @@ public class TraineeServiceImpl implements TraineeService {
     public void deactivate(Request.ToggleActive request) {
         String username = request.username();
 
+        SecurityUtils.requireSelf(username);
+
         log.debug("Deactivating trainee '{}'", username);
 
         if (traineeRepository.deactivateByUsername(username) == 0) {
@@ -164,22 +180,48 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public void delete(Request.DeleteTrainee request) {
         String username = request.username();
+
+        SecurityUtils.requireSelf(username);
+
         log.debug("Deleting trainee '{}'", username);
 
         var trainings = trainingRepository.findAllByTraineeUsernameWithTrainer(username);
 
         traineeRepository.deleteByUsername(username);
 
-        trainings.forEach(training -> {
-            var trainer = training.getTrainer();
-            workloadClient.sendWorkload(new WorkloadRequest(
-                    trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
-                    trainer.isActive(), training.getTrainingDate(), training.getTrainingDuration(),
-                    WorkloadRequest.ActionType.DELETE
-            ));
-        });
+        // Notify gym-crm-workload only after this transaction actually commits.
+        // Previously this HTTP call happened while the DB transaction/connection
+        // was still open, which (a) holds a Hikari connection for the duration
+        // of a network call and (b) could report a delete that later rolls back.
+        registerAfterCommitWorkloadNotifications(trainings);
 
         log.info("Deleted trainee '{}'", username);
+    }
+
+    private void registerAfterCommitWorkloadNotifications(List<Training> trainings) {
+        if (trainings.isEmpty()) {
+            return;
+        }
+
+        // Capture the fields we need now — the entities/session won't be
+        // available anymore once the transaction has committed.
+        var events = trainings.stream()
+                .map(training -> {
+                    var trainer = training.getTrainer();
+                    return new WorkloadRequest(
+                            trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
+                            trainer.isActive(), training.getTrainingDate(), training.getTrainingDuration(),
+                            WorkloadRequest.ActionType.DELETE
+                    );
+                })
+                .toList();
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                events.forEach(workloadClient::sendWorkload);
+            }
+        });
     }
 
     @Override
@@ -225,6 +267,8 @@ public class TraineeServiceImpl implements TraineeService {
     @Transactional
     public List<Profile.Trainer> updateTrainers(Request.UpdateTraineeTrainers request) {
         log.debug("Updating trainers for trainee '{}'", request.username());
+
+        SecurityUtils.requireSelf(request.username());
 
         var trainee = traineeRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserDoesNotExistException(request.username()));
