@@ -4,13 +4,16 @@ eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
 ---
 spring:
   config:
     activate:
       on-profile: dev
 jwt:
-  secret: xyz123
+  secret: this-is-a-much-longer-dev-secret-key-32bytes-min
 eureka:
   client:
     service-url:

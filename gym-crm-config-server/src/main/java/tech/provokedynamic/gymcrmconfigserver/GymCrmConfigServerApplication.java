@@ -12,7 +12,6 @@ import org.springframework.context.annotation.ComponentScan;
         proxyBeanMethods = false)
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {
-        "tech.provokedynamic.gymcrmconfigserver",
         "tech.provokedynamic.gymcrmconfigserver.config",
 })
 @EnableConfigServer
