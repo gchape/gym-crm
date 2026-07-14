@@ -48,6 +48,9 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:4200
 ---
 spring:
   config:
@@ -66,3 +69,6 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://gym-crm-eureka-server:8761/eureka/}
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
