@@ -10,6 +10,7 @@ import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.service.UserService;
+import tech.provokedynamic.gymcrm.util.SecurityUtils;
 
 @Slf4j
 @Service
@@ -25,6 +26,8 @@ public class UserServiceImpl implements UserService {
         String username = request.username();
 
         log.debug("updatePassword called for username={}", username);
+
+        SecurityUtils.requireSelf(username);
 
         var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {

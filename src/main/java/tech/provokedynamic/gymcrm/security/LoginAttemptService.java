@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LoginAttemptService {
 
     private static final int MAX_ATTEMPTS = 3;
-    private static final long BLOCK_DURATION_SECONDS = 300;
+    private static final long BLOCK_DURATION_SECONDS = 10;
 
     private final ConcurrentHashMap<String, LoginAttempt> attempts = new ConcurrentHashMap<>();
 

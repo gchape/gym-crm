@@ -8,10 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.service.TrainingService;
 
@@ -39,6 +36,19 @@ public class TrainingController {
         trainingService.add(body);
 
         log.info("POST /api/trainings - added successfully");
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Cancel a training session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Training cancelled"),
+            @ApiResponse(responseCode = "404", description = "Training not found")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> cancel(@PathVariable Long id) {
+        log.info("DELETE /api/trainings/{}", id);
+        trainingService.cancel(new Request.CancelTraining(id));
+        log.info("DELETE /api/trainings/{} - cancelled", id);
         return ResponseEntity.ok().build();
     }
 }
