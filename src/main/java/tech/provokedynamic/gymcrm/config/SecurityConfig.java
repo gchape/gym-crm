@@ -30,14 +30,26 @@ import java.util.List;
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
+    // BCrypt work factor. 4 (the previous value) is the *minimum* allowed by
+    // the library — fast, but far too weak for password storage. 10 is
+    // Spring Security's own default; bump further only if your login-latency
+    // budget allows it.
+    private static final int BCRYPT_STRENGTH = 10;
+
     private final GymCRMUserDetailsService userDetailsService;
     private final JwtFilter jwtFilter;
+
+    // Comma-separated list of origins allowed to call this API with credentials.
+    // Supplied via gym-crm-config-server (app.cors.allowed-origins), defaulting
+    // to common local dev origins so the service still boots standalone.
+    @Value("#{'${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}'.split(',')}")
+    private List<String> allowedOrigins;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(
                 BCryptPasswordEncoder.BCryptVersion.$2Y,
-                4,
+                BCRYPT_STRENGTH,
                 new SecureRandom()
         );
     }
@@ -98,6 +110,7 @@ public class SecurityConfig {
 
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
         var config = new CorsConfiguration();
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Transaction-Id"));
         config.setExposedHeaders(List.of("X-Transaction-Id"));
