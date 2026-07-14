@@ -15,10 +15,6 @@ resilience4j:
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
 springdoc:
-  api-docs:
-    path: /api-docs
-    groups:
-      enabled: true
   swagger-ui:
     path: /swagger-ui.html
 spring:
@@ -43,7 +39,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
 jwt:
-  secret: xyz123
+  secret: this-is-a-much-longer-dev-secret-key-32bytes-min
 eureka:
   client:
     service-url:

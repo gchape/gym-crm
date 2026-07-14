@@ -7,7 +7,7 @@ spring:
     active: native
   cloud:
     config:
-      charset: UTF-8
       server:
         native:
           search-locations: classpath:/config
+          version: 1
