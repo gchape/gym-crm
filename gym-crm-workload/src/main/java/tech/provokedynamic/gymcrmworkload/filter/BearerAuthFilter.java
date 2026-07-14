@@ -2,32 +2,34 @@ package tech.provokedynamic.gymcrmworkload.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
 import tech.provokedynamic.gymcrmworkload.security.JwtValidationService;
 
 import java.io.IOException;
+import java.util.List;
 
-@Component
-@Order(1)
 @RequiredArgsConstructor
-public class BearerAuthFilter extends HttpFilter {
+public class BearerAuthFilter extends OncePerRequestFilter {
 
     private final JwtValidationService jwtValidationService;
 
     @Override
-    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         String header = request.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ") || !jwtValidationService.isValid(header.substring(7))) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid bearer token");
-            return;
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            if (jwtValidationService.isValid(token)) {
+                var auth = new UsernamePasswordAuthenticationToken(token, null, List.of());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
 
         chain.doFilter(request, response);
