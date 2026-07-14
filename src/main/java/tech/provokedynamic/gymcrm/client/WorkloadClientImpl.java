@@ -1,9 +1,9 @@
 package tech.provokedynamic.gymcrm.client;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tech.provokedynamic.gymcrm.filter.TransactionIdFilter;
@@ -11,7 +11,6 @@ import tech.provokedynamic.gymcrm.security.JwtService;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class WorkloadClientImpl implements WorkloadClient {
 
     private static final String SERVICE_SUBJECT = "gym-crm-service";
@@ -19,6 +18,13 @@ public class WorkloadClientImpl implements WorkloadClient {
 
     private final RestClient.Builder loadBalancedRestClientBuilder;
     private final JwtService jwtService;
+
+    public WorkloadClientImpl(
+            @Qualifier("loadBalanced") RestClient.Builder loadBalancedRestClientBuilder,
+            JwtService jwtService) {
+        this.loadBalancedRestClientBuilder = loadBalancedRestClientBuilder;
+        this.jwtService = jwtService;
+    }
 
     @Override
     @CircuitBreaker(name = "workloadService", fallbackMethod = "sendWorkloadFallback")

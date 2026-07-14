@@ -27,8 +27,6 @@ public class OpenApiConfig {
                 .group("public")
                 .packagesToScan("tech.provokedynamic.gymcrm.controller")
                 .pathsToMatch("/api/**")
-                .producesToMatch("application/json")
-                .consumesToMatch("application/json")
                 .build();
     }
 }
