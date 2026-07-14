@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import tech.provokedynamic.gymcrm.dto.Sensitive;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Aspect
 @Component
@@ -26,7 +28,9 @@ public class OperationLoggingAspect {
                 ? httpRequest.getMethod() + " " + httpRequest.getRequestURI()
                 : joinPoint.getSignature().toShortString();
 
-        log.info("Incoming request - endpoint=[{}], request=[{}]", endpoint, Arrays.toString(joinPoint.getArgs()));
+        String requestArgs = describeArgs(joinPoint.getArgs());
+
+        log.info("Incoming request - endpoint=[{}], request=[{}]", endpoint, requestArgs);
 
         try {
             Object result = joinPoint.proceed();
@@ -37,6 +41,18 @@ public class OperationLoggingAspect {
             log.error("Request failed - endpoint=[{}], status=[500], message=[{}]", endpoint, ex.getMessage(), ex);
             throw ex;
         }
+    }
+
+    /**
+     * Renders each argument for logging, masking anything that implements
+     * {@link Sensitive} (passwords, tokens, etc.) instead of relying on its
+     * default toString(). Any DTO carrying a secret should implement
+     * Sensitive rather than being added here as a special case.
+     */
+    private String describeArgs(Object[] args) {
+        return Arrays.stream(args)
+                .map(arg -> arg instanceof Sensitive sensitive ? sensitive.redacted() : String.valueOf(arg))
+                .collect(Collectors.joining(", "));
     }
 
     private HttpServletRequest currentHttpRequest() {

@@ -15,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import tech.provokedynamic.gymcrm.dto.Sensitive;
 import tech.provokedynamic.gymcrm.security.JwtService;
 import tech.provokedynamic.gymcrm.security.LoginAttemptService;
 import tech.provokedynamic.gymcrm.security.TokenBlacklist;
@@ -26,6 +27,8 @@ import tech.provokedynamic.gymcrm.security.TokenBlacklist;
 @NullMarked
 @Tag(name = "Auth", description = "Login and logout")
 public class AuthController {
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -66,22 +69,38 @@ public class AuthController {
     @Operation(summary = "Logout — invalidates JWT token")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Logged out successfully"),
+            @ApiResponse(responseCode = "400", description = "Missing or malformed Authorization header"),
             @ApiResponse(responseCode = "401", description = "Missing or invalid token")
     })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
         log.info("POST /api/logout");
 
-        var token = authHeader.substring(7);
+        if (authHeader.length() <= BEARER_PREFIX.length() || !authHeader.startsWith(BEARER_PREFIX)) {
+            log.warn("POST /api/logout - malformed Authorization header");
+            return ResponseEntity.badRequest().build();
+        }
+
+        var token = authHeader.substring(BEARER_PREFIX.length());
         tokenBlacklist.blacklist(token);
 
         log.info("POST /api/logout - token blacklisted");
         return ResponseEntity.ok().build();
     }
 
-    public record LoginRequest(@NotBlank String username, @NotBlank String password) {
+    public record LoginRequest(@NotBlank String username, @NotBlank String password) implements Sensitive {
+
+        @Override
+        public String redacted() {
+            return "LoginRequest[username=%s, password=***]".formatted(username);
+        }
     }
 
-    public record LoginResponse(String token) {
+    public record LoginResponse(String token) implements Sensitive {
+
+        @Override
+        public String redacted() {
+            return "LoginResponse[token=***]";
+        }
     }
 }
