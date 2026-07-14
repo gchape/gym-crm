@@ -18,11 +18,15 @@ public class SecurityConfig {
 
     private final JwtValidationService jwtValidationService;
 
+    // Narrowed from "/actuator/**" — only expose liveness/info, not the full
+    // actuator surface (env, beans, heapdump, etc.) without auth.
     private static final String[] PUBLIC_PATHS = {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
-            "/actuator/**",
+            "/actuator/health",
+            "/actuator/health/**",
+            "/actuator/info",
             "/favicon.ico"
     };
 
@@ -42,7 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated())
 
-                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) ->
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((_, response, _) ->
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid bearer token")))
 
                 .addFilterBefore(new BearerAuthFilter(jwtValidationService), UsernamePasswordAuthenticationFilter.class)
