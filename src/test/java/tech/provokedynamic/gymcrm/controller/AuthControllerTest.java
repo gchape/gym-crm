@@ -13,7 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import tech.provokedynamic.gymcrm.security.JwtService;
-import tech.provokedynamic.gymcrm.security.LoginAttemptService;
 import tech.provokedynamic.gymcrm.security.TokenBlacklist;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -31,8 +30,6 @@ class AuthControllerTest {
     JwtService jwtService;
     @Mock
     TokenBlacklist tokenBlacklist;
-    @Mock
-    LoginAttemptService loginAttemptService;
 
     MockMvc mockMvc;
     ObjectMapper mapper;
@@ -41,7 +38,7 @@ class AuthControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new AuthController(
-                        authenticationManager, jwtService, tokenBlacklist, loginAttemptService))
+                        authenticationManager, jwtService, tokenBlacklist))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
         mapper = new ObjectMapper();
@@ -51,7 +48,6 @@ class AuthControllerTest {
 
     @Test
     void login_validCredentials_returns200WithToken() throws Exception {
-        when(loginAttemptService.isBlocked("john.doe")).thenReturn(false);
         when(authenticationManager.authenticate(any())).thenReturn(
                 new UsernamePasswordAuthenticationToken("john.doe", null));
         when(jwtService.generateToken("john.doe")).thenReturn("jwt.token.here");
@@ -63,13 +59,10 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("jwt.token.here"));
-
-        verify(loginAttemptService).onSuccess("john.doe");
     }
 
     @Test
-    void login_badCredentials_returns401AndRecordsFailure() throws Exception {
-        when(loginAttemptService.isBlocked("john.doe")).thenReturn(false);
+    void login_badCredentials_returns401() throws Exception {
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("bad"));
 
         mockMvc.perform(post("/api/login")
@@ -79,23 +72,7 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isUnauthorized());
 
-        verify(loginAttemptService).onFailure("john.doe");
         verify(jwtService, never()).generateToken(any());
-    }
-
-    @Test
-    void login_blockedUser_returns429WithoutAttemptingAuth() throws Exception {
-        when(loginAttemptService.isBlocked("john.doe")).thenReturn(true);
-
-        mockMvc.perform(post("/api/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"username":"john.doe","password":"pass123456"}
-                                """))
-                .andExpect(status().isTooManyRequests());
-
-        verifyNoInteractions(authenticationManager);
-        verifyNoInteractions(jwtService);
     }
 
     @Test
