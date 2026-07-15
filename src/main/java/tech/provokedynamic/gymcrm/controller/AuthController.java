@@ -17,7 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.bind.annotation.*;
 import tech.provokedynamic.gymcrm.dto.Sensitive;
 import tech.provokedynamic.gymcrm.security.JwtService;
-import tech.provokedynamic.gymcrm.security.LoginAttemptService;
 import tech.provokedynamic.gymcrm.security.TokenBlacklist;
 
 @Slf4j
@@ -33,33 +32,25 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenBlacklist tokenBlacklist;
-    private final LoginAttemptService loginAttemptService;
 
     @Operation(summary = "Login — returns JWT token")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful"),
             @ApiResponse(responseCode = "401", description = "Invalid credentials"),
-            @ApiResponse(responseCode = "429", description = "Account temporarily blocked")
+            @ApiResponse(responseCode = "429", description = "Too many requests")
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest body) {
         log.info("POST /api/login - username={}", body.username());
 
-        if (loginAttemptService.isBlocked(body.username())) {
-            log.warn("POST /api/login - account blocked username={}", body.username());
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
-        }
-
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(body.username(), body.password()));
         } catch (BadCredentialsException e) {
-            loginAttemptService.onFailure(body.username());
             log.warn("POST /api/login - bad credentials username={}", body.username());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        loginAttemptService.onSuccess(body.username());
         var token = jwtService.generateToken(body.username());
 
         log.info("POST /api/login - success username={}", body.username());
