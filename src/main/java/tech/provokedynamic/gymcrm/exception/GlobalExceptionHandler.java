@@ -1,4 +1,4 @@
-package tech.provokedynamic.gymcrm.controller;
+package tech.provokedynamic.gymcrm.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,7 +11,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import tech.provokedynamic.gymcrm.exception.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;

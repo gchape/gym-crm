@@ -14,10 +14,7 @@ import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
-import tech.provokedynamic.gymcrm.exception.AlreadyActivatedException;
-import tech.provokedynamic.gymcrm.exception.AlreadyDeactivatedException;
-import tech.provokedynamic.gymcrm.exception.AuthenticationException;
-import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
+import tech.provokedynamic.gymcrm.exception.*;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 
 import java.time.LocalDate;
