@@ -3,6 +3,7 @@ package tech.provokedynamic.gymcrm.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -10,7 +11,6 @@ import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.service.UserService;
-import tech.provokedynamic.gymcrm.util.SecurityUtils;
 
 @Slf4j
 @Service
@@ -18,7 +18,7 @@ import tech.provokedynamic.gymcrm.util.SecurityUtils;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -26,8 +26,6 @@ public class UserServiceImpl implements UserService {
         String username = request.username();
 
         log.debug("updatePassword called for username={}", username);
-
-        SecurityUtils.requireSelf(username);
 
         var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {
