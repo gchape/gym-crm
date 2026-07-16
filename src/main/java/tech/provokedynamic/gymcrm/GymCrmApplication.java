@@ -26,6 +26,7 @@ import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
         "tech.provokedynamic.gymcrm.service",
         "tech.provokedynamic.gymcrm.validation",
         "tech.provokedynamic.gymcrm.security",
+        "tech.provokedynamic.gymcrm.client",
 })
 @Import(GlobalExceptionHandler.class)
 @EnableDiscoveryClient
