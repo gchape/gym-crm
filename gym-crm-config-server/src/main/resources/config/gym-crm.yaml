@@ -24,8 +24,21 @@ spring:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
   datasource:
     driver-class-name: org.postgresql.Driver
-jwt:
-  expiration: 86400000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+      client:
+        registration:
+          gym-crm-service:
+            client-id: gym-crm-service
+            client-secret: ${GYM_CRM_CLIENT_SECRET:dev-secret-change-me}
+            authorization-grant-type: client_credentials
+            scope: workload.write
+        provider:
+          gym-crm-service:
+            token-uri: http://localhost:9000/oauth2/token
 ---
 spring:
   config:
@@ -38,8 +51,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-jwt:
-  secret: this-is-a-much-longer-dev-secret-key-32bytes-min
 eureka:
   client:
     service-url:
@@ -63,8 +74,21 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-jwt:
-  secret: ${JWT_SECRET}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
+      client:
+        registration:
+          gym-crm-service:
+            client-id: gym-crm-service
+            client-secret: ${GYM_CRM_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: workload.write
+        provider:
+          gym-crm-service:
+            token-uri: ${OAUTH2_ISSUER_URI}/oauth2/token
 eureka:
   client:
     service-url:

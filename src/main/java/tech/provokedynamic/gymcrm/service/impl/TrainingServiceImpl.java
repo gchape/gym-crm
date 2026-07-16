@@ -8,18 +8,15 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.client.WorkloadClient;
-import tech.provokedynamic.gymcrm.client.WorkloadRequest;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
-import tech.provokedynamic.gymcrm.exception.ForbiddenException;
 import tech.provokedynamic.gymcrm.exception.TrainingNotFoundException;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.service.TrainingService;
-import tech.provokedynamic.gymcrm.util.SecurityUtils;
 
 @Slf4j
 @Service
@@ -35,11 +32,6 @@ public class TrainingServiceImpl implements TrainingService {
     @Validate
     @Transactional
     public void add(Request.AddTraining request) {
-        // Assumption: a training is booked by the trainer running it. If your
-        // domain instead expects the trainee to initiate this call, swap this
-        // for request.traineeUsername().
-        SecurityUtils.requireSelf(request.trainerUsername());
-
         var trainee = traineeRepository.findByUsername(request.traineeUsername())
                 .orElseThrow(() -> new UserDoesNotExistException(request.traineeUsername()));
         var trainer = trainerRepository.findByUsername(request.trainerUsername())
@@ -57,7 +49,7 @@ public class TrainingServiceImpl implements TrainingService {
         trainingRepository.save(training);
 
         registerAfterCommitWorkloadNotification(trainer, request.trainingDate(), request.trainingDuration(),
-                WorkloadRequest.ActionType.ADD);
+                Request.WorkloadRequest.ActionType.ADD);
 
         log.info("Added training '{}' for trainee '{}' with trainer '{}'",
                 request.trainingName(), request.traineeUsername(), request.trainerUsername());
@@ -70,32 +62,22 @@ public class TrainingServiceImpl implements TrainingService {
         var training = trainingRepository.findById(request.trainingId())
                 .orElseThrow(() -> new TrainingNotFoundException(request.trainingId()));
 
-        // Either party on the training may cancel it.
-        String current = SecurityUtils.currentUsername();
-        boolean isParticipant = current != null && (
-                current.equals(training.getTrainer().getUsername())
-                        || current.equals(training.getTrainee().getUsername())
-        );
-        if (!isParticipant) {
-            throw new ForbiddenException("You may only cancel your own trainings");
-        }
-
         trainingRepository.delete(training);
 
         var trainer = training.getTrainer();
         registerAfterCommitWorkloadNotification(trainer, training.getTrainingDate(), training.getTrainingDuration(),
-                WorkloadRequest.ActionType.DELETE);
+                Request.WorkloadRequest.ActionType.DELETE);
 
         log.info("Cancelled training id={}", request.trainingId());
     }
 
     private void registerAfterCommitWorkloadNotification(
             Trainer trainer, java.time.LocalDate trainingDate, int trainingDuration,
-            WorkloadRequest.ActionType actionType) {
+            Request.WorkloadRequest.ActionType actionType) {
 
         // Capture fields now — the entity/session is gone by the time
         // afterCommit() runs.
-        var event = new WorkloadRequest(
+        var event = new Request.WorkloadRequest(
                 trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
                 trainer.isActive(), trainingDate, trainingDuration, actionType
         );
