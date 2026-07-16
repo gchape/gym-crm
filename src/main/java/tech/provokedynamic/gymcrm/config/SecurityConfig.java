@@ -1,43 +1,23 @@
 package tech.provokedynamic.gymcrm.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import tech.provokedynamic.gymcrm.security.GymCRMUserDetailsService;
-import tech.provokedynamic.gymcrm.security.JwtFilter;
 
-import java.security.SecureRandom;
 import java.util.List;
 
 @Configuration
-@RequiredArgsConstructor
-@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
-
-    // BCrypt work factor. 4 (the previous value) is the *minimum* allowed by
-    // the library — fast, but far too weak for password storage. 10 is
-    // Spring Security's own default; bump further only if your login-latency
-    // budget allows it.
-    private static final int BCRYPT_STRENGTH = 10;
-
-    private final GymCRMUserDetailsService userDetailsService;
-    private final JwtFilter jwtFilter;
 
     // Comma-separated list of origins allowed to call this API with credentials.
     // Supplied via gym-crm-config-server (app.cors.allowed-origins), defaulting
@@ -46,29 +26,8 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
 
     @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(
-                BCryptPasswordEncoder.BCryptVersion.$2Y,
-                BCRYPT_STRENGTH,
-                new SecureRandom()
-        );
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        var provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
-        return config.getAuthenticationManager();
-    }
-
-    @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
-        return (request, response, authException) ->
+        return (_, response, _) ->
                 response.sendError(HttpStatus.UNAUTHORIZED.value(), "Missing or invalid authentication token");
     }
 
@@ -86,7 +45,6 @@ public class SecurityConfig {
                         session -> session
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authenticationProvider(authenticationProvider())
                 .exceptionHandling(
                         exceptions -> exceptions
                                 .authenticationEntryPoint(authenticationEntryPoint())
@@ -95,7 +53,6 @@ public class SecurityConfig {
                         auth -> auth
                                 .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
                                 .requestMatchers("/api/training-types").permitAll()
                                 .requestMatchers(
                                         "/swagger-ui/**",
@@ -104,7 +61,9 @@ public class SecurityConfig {
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2ResourceServer(
+                        oauth2 -> oauth2.jwt(Customizer.withDefaults())
+                )
                 .build();
     }
 

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import tech.provokedynamic.gymcrm.filter.TransactionIdFilter;
-import tech.provokedynamic.gymcrm.security.JwtService;
 
 @Slf4j
 @Component
