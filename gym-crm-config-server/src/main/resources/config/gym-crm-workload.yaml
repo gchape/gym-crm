@@ -7,13 +7,17 @@ eureka:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
 ---
 spring:
   config:
     activate:
       on-profile: dev
-jwt:
-  secret: this-is-a-much-longer-dev-secret-key-32bytes-min
 eureka:
   client:
     service-url:
@@ -27,8 +31,11 @@ spring:
   config:
     activate:
       on-profile: prod
-jwt:
-  secret: ${JWT_SECRET}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
 eureka:
   client:
     service-url:
