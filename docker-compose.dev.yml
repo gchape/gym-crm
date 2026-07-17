@@ -16,8 +16,8 @@ services:
     image: apache/kafka:4.3.1
     container_name: gym-crm-kafka
     ports:
-      - "9092:9092"   # client connections
-      - "9093:9093"   # controller (KRaft)
+      - "9092:9092"
+      - "9093:9093"
     environment:
       - KAFKA_NODE_ID=1
       - KAFKA_PROCESS_ROLES=broker,controller
@@ -27,8 +27,9 @@ services:
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      test: [ "CMD", "consul", "members" ]
       interval: 10s
       timeout: 5s
       retries: 5
