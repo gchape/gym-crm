@@ -1,6 +1,6 @@
 services:
   consul:
-    image: hashicorp/consul:2.0
+    image: hashicorp/consul:2.0.2
     container_name: gym-crm-consul
     command: agent -dev -client=0.0.0.0 -ui
     ports:
@@ -11,3 +11,44 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: gym-crm-kafka
+    ports:
+      - "9092:9092"   # client connections
+      - "9093:9093"   # controller (KRaft)
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:18.4-alpine
+    container_name: gym-crm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - gym-crm-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  gym-crm-postgres-data:
