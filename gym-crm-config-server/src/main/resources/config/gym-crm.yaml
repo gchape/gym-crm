@@ -1,15 +1,5 @@
 server:
   port: 8081
-resilience4j:
-  circuitbreaker:
-    instances:
-      workloadService:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -32,16 +22,13 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:9000
-      client:
-        registration:
-          gym-crm-service:
-            client-id: gym-crm-service
-            client-secret: ${GYM_CRM_CLIENT_SECRET:dev-secret-change-me}
-            authorization-grant-type: client_credentials
-            scope: workload.write
-        provider:
-          gym-crm-service:
-            token-uri: http://localhost:9000/oauth2/token
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 ---
 spring:
   config:
@@ -78,20 +65,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_ISSUER_URI}
-      client:
-        registration:
-          gym-crm-service:
-            client-id: gym-crm-service
-            client-secret: ${GYM_CRM_CLIENT_SECRET}
-            authorization-grant-type: client_credentials
-            scope: workload.write
-        provider:
-          gym-crm-service:
-            token-uri: ${OAUTH2_ISSUER_URI}/oauth2/token
   cloud:
     consul:
       host: ${CONSUL_HOST:gym-crm-consul}
       port: ${CONSUL_PORT:8500}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
