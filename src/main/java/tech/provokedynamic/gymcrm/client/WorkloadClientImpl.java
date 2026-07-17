@@ -31,6 +31,11 @@ public class WorkloadClientImpl implements WorkloadClient {
                 .build();
 
         var authorizedClient = authorizedClientManager.authorize(authorizeRequest);
+        if (authorizedClient == null) {
+            throw new IllegalStateException(
+                    "Failed to authorize client '" + REGISTRATION_ID + "' — check auth-server availability/credentials");
+        }
+
         var token = authorizedClient.getAccessToken().getTokenValue();
 
         String transactionId = MDC.get(TransactionIdFilter.MDC_KEY);
