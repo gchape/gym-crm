@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
-import tech.provokedynamic.gymcrm.client.WorkloadClient;
+import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Trainer;
 import tech.provokedynamic.gymcrm.entity.Training;
@@ -17,6 +17,7 @@ import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.service.TrainingService;
+import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
 
 @Slf4j
 @Service
@@ -26,7 +27,7 @@ public class TrainingServiceImpl implements TrainingService {
     private final TrainingRepository trainingRepository;
     private final TraineeRepository traineeRepository;
     private final TrainerRepository trainerRepository;
-    private final WorkloadClient workloadClient;
+    private final WorkloadEventPublisher workloadEventPublisher;
 
     @Override
     @Validate
@@ -49,7 +50,7 @@ public class TrainingServiceImpl implements TrainingService {
         trainingRepository.save(training);
 
         registerAfterCommitWorkloadNotification(trainer, request.trainingDate(), request.trainingDuration(),
-                Request.WorkloadRequest.ActionType.ADD);
+                WorkloadEvent.ActionType.ADD);
 
         log.info("Added training '{}' for trainee '{}' with trainer '{}'",
                 request.trainingName(), request.traineeUsername(), request.trainerUsername());
@@ -66,18 +67,18 @@ public class TrainingServiceImpl implements TrainingService {
 
         var trainer = training.getTrainer();
         registerAfterCommitWorkloadNotification(trainer, training.getTrainingDate(), training.getTrainingDuration(),
-                Request.WorkloadRequest.ActionType.DELETE);
+                WorkloadEvent.ActionType.DELETE);
 
         log.info("Cancelled training id={}", request.trainingId());
     }
 
     private void registerAfterCommitWorkloadNotification(
             Trainer trainer, java.time.LocalDate trainingDate, int trainingDuration,
-            Request.WorkloadRequest.ActionType actionType) {
+            WorkloadEvent.ActionType actionType) {
 
         // Capture fields now — the entity/session is gone by the time
         // afterCommit() runs.
-        var event = new Request.WorkloadRequest(
+        var event = new WorkloadEvent(
                 trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
                 trainer.isActive(), trainingDate, trainingDuration, actionType
         );
@@ -85,7 +86,7 @@ public class TrainingServiceImpl implements TrainingService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                workloadClient.sendWorkload(event);
+                workloadEventPublisher.publish(event);
             }
         });
     }

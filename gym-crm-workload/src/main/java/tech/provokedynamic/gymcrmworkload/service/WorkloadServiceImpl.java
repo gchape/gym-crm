@@ -1,12 +1,10 @@
 package tech.provokedynamic.gymcrmworkload.service;
 
 import org.springframework.stereotype.Service;
-import tech.provokedynamic.gymcrmworkload.dto.WorkloadRequest;
-import tech.provokedynamic.gymcrmworkload.model.MonthSummary;
+import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
 import tech.provokedynamic.gymcrmworkload.model.TrainerWorkloadSummary;
-import tech.provokedynamic.gymcrmworkload.model.YearSummary;
 
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,28 +14,22 @@ public class WorkloadServiceImpl implements WorkloadService {
     private final Map<String, TrainerWorkloadSummary> workloadStore = new ConcurrentHashMap<>();
 
     @Override
-    public void processWorkload(WorkloadRequest request) {
+    public void processWorkload(WorkloadEvent event) {
         TrainerWorkloadSummary summary = workloadStore.computeIfAbsent(
-                request.trainerUsername(),
+                event.trainerUsername(),
                 username -> new TrainerWorkloadSummary(
-                        username,
-                        request.trainerFirstName(),
-                        request.trainerLastName(),
-                        request.isActive()
-                )
+                        username, event.trainerFirstName(), event.trainerLastName(), event.isActive())
         );
 
-        summary.setTrainerFirstName(request.trainerFirstName());
-        summary.setTrainerLastName(request.trainerLastName());
-        summary.setTrainerStatus(request.isActive());
+        summary.setTrainerFirstName(event.trainerFirstName());
+        summary.setTrainerLastName(event.trainerLastName());
+        summary.setTrainerStatus(event.isActive());
 
-        LocalDate date = request.trainingDate();
-        YearSummary yearSummary = summary.getOrCreateYear(date.getYear());
-        MonthSummary monthSummary = yearSummary.getOrCreateMonth(date.getMonthValue());
+        YearMonth month = YearMonth.from(event.trainingDate());
 
-        switch (request.actionType()) {
-            case ADD -> monthSummary.addDuration(request.trainingDuration());
-            case DELETE -> monthSummary.subtractDuration(request.trainingDuration());
+        switch (event.actionType()) {
+            case ADD -> summary.addDuration(month, event.trainingDuration());
+            case DELETE -> summary.subtractDuration(month, event.trainingDuration());
         }
     }
 
