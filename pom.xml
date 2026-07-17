@@ -74,9 +74,10 @@
             <version>3.0.3</version>
         </dependency>
 
+        <!-- Consul service discovery (replaces spring-cloud-starter-netflix-eureka-client) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+            <artifactId>spring-cloud-starter-consul-discovery</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>

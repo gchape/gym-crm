@@ -1,13 +1,16 @@
 server:
   port: 8082
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 spring:
+  cloud:
+    consul:
+      discovery:
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        instance-id: ${spring.application.name}:${random.value}
   security:
     oauth2:
       resourceserver:
@@ -18,14 +21,10 @@ spring:
   config:
     activate:
       on-profile: dev
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    registry-fetch-interval-seconds: 10
-  instance:
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
 ---
 spring:
   config:
@@ -36,7 +35,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_ISSUER_URI}
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URL:http://gym-crm-workload-server:8761/eureka/}
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:gym-crm-consul}
+      port: ${CONSUL_PORT:8500}
