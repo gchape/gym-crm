@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.*;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class OAuth2ClientConfig {
 
     @Bean

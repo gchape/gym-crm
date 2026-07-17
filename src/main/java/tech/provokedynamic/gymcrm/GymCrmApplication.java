@@ -2,6 +2,7 @@ package tech.provokedynamic.gymcrm;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
@@ -25,9 +26,9 @@ import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
         "tech.provokedynamic.gymcrm.repository",
         "tech.provokedynamic.gymcrm.service",
         "tech.provokedynamic.gymcrm.validation",
-        "tech.provokedynamic.gymcrm.security",
         "tech.provokedynamic.gymcrm.client",
 })
+@EnableAutoConfiguration
 @Import(GlobalExceptionHandler.class)
 @EnableDiscoveryClient
 public class GymCrmApplication {
