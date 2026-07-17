@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
-import tech.provokedynamic.gymcrm.client.WorkloadClient;
+import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
@@ -27,6 +27,7 @@ import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.service.TraineeService;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
+import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -44,7 +45,7 @@ public class TraineeServiceImpl implements TraineeService {
     private final CredentialGenerator credentialGenerator;
     private final PasswordEncoder passwordEncoder;
 
-    private final WorkloadClient workloadClient;
+    private final WorkloadEventPublisher workloadEventPublisher;
 
     @Override
     @Validate
@@ -174,9 +175,6 @@ public class TraineeServiceImpl implements TraineeService {
         traineeRepository.deleteByUsername(username);
 
         // Notify gym-crm-workload only after this transaction actually commits.
-        // Previously this HTTP call happened while the DB transaction/connection
-        // was still open, which (a) holds a Hikari connection for the duration
-        // of a network call and (b) could report a delete that later rolls back.
         registerAfterCommitWorkloadNotifications(trainings);
 
         log.info("Deleted trainee '{}'", username);
@@ -192,10 +190,10 @@ public class TraineeServiceImpl implements TraineeService {
         var events = trainings.stream()
                 .map(training -> {
                     var trainer = training.getTrainer();
-                    return new Request.WorkloadRequest(
+                    return new WorkloadEvent(
                             trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
                             trainer.isActive(), training.getTrainingDate(), training.getTrainingDuration(),
-                            Request.WorkloadRequest.ActionType.DELETE
+                            WorkloadEvent.ActionType.DELETE
                     );
                 })
                 .toList();
@@ -203,7 +201,7 @@ public class TraineeServiceImpl implements TraineeService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                events.forEach(workloadClient::sendWorkload);
+                events.forEach(workloadEventPublisher::publish);
             }
         });
     }

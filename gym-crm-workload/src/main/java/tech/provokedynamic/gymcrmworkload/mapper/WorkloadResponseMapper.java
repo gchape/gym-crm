@@ -4,20 +4,34 @@ import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrmworkload.dto.response.MonthSummaryResponse;
 import tech.provokedynamic.gymcrmworkload.dto.response.TrainerWorkloadResponse;
 import tech.provokedynamic.gymcrmworkload.dto.response.YearSummaryResponse;
-import tech.provokedynamic.gymcrmworkload.model.MonthSummary;
 import tech.provokedynamic.gymcrmworkload.model.TrainerWorkloadSummary;
-import tech.provokedynamic.gymcrmworkload.model.YearSummary;
 
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Component
 public class WorkloadResponseMapper {
 
     public TrainerWorkloadResponse toResponse(TrainerWorkloadSummary summary) {
-        List<YearSummaryResponse> years = summary.getYears().values().stream()
-                .sorted(Comparator.comparingInt(YearSummary::getYear))
-                .map(this::toYearResponse)
+        Map<Integer, List<MonthSummaryResponse>> byYear = summary.getMonthlyDurations().entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getKey().getYear(),
+                        TreeMap::new,
+                        Collectors.mapping(
+                                e -> new MonthSummaryResponse(e.getKey().getMonthValue(), e.getValue().get()),
+                                Collectors.collectingAndThen(Collectors.toList(),
+                                        list -> list.stream()
+                                                .sorted(Comparator.comparingInt(MonthSummaryResponse::month))
+                                                .toList())
+                        )
+                ));
+
+        List<YearSummaryResponse> years = byYear.entrySet().stream()
+                .map(e -> new YearSummaryResponse(e.getKey(), e.getValue()))
                 .toList();
 
         return new TrainerWorkloadResponse(
@@ -27,14 +41,5 @@ public class WorkloadResponseMapper {
                 summary.isTrainerStatus(),
                 years
         );
-    }
-
-    private YearSummaryResponse toYearResponse(YearSummary yearSummary) {
-        List<MonthSummaryResponse> months = yearSummary.getMonths().values().stream()
-                .sorted(Comparator.comparingInt(MonthSummary::getMonth))
-                .map(m -> new MonthSummaryResponse(m.getMonth(), m.getTrainingSummaryDuration()))
-                .toList();
-
-        return new YearSummaryResponse(yearSummary.getYear(), months);
     }
 }
