@@ -1,6 +1,6 @@
 services:
   consul:
-    image: hashicorp/consul:1.20
+    image: hashicorp/consul:2.0
     container_name: gym-crm-consul
     command: agent -dev -client=0.0.0.0 -ui
     ports:
