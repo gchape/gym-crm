@@ -1,9 +1,5 @@
 server:
   port: 8081
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
 resilience4j:
   circuitbreaker:
     instances:
@@ -18,14 +14,34 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 spring:
+  cloud:
+    consul:
+      discovery:
+        prefer-ip-address: true
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        instance-id: ${spring.application.name}:${random.value}
   jpa:
     hibernate:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
   datasource:
     driver-class-name: org.postgresql.Driver
-jwt:
-  expiration: 86400000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+      client:
+        registration:
+          gym-crm-service:
+            client-id: gym-crm-service
+            client-secret: ${GYM_CRM_CLIENT_SECRET:dev-secret-change-me}
+            authorization-grant-type: client_credentials
+            scope: workload.write
+        provider:
+          gym-crm-service:
+            token-uri: http://localhost:9000/oauth2/token
 ---
 spring:
   config:
@@ -38,16 +54,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-jwt:
-  secret: this-is-a-much-longer-dev-secret-key-32bytes-min
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-    registry-fetch-interval-seconds: 10
-  instance:
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
+  cloud:
+    consul:
+      host: localhost
+      port: 8500
 app:
   cors:
     allowed-origins: http://localhost:3000,http://localhost:4200
@@ -63,12 +73,25 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-jwt:
-  secret: ${JWT_SECRET}
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URL:http://gym-crm-eureka-server:8761/eureka/}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
+      client:
+        registration:
+          gym-crm-service:
+            client-id: gym-crm-service
+            client-secret: ${GYM_CRM_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope: workload.write
+        provider:
+          gym-crm-service:
+            token-uri: ${OAUTH2_ISSUER_URI}/oauth2/token
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:gym-crm-consul}
+      port: ${CONSUL_PORT:8500}
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}

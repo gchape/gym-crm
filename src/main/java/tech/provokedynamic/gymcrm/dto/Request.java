@@ -166,4 +166,16 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             Integer trainingDuration
     ) implements Request {
     }
+
+    record WorkloadRequest(
+            String trainerUsername,
+            String trainerFirstName,
+            String trainerLastName,
+            Boolean isActive,
+            LocalDate trainingDate,
+            Integer trainingDuration,
+            ActionType actionType
+    ) {
+        public enum ActionType {ADD, DELETE}
+    }
 }
