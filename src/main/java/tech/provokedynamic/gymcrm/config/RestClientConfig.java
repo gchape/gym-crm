@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class RestClientConfig {
 
     private static final int TIMEOUT_MS = 3_000;

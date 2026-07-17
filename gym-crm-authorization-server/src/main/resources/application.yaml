@@ -1,6 +1,6 @@
 spring:
   application:
-    name: gym-crm
+    name: gym-crm-authorization-server
   profiles:
     active: dev
   config:
