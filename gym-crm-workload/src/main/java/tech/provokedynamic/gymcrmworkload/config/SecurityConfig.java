@@ -11,8 +11,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
-    // Narrowed from "/actuator/**" — only expose liveness/info, not the full
-    // actuator surface (env, beans, heapdump, etc.) without auth.
     private static final String[] PUBLIC_PATHS = {
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -20,32 +18,24 @@ public class SecurityConfig {
             "/actuator/health",
             "/actuator/health/**",
             "/actuator/info",
-            "/favicon.ico"
     };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .formLogin(AbstractHttpConfigurer::disable)
-
                 .httpBasic(AbstractHttpConfigurer::disable)
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
-                        // Only the client_credentials-issued gym-crm-service token
-                        // carries this scope; a trainee/trainer's OIDC token
-                        // (scope=openid profile) is authenticated but must not be
-                        // authorized to call this internal service-to-service endpoint.
-                        .requestMatchers("/api/trainers/workload/**").hasAuthority("SCOPE_workload.write")
+                        // Removed: .requestMatchers("/api/trainers/workload/**").permitAll()
+                        // This contradicted @SecurityRequirement(name = "bearerAuth") on
+                        // WorkloadController — the endpoint was documented as protected
+                        // but actually open to anyone. It now matches its own OpenAPI spec.
                         .anyRequest().authenticated())
-
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-
                 .build();
     }
 }

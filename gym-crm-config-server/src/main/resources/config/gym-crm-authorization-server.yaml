@@ -1,8 +1,5 @@
 server:
   port: 9000
-gym-crm:
-  auth-server:
-    issuer: http://localhost:9000
 spring:
   jpa:
     hibernate:
@@ -20,6 +17,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
+gym-crm:
+  auth-server:
+    issuer: http://localhost:9000
+    client-secret: dev-secret-change-me
+    frontend-redirect-uris: http://localhost:3000/callback,http://localhost:4200/callback
 ---
 spring:
   config:
@@ -32,3 +34,5 @@ spring:
 gym-crm:
   auth-server:
     issuer: ${OAUTH2_ISSUER_URI}
+    client-secret: ${GYM_CRM_CLIENT_SECRET}
+    frontend-redirect-uris: ${GYM_CRM_FRONTEND_REDIRECT_URIS}
