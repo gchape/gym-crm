@@ -1,31 +1,32 @@
-package tech.provokedynamic.gymcrmeurekaserver;
+package tech.provokedynamic.gymcrmauthorizationserver;
 
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 
-@SpringBootConfiguration(
-        proxyBeanMethods = false)
-@EnableAutoConfiguration
+@SpringBootConfiguration(proxyBeanMethods = false)
 @ComponentScan(basePackages = {
-        "tech.provokedynamic.gymcrmeurekaserver",
-        "tech.provokedynamic.gymcrmeurekaserver.config",
+        "tech.provokedynamic.gymcrmauthorizationserver.config",
+        "tech.provokedynamic.gymcrmauthorizationserver.repository",
+        "tech.provokedynamic.gymcrmauthorizationserver.security",
 })
-@EnableEurekaServer
-public class GymCrmEurekaServerApplication {
+@EnableAutoConfiguration
+@EntityScan(basePackages = {
+        "tech.provokedynamic.gymcrmauthorizationserver.entity",
+})
+public class GymCrmAuthorizationServerApplication {
 
     static void main(String[] args) {
         new SpringApplicationBuilder()
-                .sources(GymCrmEurekaServerApplication.class)
+                .sources(GymCrmAuthorizationServerApplication.class)
+                .headless(false)
                 .logStartupInfo(false)
                 .bannerMode(Banner.Mode.OFF)
                 .web(WebApplicationType.SERVLET)
-                .allowCircularReferences(false)
-                .headless(true)
                 .build(args)
                 .run();
     }
