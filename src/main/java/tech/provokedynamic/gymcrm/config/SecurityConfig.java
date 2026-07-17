@@ -1,6 +1,7 @@
 package tech.provokedynamic.gymcrm.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,13 +18,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@EnableConfigurationProperties(CorsProperties.class)
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    // Comma-separated list of origins allowed to call this API with credentials.
-    // Supplied via gym-crm-config-server (app.cors.allowed-origins), defaulting
-    // to common local dev origins so the service still boots standalone.
-    @Value("#{'${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}'.split(',')}")
-    private List<String> allowedOrigins;
+    private final CorsProperties corsProperties;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,44 +32,27 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
-                .cors(
-                        configurer -> configurer
-                                .configurationSource(corsConfigurationSource())
-                )
-                .csrf(
-                        AbstractHttpConfigurer::disable
-                )
-                .sessionManagement(
-                        session -> session
-                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .exceptionHandling(
-                        exceptions -> exceptions
-                                .authenticationEntryPoint((_, response, _) ->
-                                        response.sendError(401, "Missing or invalid authentication token"))
-                )
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
-                                .requestMatchers("/api/training-types").permitAll()
-                                .requestMatchers(
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/v3/api-docs/**"
-                                ).permitAll()
-                                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                                .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(
-                        oauth2 -> oauth2.jwt(Customizer.withDefaults())
-                )
+                .cors(configurer -> configurer.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((_, response, _) ->
+                                response.sendError(401, "Missing or invalid authentication token")))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
+                        .requestMatchers("/api/training-types").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .build();
     }
 
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
         var config = new CorsConfiguration();
-        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowedOrigins(corsProperties.allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Transaction-Id"));
         config.setExposedHeaders(List.of("X-Transaction-Id"));
