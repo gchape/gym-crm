@@ -20,6 +20,17 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:9000
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: gym-crm-workload
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: tech.provokedynamic.gymcrmcommon.event
+        spring.json.value.default.type: tech.provokedynamic.gymcrmcommon.event.WorkloadEvent
+        spring.json.use.type.headers: false
 ---
 spring:
   config:
@@ -43,3 +54,5 @@ spring:
     consul:
       host: ${CONSUL_HOST:gym-crm-consul}
       port: ${CONSUL_PORT:8500}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
