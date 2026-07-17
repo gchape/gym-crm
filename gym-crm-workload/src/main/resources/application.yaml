@@ -8,3 +8,7 @@ spring:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [txId=%X{transactionId}] %logger{36} - %msg%n"
+  level:
+    org.apache.kafka: DEBUG
+    org.apache.kafka.clients.consumer: DEBUG
+    org.springframework.kafka: DEBUG
