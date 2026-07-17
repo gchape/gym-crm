@@ -63,12 +63,6 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public ProblemDetail handleForbidden(ForbiddenException ex) {
-        log.warn("Forbidden: {}", ex.getMessage());
-        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-    }
-
     @ExceptionHandler(UserDoesNotExistException.class)
     public ProblemDetail handleUserNotFound(UserDoesNotExistException ex) {
         log.warn("User not found: {}", ex.getMessage());
