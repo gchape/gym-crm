@@ -3,6 +3,16 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      sampler: parent-based-trace-id-ratio
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
 spring:
   cloud:
     consul:
@@ -29,6 +39,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+  include-application-name: false
 ---
 spring:
   config:
@@ -74,3 +88,12 @@ spring:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
+management:
+  tracing:
+    sampling:
+      probability: 0.1
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT}

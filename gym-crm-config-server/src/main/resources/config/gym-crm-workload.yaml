@@ -3,6 +3,16 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    tracing:
+      sampler: parent-based-trace-id-ratio
+      export:
+        otlp:
+          endpoint: http://localhost:4318/v1/traces
 spring:
   cloud:
     consul:
@@ -31,6 +41,10 @@ spring:
         spring.json.trusted.packages: tech.provokedynamic.gymcrmcommon.event
         spring.json.value.default.type: tech.provokedynamic.gymcrmcommon.event.WorkloadEvent
         spring.json.use.type.headers: false
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+  include-application-name: false
 ---
 spring:
   config:
@@ -56,3 +70,12 @@ spring:
       port: ${CONSUL_PORT:8500}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+management:
+  tracing:
+    sampling:
+      probability: 0.1
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTLP_ENDPOINT}
