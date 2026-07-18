@@ -35,11 +35,17 @@ public class TrainerServiceImpl implements TrainerService {
     @Validate
     @Transactional
     public Response.CreatedUser create(Request.CreateTrainer request) {
+        log.debug("Creating trainer profile firstName='{}' lastName='{}' specialization='{}'",
+                request.firstName(), request.lastName(), request.specialization());
+
         var username = credentialGenerator.generateUsername(request.firstName(), request.lastName());
         var rawPassword = credentialGenerator.generatePassword();
 
         var specialization = trainingTypeRepository.findByTrainingTypeName(request.specialization())
-                .orElseThrow(() -> new TrainingTypeNotFoundException(request.specialization()));
+                .orElseThrow(() -> {
+                    log.warn("Create trainer failed: training type '{}' not found", request.specialization());
+                    return new TrainingTypeNotFoundException(request.specialization());
+                });
 
         var trainer = Trainer.builder()
                 .firstName(request.firstName())
@@ -97,13 +103,20 @@ public class TrainerServiceImpl implements TrainerService {
     @Validate
     @Transactional
     public Profile.Trainer update(Request.UpdateTrainer request) {
-        log.debug("Updating trainer profile for '{}'", request.username());
+        log.debug("Updating trainer profile for '{}' -> specialization='{}', isActive={}",
+                request.username(), request.specialization(), request.isActive());
 
         var trainer = trainerRepository.findByUsername(request.username())
-                .orElseThrow(() -> new UserDoesNotExistException(request.username()));
+                .orElseThrow(() -> {
+                    log.warn("Update trainer failed: '{}' does not exist", request.username());
+                    return new UserDoesNotExistException(request.username());
+                });
 
         var specialization = trainingTypeRepository.findByTrainingTypeName(request.specialization())
-                .orElseThrow(() -> new TrainingTypeNotFoundException(request.specialization()));
+                .orElseThrow(() -> {
+                    log.warn("Update trainer failed: training type '{}' not found", request.specialization());
+                    return new TrainingTypeNotFoundException(request.specialization());
+                });
 
         var updated = trainer.toBuilder()
                 .firstName(request.firstName())

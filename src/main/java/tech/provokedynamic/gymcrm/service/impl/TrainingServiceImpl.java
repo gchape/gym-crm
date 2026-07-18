@@ -33,10 +33,20 @@ public class TrainingServiceImpl implements TrainingService {
     @Validate
     @Transactional
     public void add(Request.AddTraining request) {
+        log.debug("Adding training '{}' for trainee '{}' with trainer '{}' on {} ({} min)",
+                request.trainingName(), request.traineeUsername(), request.trainerUsername(),
+                request.trainingDate(), request.trainingDuration());
+
         var trainee = traineeRepository.findByUsername(request.traineeUsername())
-                .orElseThrow(() -> new UserDoesNotExistException(request.traineeUsername()));
+                .orElseThrow(() -> {
+                    log.warn("Add training failed: trainee '{}' does not exist", request.traineeUsername());
+                    return new UserDoesNotExistException(request.traineeUsername());
+                });
         var trainer = trainerRepository.findByUsername(request.trainerUsername())
-                .orElseThrow(() -> new UserDoesNotExistException(request.trainerUsername()));
+                .orElseThrow(() -> {
+                    log.warn("Add training failed: trainer '{}' does not exist", request.trainerUsername());
+                    return new UserDoesNotExistException(request.trainerUsername());
+                });
 
         var training = Training.builder()
                 .trainee(trainee)
@@ -60,8 +70,13 @@ public class TrainingServiceImpl implements TrainingService {
     @Validate
     @Transactional
     public void cancel(Request.CancelTraining request) {
+        log.debug("Cancelling training id={}", request.trainingId());
+
         var training = trainingRepository.findById(request.trainingId())
-                .orElseThrow(() -> new TrainingNotFoundException(request.trainingId()));
+                .orElseThrow(() -> {
+                    log.warn("Cancel training failed: id={} not found", request.trainingId());
+                    return new TrainingNotFoundException(request.trainingId());
+                });
 
         trainingRepository.delete(training);
 
@@ -69,19 +84,21 @@ public class TrainingServiceImpl implements TrainingService {
         registerAfterCommitWorkloadNotification(trainer, training.getTrainingDate(), training.getTrainingDuration(),
                 WorkloadEvent.ActionType.DELETE);
 
-        log.info("Cancelled training id={}", request.trainingId());
+        log.info("Cancelled training id={}, name='{}', trainer='{}'",
+                request.trainingId(), training.getTrainingName(), trainer.getUsername());
     }
 
     private void registerAfterCommitWorkloadNotification(
             Trainer trainer, java.time.LocalDate trainingDate, int trainingDuration,
             WorkloadEvent.ActionType actionType) {
 
-        // Capture fields now — the entity/session is gone by the time
-        // afterCommit() runs.
         var event = new WorkloadEvent(
                 trainer.getUsername(), trainer.getFirstName(), trainer.getLastName(),
                 trainer.isActive(), trainingDate, trainingDuration, actionType
         );
+
+        log.debug("Registering after-commit workload notification: trainer='{}', action={}",
+                trainer.getUsername(), actionType);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

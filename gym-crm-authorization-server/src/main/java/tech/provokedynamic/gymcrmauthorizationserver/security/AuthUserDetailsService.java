@@ -1,6 +1,7 @@
 package tech.provokedynamic.gymcrmauthorizationserver.security;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +13,7 @@ import tech.provokedynamic.gymcrmauthorizationserver.repository.AuthUserReposito
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthUserDetailsService implements UserDetailsService {
@@ -22,12 +24,19 @@ public class AuthUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.debug("Loading user details for username '{}'", username);
+
         AuthUser user = authUserRepository.findByUsernameAndActiveTrue(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
+                .orElseThrow(() -> {
+                    log.warn("Authentication lookup failed: '{}' not found or inactive", username);
+                    return new UsernameNotFoundException(username);
+                });
 
         String role = TRAINEE_DISCRIMINATOR.equalsIgnoreCase(user.getUserType())
                 ? "ROLE_TRAINEE"
                 : "ROLE_TRAINER";
+
+        log.debug("Loaded user '{}' with role '{}'", username, role);
 
         return User.builder()
                 .username(user.getUsername())
