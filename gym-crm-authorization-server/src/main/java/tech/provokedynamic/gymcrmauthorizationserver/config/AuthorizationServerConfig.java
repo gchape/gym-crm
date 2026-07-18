@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -31,8 +32,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
+import java.io.InputStream;
+import java.security.KeyStore;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
@@ -44,6 +45,7 @@ import java.util.UUID;
 public class AuthorizationServerConfig {
 
     private final AuthServerProperties properties;
+    private final ResourceLoader resourceLoader;
 
     @Bean
     @Order(1)
@@ -128,16 +130,23 @@ public class AuthorizationServerConfig {
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() throws Exception {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);
-        KeyPair keyPair = generator.generateKeyPair();
+        var keyStoreProps = properties.keyStore();
 
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream in = resourceLoader.getResource(keyStoreProps.location()).getInputStream()) {
+            keyStore.load(in, keyStoreProps.password().toCharArray());
+        }
+
+        RSAPrivateKey privateKey = (RSAPrivateKey) keyStore.getKey(
+                keyStoreProps.alias(), keyStoreProps.keyPassword().toCharArray());
+        RSAPublicKey publicKey = (RSAPublicKey) keyStore.getCertificate(keyStoreProps.alias()).getPublicKey();
 
         RSAKey rsaKey = new RSAKey.Builder(publicKey)
                 .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
+                // Stable kid derived from the alias rather than a random UUID per
+                // boot — lets resource servers cache JWKS across restarts without
+                // treating every restart as a full key rotation.
+                .keyID(keyStoreProps.alias())
                 .build();
 
         return new ImmutableJWKSet<>(new JWKSet(rsaKey));
