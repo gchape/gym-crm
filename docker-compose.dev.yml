@@ -4,13 +4,21 @@ services:
     container_name: gym-crm-consul
     command: agent -dev -client=0.0.0.0 -ui
     ports:
-      - "8500:8500"   # HTTP API / UI
-      - "8600:8600/udp"  # DNS
+      - "8500:8500"
+      - "8600:8600/udp"
     healthcheck:
       test: ["CMD", "consul", "members"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: gym-crm-jaeger
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
 
   kafka:
     image: apache/kafka:4.3.1
