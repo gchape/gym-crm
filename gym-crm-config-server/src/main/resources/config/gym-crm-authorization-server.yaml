@@ -22,6 +22,11 @@ gym-crm:
     issuer: http://localhost:9000
     client-secret: dev-secret-change-me
     frontend-redirect-uris: http://localhost:3000/callback,http://localhost:4200/callback
+    key-store:
+      location: classpath:keystore/dev-keystore.p12
+      password: ${KEYSTORE_PASSWORD:dev-keystore-pass}
+      alias: gym-crm-auth
+      key-password: ${KEYSTORE_KEY_PASSWORD:dev-keystore-pass}
 ---
 spring:
   config:
@@ -36,3 +41,8 @@ gym-crm:
     issuer: ${OAUTH2_ISSUER_URI}
     client-secret: ${GYM_CRM_CLIENT_SECRET}
     frontend-redirect-uris: ${GYM_CRM_FRONTEND_REDIRECT_URIS}
+    key-store:
+      location: file:${KEYSTORE_PATH}
+      password: ${KEYSTORE_PASSWORD}
+      alias: ${KEYSTORE_ALIAS}
+      key-password: ${KEYSTORE_KEY_PASSWORD}
