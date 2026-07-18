@@ -3,12 +3,14 @@ package tech.provokedynamic.gymcrmworkload.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private static final String[] PUBLIC_PATHS = {
@@ -30,10 +32,8 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
-                        // Removed: .requestMatchers("/api/trainers/workload/**").permitAll()
-                        // This contradicted @SecurityRequirement(name = "bearerAuth") on
-                        // WorkloadController — the endpoint was documented as protected
-                        // but actually open to anyone. It now matches its own OpenAPI spec.
+                        .requestMatchers("/api/trainers/workload/**")
+                        .hasAuthority("SCOPE_workload.write")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .build();
