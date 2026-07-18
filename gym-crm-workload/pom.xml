@@ -61,6 +61,10 @@
             <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>tech.provokedynamic</groupId>
             <artifactId>gym-crm-common</artifactId>
             <version>0.0.1-SNAPSHOT</version>
