@@ -5,10 +5,3 @@ spring:
     active: dev
   config:
     import: "configserver:http://localhost:8071"
-logging:
-  pattern:
-    console: "%d{HH:mm:ss} %-5level [%X{transactionId}] %logger{36} - %msg%n"
-  level:
-    tech.provokedynamic.gymcrm: DEBUG
-    org.springframework: DEBUG
-    root: DEBUG
