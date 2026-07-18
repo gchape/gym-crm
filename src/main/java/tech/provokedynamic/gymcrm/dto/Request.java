@@ -128,12 +128,7 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             @NotBlank(message = "New password is required")
             @Size(min = 10, max = 10, message = "New password must be exactly 10 characters")
             String newPassword
-    ) implements Request, Sensitive {
-
-        @Override
-        public String redacted() {
-            return "ChangePassword[username=%s, password=***, newPassword=***]".formatted(username);
-        }
+    ) implements Request {
     }
 
     record ToggleActive(
