@@ -1,11 +1,13 @@
 package tech.provokedynamic.gymcrm.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import tech.provokedynamic.gymcrm.repository.UserRepository;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
 
 @Configuration(proxyBeanMethods = false)
-public class CredentialConfig {
+public class CredentialsConfig {
 
     @Bean
     public CredentialGenerator credentialGenerator(UserRepository userRepository) {
