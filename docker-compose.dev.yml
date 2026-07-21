@@ -12,14 +12,6 @@ services:
       timeout: 5s
       retries: 5
 
-  jaeger:
-    image: jaegertracing/all-in-one:1.76.0
-    container_name: gym-crm-jaeger
-    ports:
-      - "16686:16686"  # UI
-      - "4317:4317"    # OTLP gRPC
-      - "4318:4318"    # OTLP HTTP
-
   kafka:
     image: apache/kafka:4.3.1
     container_name: gym-crm-kafka
@@ -59,5 +51,19 @@ services:
       timeout: 5s
       retries: 5
 
+  mongo:
+    image: mongo:8.0
+    container_name: gym-crm-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - gym-crm-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   gym-crm-postgres-data:
+  gym-crm-mongo-data:
