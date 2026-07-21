@@ -1,11 +1,11 @@
 package tech.provokedynamic.gymcrmworkload.service;
 
-import tech.provokedynamic.gymcrmworkload.model.TrainerWorkloadSummary;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
+import tech.provokedynamic.gymcrmworkload.document.TrainerWorkloadDocument;
 
 public interface WorkloadService {
 
-    void processWorkload(WorkloadEvent event);
+    void processWorkload(WorkloadEvent event, String transactionId);
 
-    TrainerWorkloadSummary getSummary(String trainerUsername);
+    TrainerWorkloadDocument getSummary(String trainerUsername);
 }
