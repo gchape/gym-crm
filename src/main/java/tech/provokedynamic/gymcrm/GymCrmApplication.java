@@ -22,7 +22,6 @@ import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
         "tech.provokedynamic.gymcrm.aspect",
         "tech.provokedynamic.gymcrm.controller",
         "tech.provokedynamic.gymcrm.config",
-        "tech.provokedynamic.gymcrm.filter",
         "tech.provokedynamic.gymcrm.repository",
         "tech.provokedynamic.gymcrm.service",
         "tech.provokedynamic.gymcrm.validation",

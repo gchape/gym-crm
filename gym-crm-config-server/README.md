@@ -1,144 +1,77 @@
 # gym-crm-config-server
 
-Centralized configuration server for the `gym-crm` microservices ecosystem, built with Spring Cloud Config Server.
+Spring Cloud Config Server — the single source of configuration for every other service in the
+system.
 
-## Purpose
+Port: **8071**
 
-Provides distributed configuration management for all `gym-crm` microservices. Instead of each service holding its
-own environment-specific settings (database credentials, JWT secrets, feature flags, Eureka registration details,
-etc.) locally, they fetch this configuration remotely from this server at startup.
+## Responsibilities
 
-## Tech Stack
+Serves YAML configuration files from its own classpath (`native` profile — no separate Git repo) to
+every other module at startup, via `spring.config.import: configserver:http://localhost:8071` in
+each consuming service's `application.yaml`.
 
-- Spring Boot 4.1.0
-- Spring Cloud Config Server 2025.1.2
-- Native (file-based / classpath) configuration repository — no Git backend required
+This must be **the first service started** in any environment — every other module fails to start
+without it (or falls back to its own bare-bones `application.yaml` defaults, which is intentionally
+minimal).
 
-## How It Works
+## Tech stack
 
-This server reads configuration files from `src/main/resources/config/` and serves them over HTTP to any client
-that requests them, based on:
+- Spring Boot 4.1, Java 25
+- `spring-cloud-config-server` (native backend)
 
-- **Application name** (`spring.application.name` on the client)
-- **Active profile** (`spring.profiles.active` on the client)
-
-Example request/response flow:
+## Layout
 
 ```
-Client "gym-crm" with profile "dev" starts up
-        │
-        ▼
-GET http://localhost:8071/gym-crm/dev
-        │
-        ▼
-Config Server reads config/gym-crm.yaml,
-merges base block + "dev" profile block
-        │
-        ▼
-Returns merged config as JSON
-        │
-        ▼
-Client applies it to its own Environment
+src/main/resources/config/
+├── gym-crm.yaml                        → gym-crm (core service)
+├── gym-crm-authorization-server.yaml   → gym-crm-authorization-server
+└── gym-crm-workload.yaml               → gym-crm-workload
 ```
 
-## Configuration Files
+Each file's name must exactly match the consuming service's `spring.application.name`. Each file uses
+Spring's multi-document YAML format (`---` separators) with `spring.config.activate.on-profile` to
+provide `dev` and `prod` variants — the config server just serves the whole file; profile resolution
+happens client-side based on the requesting service's active profile.
 
-Located under `src/main/resources/config/`:
+## Configuration served (summary)
 
-| File                    | Served to clients named...                |
-|-------------------------|-------------------------------------------|
-| `application.yaml`      | All clients (shared defaults, if present) |
-| `gym-crm.yaml`          | `gym-crm`                                 |
-| `gym-crm-workload.yaml` | `gym-crm-workload`                        |
+| File                                | Key settings                                                                                    |
+|-------------------------------------|-------------------------------------------------------------------------------------------------|
+| `gym-crm.yaml`                      | Server port (8081), Postgres datasource, JWT issuer-uri, Kafka producer, CORS, Consul discovery |
+| `gym-crm-authorization-server.yaml` | Server port (9000), Postgres datasource, OAuth2 issuer                                          |
+| `gym-crm-workload.yaml`             | Server port (8082), JWT issuer-uri, Kafka consumer, Consul discovery                            |
 
-Each file can contain multiple `---`-separated YAML documents, using `spring.config.activate.on-profile` to scope
-sections to specific profiles (`dev`, `prod`, etc.).
+See each service's own README for the full property list and environment variables used in `prod`.
 
-### What each client gets
-
-**`gym-crm.yaml`** (served to `gym-crm`):
-
-- Server port (`8081`), Eureka client registration flags
-- Resilience4j circuit breaker settings for the `workloadService` instance (sliding window, failure threshold,
-  wait duration, half-open call permits)
-- springdoc/Swagger paths
-- Hibernate snake-case naming strategy, PostgreSQL driver class
-- `dev` profile: local Postgres connection, `ddl-auto: create-drop`, local Eureka URL, fast heartbeat intervals
-- `prod` profile: connection details and JWT secret sourced from environment variables
-  (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`), `ddl-auto: validate`, Eureka URL defaulting to the
-  in-cluster hostname
-
-**`gym-crm-workload.yaml`** (served to `gym-crm-workload`):
-
-- Server port (`8082`), Eureka client registration flags
-- `dev` profile: hardcoded JWT secret, local Eureka URL, fast heartbeat intervals
-- `prod` profile: `JWT_SECRET` and `EUREKA_URL` sourced from environment variables
-
-⚠️ Both clients' JWT secrets **must match** (they validate/sign the same service-to-service tokens used for the
-workload API), so keep the `dev` values in sync and set the same `JWT_SECRET` environment variable for both in
-`prod`.
-
-## Running Locally
+## Running
 
 ```bash
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
-Server starts on **port 8071** by default.
+No external dependencies (no database, no Kafka) — this service only serves static config from its
+own classpath, so it's always the fastest to start and should always be started first.
 
-Verify it's serving config correctly:
+## Verifying config is being served correctly
 
 ```bash
 curl http://localhost:8071/gym-crm/dev
-curl http://localhost:8071/gym-crm-workload/dev
+curl http://localhost:8071/gym-crm-workload/prod
 ```
 
-## Client Setup
+Returns the resolved property source for that application/profile combination as JSON — useful for
+confirming a config change actually took effect before restarting a downstream service.
 
-Any Spring Boot service that wants to consume config from this server needs:
+## Adding a new service
 
-**Dependency** (`pom.xml`):
+1. Create `src/main/resources/config/<spring.application.name>.yaml`.
+2. Add `dev` and `prod` profile documents as needed.
+3. In the new service's own `application.yaml`, set `spring.application.name` to match and add
+   `spring.config.import: "configserver:http://localhost:8071"`.
 
-```xml
+## Running tests
 
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-config</artifactId>
-</dependency>
+```bash
+mvn test
 ```
-
-**Local `application.yaml`:**
-
-```yaml
-spring:
-  application:
-    name: gym-crm       # must match a filename in config/
-  profiles:
-    active: dev
-  config:
-    import: "configserver:http://localhost:8071"
-```
-
-## Environment Variables (Production)
-
-Production profile blocks reference environment variables instead of hardcoded values:
-
-| Variable      | Used for                                                         | Required by                   |
-|---------------|------------------------------------------------------------------|-------------------------------|
-| `DB_URL`      | Datasource JDBC URL                                              | `gym-crm`                     |
-| `DB_USERNAME` | Database username                                                | `gym-crm`                     |
-| `DB_PASSWORD` | Database password                                                | `gym-crm`                     |
-| `JWT_SECRET`  | JWT signing secret                                               | `gym-crm`, `gym-crm-workload` |
-| `EUREKA_URL`  | Eureka server address (defaults to in-cluster hostname if unset) | `gym-crm`, `gym-crm-workload` |
-
-⚠️ These must be set on the **client's** runtime environment (e.g. `gym-crm`'s or `gym-crm-workload`'s
-host/container), not on this config server — the config server only serves the raw `${VAR}` placeholder text;
-resolution happens client-side.
-
-## Notes
-
-- This server does not register with Eureka (kept simple — clients use a hardcoded URL to reach it).
-- Uses `native` profile (`spring.profiles.active: native`) to read from the local classpath instead of a Git
-  repository.
-- Actuator is on the classpath (via `spring-boot-starter-actuator`) for health/monitoring endpoints, but no custom
-  actuator configuration is currently applied here.

@@ -1,10 +1,10 @@
-package tech.provokedynamic.gymcrmworkload;
+package tech.provokedynamic.gymcrmcommon;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class GymCrmWorkloadApplicationTests {
+class GymCrmCommonApplicationTests {
 
     @Test
     void contextLoads() {

@@ -13,11 +13,10 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {
         "tech.provokedynamic.gymcrmworkload.config",
-        "tech.provokedynamic.gymcrmworkload.aspect",
-        "tech.provokedynamic.gymcrmworkload.filter",
         "tech.provokedynamic.gymcrmworkload.service",
         "tech.provokedynamic.gymcrmworkload.controller",
         "tech.provokedynamic.gymcrmworkload.mapper",
+        "tech.provokedynamic.gymcrmworkload.listener",
 })
 @EnableDiscoveryClient
 public class GymCrmWorkloadApplication {
