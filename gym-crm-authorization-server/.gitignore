@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+**/keystore/*.p12
+!**/keystore/dev-keystore.p12
+
 ### STS ###
 .apt_generated
 .classpath

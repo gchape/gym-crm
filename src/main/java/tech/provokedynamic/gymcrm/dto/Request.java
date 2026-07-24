@@ -128,12 +128,7 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             @NotBlank(message = "New password is required")
             @Size(min = 10, max = 10, message = "New password must be exactly 10 characters")
             String newPassword
-    ) implements Request, Sensitive {
-
-        @Override
-        public String redacted() {
-            return "ChangePassword[username=%s, password=***, newPassword=***]".formatted(username);
-        }
+    ) implements Request {
     }
 
     record ToggleActive(
@@ -165,17 +160,5 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             @Max(value = 480, message = "Training duration cannot exceed 480 minutes (8 hours)")
             Integer trainingDuration
     ) implements Request {
-    }
-
-    record WorkloadRequest(
-            String trainerUsername,
-            String trainerFirstName,
-            String trainerLastName,
-            Boolean isActive,
-            LocalDate trainingDate,
-            Integer trainingDuration,
-            ActionType actionType
-    ) {
-        public enum ActionType {ADD, DELETE}
     }
 }

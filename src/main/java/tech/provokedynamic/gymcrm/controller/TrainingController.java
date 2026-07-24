@@ -30,12 +30,14 @@ public class TrainingController {
     })
     @PostMapping
     public ResponseEntity<Void> add(@Valid @RequestBody Request.AddTraining body) {
-        log.info("POST /api/trainings - trainee={} trainer={} name={}",
-                body.traineeUsername(), body.trainerUsername(), body.trainingName());
+        log.info("POST /api/trainings - trainee={} trainer={} name={} date={} duration={}min",
+                body.traineeUsername(), body.trainerUsername(), body.trainingName(),
+                body.trainingDate(), body.trainingDuration());
 
         trainingService.add(body);
 
-        log.info("POST /api/trainings - added successfully");
+        log.info("POST /api/trainings - added successfully for trainee={} trainer={}",
+                body.traineeUsername(), body.trainerUsername());
         return ResponseEntity.ok().build();
     }
 
@@ -46,9 +48,9 @@ public class TrainingController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancel(@PathVariable Long id) {
-        log.info("DELETE /api/trainings/{}", id);
+        log.info("DELETE /api/trainings/{} - cancelling training", id);
         trainingService.cancel(new Request.CancelTraining(id));
-        log.info("DELETE /api/trainings/{} - cancelled", id);
+        log.info("DELETE /api/trainings/{} - cancelled successfully", id);
         return ResponseEntity.ok().build();
     }
 }
