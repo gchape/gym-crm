@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.entity.Trainee;
 import tech.provokedynamic.gymcrm.entity.Trainer;
@@ -34,6 +35,8 @@ class TrainingServiceImplTest {
     TraineeRepository traineeRepository;
     @Mock
     TrainerRepository trainerRepository;
+    @Mock
+    WorkloadEventPublisher workloadEventPublisher;
 
     @InjectMocks
     TrainingServiceImpl service;

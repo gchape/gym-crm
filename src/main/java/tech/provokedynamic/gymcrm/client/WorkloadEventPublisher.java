@@ -1,4 +1,3 @@
-// src/main/java/tech/provokedynamic/gymcrm/client/WorkloadEventPublisher.java
 package tech.provokedynamic.gymcrm.client;
 
 import lombok.RequiredArgsConstructor;
@@ -8,10 +7,13 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadTopics;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -44,6 +46,41 @@ public class WorkloadEventPublisher {
                                 metadata.partition(), metadata.offset());
                     }
                 });
+    }
+
+    /**
+     * Registers a single event to be published only after the current
+     * transaction commits. No-op (with a debug log) if there's no active
+     * transaction synchronization — e.g. a plain Mockito unit test calling
+     * the owning service method directly, outside a Spring transaction proxy.
+     * Publishing before commit would leak an uncommitted change's workload.
+     */
+    public void publishAfterCommit(WorkloadEvent event) {
+        publishAfterCommit(List.of(event));
+    }
+
+    /**
+     * Batched variant of {@link #publishAfterCommit(WorkloadEvent)} for
+     * callers that need to notify on multiple events from one transaction
+     * (e.g. cascading deletes).
+     */
+    public void publishAfterCommit(List<WorkloadEvent> events) {
+        if (events.isEmpty()) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            log.debug("No active transaction synchronization; skipping after-commit publish for {} event(s)",
+                    events.size());
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                events.forEach(WorkloadEventPublisher.this::publish);
+            }
+        });
     }
 
     private String resolveTransactionId() {
