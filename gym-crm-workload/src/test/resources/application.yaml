@@ -1,0 +1,26 @@
+# src/test/resources/application.yaml
+#
+# Applies to ALL tests on this module's test classpath (unit tests, @DataMongoTest
+# slices, and the Cucumber suites) and is read as a normal config-data file, so it
+# reliably disables Spring Cloud Config before any import resolution happens --
+# unlike @DataMongoTest(properties = ...) inlined values, which were not taking
+# effect early enough to stop the configserver: import in this Boot 4 / Spring
+# Cloud 2025.x combination.
+spring:
+  config:
+    import: ""
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+    consul:
+      enabled: false
+      config:
+        enabled: false
+      discovery:
+        enabled: false
+  profiles:
+    active: ""
