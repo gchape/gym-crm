@@ -16,6 +16,7 @@
     <properties>
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
+        <cucumber.version>7.20.1</cucumber.version>
     </properties>
     <dependencies>
         <dependency>
@@ -109,6 +110,49 @@
             <artifactId>spring-boot-starter-data-mongodb-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Testcontainers Kafka + service-connection support for Cucumber suites -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <version>1.21.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Cucumber BDD component + integration tests -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>
@@ -168,6 +212,26 @@
                                 </path>
                             </annotationProcessorPaths>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+              Surefire (mvn test) runs everything EXCEPT *IT classes by
+              default, so RunCucumberTest (component suite) runs there.
+              Failsafe (mvn verify) picks up RunIntegrationCucumberIT
+              automatically via its default **/*IT.java include pattern,
+              keeping the cross-service integration suite on its own
+              lifecycle phase.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
