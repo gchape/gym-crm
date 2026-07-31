@@ -1,7 +1,5 @@
 package tech.provokedynamic.gymcrm.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +14,7 @@ import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.exception.*;
 import tech.provokedynamic.gymcrm.service.TrainerService;
+import tech.provokedynamic.gymcrm.testsupport.TestJson;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -33,7 +32,6 @@ class TrainerControllerTest {
     TrainerService trainerService;
 
     MockMvc mockMvc;
-    ObjectMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -41,7 +39,6 @@ class TrainerControllerTest {
                 .standaloneSetup(new TrainerController(trainerService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        mapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     private Profile.Trainer sampleTrainerProfile() {
@@ -68,7 +65,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(post("/api/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("jane.smith"))
                 .andExpect(jsonPath("$.password").value("pass123456"));
@@ -80,7 +77,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(post("/api/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -90,7 +87,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(post("/api/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -124,7 +121,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(put("/api/trainers/jane.smith")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("jane.smith"));
     }
@@ -136,7 +133,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(put("/api/trainers/ghost")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isNotFound());
     }
 
@@ -161,7 +158,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(put("/api/trainers/jane.smith/password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
     }
 
@@ -171,7 +168,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(put("/api/trainers/jane.smith/password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -183,7 +180,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(put("/api/trainers/jane.smith/password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -196,7 +193,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
 
         verify(trainerService).activate(any());
@@ -210,7 +207,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
 
         verify(trainerService).deactivate(any());
@@ -224,7 +221,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isConflict());
     }
 
@@ -235,7 +232,7 @@ class TrainerControllerTest {
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isConflict());
     }
 
