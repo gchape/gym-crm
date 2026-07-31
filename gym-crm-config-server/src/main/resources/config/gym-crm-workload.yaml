@@ -15,7 +15,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9000
+          public-key-location: classpath:keys/gym-crm-public.pem
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -55,7 +55,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI}
+          public-key-location: file:${GYM_CRM_PUBLIC_KEY_PATH}
   cloud:
     consul:
       host: ${CONSUL_HOST:gym-crm-consul}
