@@ -9,20 +9,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tech.provokedynamic.gymcrmcommon.security.RolesClaimJwtAuthenticationConverter;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Configuration
 @EnableConfigurationProperties(CorsProperties.class)
@@ -48,6 +42,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((_, response, _) ->
                                 response.sendError(401, "Missing or invalid authentication token")))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/trainees").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/trainers").permitAll()
                         .requestMatchers("/api/training-types").permitAll()
@@ -57,26 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/trainings/**").hasAuthority("ROLE_TRAINER")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                        jwt.jwtAuthenticationConverter(RolesClaimJwtAuthenticationConverter.create())))
                 .build();
-    }
-
-    private JwtAuthenticationConverter jwtAuthenticationConverter() {
-        var scopeConverter = new JwtGrantedAuthoritiesConverter();
-
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Collection<GrantedAuthority> scopeAuthorities = scopeConverter.convert(jwt);
-
-            List<String> roles = jwt.getClaimAsStringList("roles");
-            Stream<GrantedAuthority> roleAuthorities = roles == null
-                    ? Stream.empty()
-                    : roles.stream().map(SimpleGrantedAuthority::new);
-
-            return Stream.concat(scopeAuthorities.stream(), roleAuthorities)
-                    .collect(Collectors.toSet());
-        });
-        return converter;
     }
 
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
