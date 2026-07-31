@@ -1,0 +1,16 @@
+spring:
+  config:
+    import: ""
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+    consul:
+      enabled: false
+      config:
+        enabled: false
+      discovery:
+        enabled: false
+  profiles:
+    active: ""

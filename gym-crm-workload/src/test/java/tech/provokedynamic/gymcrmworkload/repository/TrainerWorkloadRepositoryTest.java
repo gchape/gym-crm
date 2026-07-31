@@ -2,14 +2,15 @@ package tech.provokedynamic.gymcrmworkload.repository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mongodb.MongoDBContainer;
+import tech.provokedynamic.gymcrmworkload.config.SecurityConfig;
 import tech.provokedynamic.gymcrmworkload.document.MonthSummary;
 import tech.provokedynamic.gymcrmworkload.document.TrainerWorkloadDocument;
 import tech.provokedynamic.gymcrmworkload.document.YearSummary;
@@ -19,11 +20,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-@ExtendWith(SpringExtension.class)
-@DataMongoTest
+@DataMongoTest(excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
 class TrainerWorkloadRepositoryTest {
 
-    static final MongoDBContainer MONGO = new MongoDBContainer("mongo:latest");
+    @Container
+    @ServiceConnection
+    static final MongoDBContainer MONGO = new MongoDBContainer("mongo:8.4");
 
     static {
         MONGO.start();
@@ -31,11 +34,6 @@ class TrainerWorkloadRepositoryTest {
 
     @Autowired
     private TrainerWorkloadRepository repository;
-
-    @DynamicPropertySource
-    static void mongoProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", MONGO::getReplicaSetUrl);
-    }
 
     @BeforeEach
     void cleanUp() {
