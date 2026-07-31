@@ -4,11 +4,12 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import tech.provokedynamic.gymcrm.model.Address;
+import tech.provokedynamic.gymcrm.validation.PersonName;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public sealed interface Request permits Request.AddTraining, Request.CancelTraining, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.DeleteTrainee, Request.ToggleActive, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
+public sealed interface Request permits Request.AddTraining, Request.CancelTraining, Request.ChangePassword, Request.CreateTrainee, Request.CreateTrainer, Request.DeleteTrainee, Request.Login, Request.ToggleActive, Request.UpdateTrainee, Request.UpdateTraineeTrainers, Request.UpdateTrainer {
 
     record CancelTraining(
             @NotNull(message = "Training id is required")
@@ -16,15 +17,20 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
     ) implements Request {
     }
 
+    record Login(
+            @NotBlank(message = "Username is required")
+            String username,
+
+            @NotBlank(message = "Password is required")
+            String password
+    ) implements Request {
+    }
+
     record CreateTrainee(
-            @NotBlank(message = "First name is required")
-            @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String firstName,
 
-            @NotBlank(message = "Last name is required")
-            @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "Last name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String lastName,
 
             @Nullable
@@ -41,14 +47,10 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "First name is required")
-            @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String firstName,
 
-            @NotBlank(message = "Last name is required")
-            @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "Last name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String lastName,
 
             @Nullable
@@ -81,14 +83,10 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
     }
 
     record CreateTrainer(
-            @NotBlank(message = "First name is required")
-            @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String firstName,
 
-            @NotBlank(message = "Last name is required")
-            @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "Last name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String lastName,
 
             @NotBlank(message = "Specialization is required")
@@ -100,14 +98,10 @@ public sealed interface Request permits Request.AddTraining, Request.CancelTrain
             @NotBlank(message = "Username is required")
             String username,
 
-            @NotBlank(message = "First name is required")
-            @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "First name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String firstName,
 
-            @NotBlank(message = "Last name is required")
-            @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
-            @Pattern(regexp = "^[\\p{L}'-]+$", message = "Last name may only contain letters, hyphens, or apostrophes")
+            @PersonName
             String lastName,
 
             @NotBlank(message = "Specialization is required")
