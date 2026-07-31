@@ -4,8 +4,8 @@ import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
@@ -84,7 +84,7 @@ class RequestValidationAspectTest {
                 .isInstanceOf(ConstraintViolationException.class);
     }
 
-    @Configuration
+    @TestConfiguration
     @EnableAspectJAutoProxy
     static class AspectConfig {
         @Bean
