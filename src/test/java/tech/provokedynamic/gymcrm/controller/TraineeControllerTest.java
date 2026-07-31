@@ -1,7 +1,5 @@
 package tech.provokedynamic.gymcrm.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +14,7 @@ import tech.provokedynamic.gymcrm.dto.Response;
 import tech.provokedynamic.gymcrm.dto.Summary;
 import tech.provokedynamic.gymcrm.exception.*;
 import tech.provokedynamic.gymcrm.service.TraineeService;
+import tech.provokedynamic.gymcrm.testsupport.TestJson;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -34,7 +33,6 @@ class TraineeControllerTest {
     TraineeService traineeService;
 
     MockMvc mockMvc;
-    ObjectMapper mapper;
 
     @BeforeEach
     void setUp() {
@@ -42,7 +40,6 @@ class TraineeControllerTest {
                 .standaloneSetup(new TraineeController(traineeService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
-        mapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     private Profile.Trainee sampleTraineeProfile() {
@@ -69,7 +66,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(post("/api/trainees")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("john.doe"))
                 .andExpect(jsonPath("$.password").value("pass123456"));
@@ -81,7 +78,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(post("/api/trainees")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -91,7 +88,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(post("/api/trainees")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -101,7 +98,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(post("/api/trainees")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -138,7 +135,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/john.doe")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("John"));
     }
@@ -152,7 +149,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/ghost")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isNotFound());
     }
 
@@ -205,7 +202,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/john.doe/password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
     }
 
@@ -215,7 +212,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/john.doe/password")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -228,7 +225,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
 
         verify(traineeService).activate(any());
@@ -242,7 +239,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk());
 
         verify(traineeService).deactivate(any());
@@ -257,7 +254,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isConflict());
     }
 
@@ -269,7 +266,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(patch("/api/trainees/john.doe/active")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isConflict());
     }
 
@@ -335,7 +332,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/john.doe/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].username").value("jane.smith"));
     }
@@ -346,7 +343,7 @@ class TraineeControllerTest {
 
         mockMvc.perform(put("/api/trainees/john.doe/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(body)))
+                        .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
 }
