@@ -13,6 +13,11 @@ public sealed interface Response {
     ) implements Response {
     }
 
+    record AccessToken(
+            String accessToken
+    ) implements Response {
+    }
+
     record TrainerSummary(
             String username,
             String firstName,
