@@ -4,9 +4,4 @@ spring:
   profiles:
     active: dev
   config:
-    import: "configserver:http://localhost:8071"
-logging:
-  level:
-    org.apache.kafka: DEBUG
-    org.apache.kafka.clients.consumer: DEBUG
-    org.springframework.kafka: DEBUG
+    import: "optional:configserver:http://localhost:8071"
