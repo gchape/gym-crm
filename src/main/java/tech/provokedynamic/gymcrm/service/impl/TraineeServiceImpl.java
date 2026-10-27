@@ -6,8 +6,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Profile;
@@ -175,16 +173,12 @@ public class TraineeServiceImpl implements TraineeService {
         traineeRepository.deleteByUsername(username);
 
         // Notify gym-crm-workload only after this transaction actually commits.
-        registerAfterCommitWorkloadNotifications(trainings);
+        publishDeletionsAfterCommit(trainings);
 
         log.info("Deleted trainee '{}'", username);
     }
 
-    private void registerAfterCommitWorkloadNotifications(List<Training> trainings) {
-        if (trainings.isEmpty()) {
-            return;
-        }
-
+    private void publishDeletionsAfterCommit(List<Training> trainings) {
         // Capture the fields we need now — the entities/session won't be
         // available anymore once the transaction has committed.
         var events = trainings.stream()
@@ -198,12 +192,7 @@ public class TraineeServiceImpl implements TraineeService {
                 })
                 .toList();
 
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                events.forEach(workloadEventPublisher::publish);
-            }
-        });
+        workloadEventPublisher.publishAfterCommit(events);
     }
 
     @Override

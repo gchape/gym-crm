@@ -1,0 +1,103 @@
+# SubTask 2 - explicit Docker network + apps wired to real DB/queue infra.
+networks:
+  gym-crm-net:
+    name: gym-crm-net
+    driver: bridge
+
+services:
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: gym-crm-kafka
+    networks: [gym-crm-net]
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      # PLAINTEXT (9092) is for host access, DOCKER (9094) is what the
+      # gym-crm / gym-crm-workload containers use to reach the broker by
+      # its service name.
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,DOCKER://:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,DOCKER://kafka:9094
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=DOCKER
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:18.4-alpine
+    container_name: gym-crm-postgres
+    networks: [gym-crm-net]
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - gym-crm-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7.0
+    container_name: gym-crm-mongo
+    networks: [gym-crm-net]
+    ports:
+      - "27017:27017"
+    volumes:
+      - gym-crm-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gym-crm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gym-crm:docker
+    container_name: gym-crm
+    networks: [gym-crm-net]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  gym-crm-workload:
+    build:
+      context: .
+      dockerfile: gym-crm-workload/Dockerfile
+    image: gym-crm-workload:docker
+    container_name: gym-crm-workload
+    networks: [gym-crm-net]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+volumes:
+  gym-crm-postgres-data:
+  gym-crm-mongo-data:

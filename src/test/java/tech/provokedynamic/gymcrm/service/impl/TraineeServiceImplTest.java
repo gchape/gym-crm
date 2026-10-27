@@ -8,6 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Profile;
 import tech.provokedynamic.gymcrm.dto.Request;
 import tech.provokedynamic.gymcrm.dto.Response;
@@ -22,6 +23,7 @@ import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.model.Address;
 import tech.provokedynamic.gymcrm.repository.TraineeRepository;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
+import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.util.CredentialGenerator;
 
 import java.time.LocalDate;
@@ -42,6 +44,10 @@ class TraineeServiceImplTest {
     TraineeRepository traineeRepository;
     @Mock
     TrainerRepository trainerRepository;
+    @Mock
+    TrainingRepository trainingRepository;
+    @Mock
+    WorkloadEventPublisher workloadEventPublisher;
     @Mock
     CredentialGenerator credentialGenerator;
     @Mock

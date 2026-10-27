@@ -1,0 +1,64 @@
+# Activated with SPRING_PROFILES_ACTIVE=docker
+# Purpose: fully-wired run against the real Postgres + Kafka containers
+# defined in docker-compose.full.yml, reached by their service names.
+server:
+  port: 8081
+
+spring:
+  config:
+    import: ""
+  cloud:
+    consul:
+      enabled: false
+    discovery:
+      enabled: false
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/postgres
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+  flyway:
+    enabled: true          # real Postgres -> let the V1/V2/V3 migrations run
+  jpa:
+    hibernate:
+      ddl-auto: validate    # schema already owned by Flyway
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+
+  kafka:
+    bootstrap-servers: kafka:9094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{transactionId:-}] "
+  include-application-name: false
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:4200
+
+gym-crm:
+  auth:
+    issuer: http://localhost:8081
+    access-token-ttl: PT30M
+    key-store:
+      location: classpath:keystore/dev-keystore.p12
+      password: ${KEYSTORE_PASSWORD:dev-keystore-pass}
+      alias: gym-crm-auth
+      key-password: ${KEYSTORE_KEY_PASSWORD:dev-keystore-pass}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

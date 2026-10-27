@@ -1,0 +1,34 @@
+# SubTask 1 - build + run both services with every external integration
+# disabled. No Postgres, Mongo, Kafka, Consul or Config Server needed.
+services:
+  gym-crm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gym-crm:standalone
+    container_name: gym-crm-standalone
+    environment:
+      SPRING_PROFILES_ACTIVE: standalone
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gym-crm-workload:
+    build:
+      context: .
+      dockerfile: gym-crm-workload/Dockerfile
+    image: gym-crm-workload:standalone
+    container_name: gym-crm-workload-standalone
+    environment:
+      SPRING_PROFILES_ACTIVE: standalone
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

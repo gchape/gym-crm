@@ -3,16 +3,6 @@ server:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
-management:
-  tracing:
-    sampling:
-      probability: 1.0
-  opentelemetry:
-    tracing:
-      sampler: parent-based-trace-id-ratio
-      export:
-        otlp:
-          endpoint: http://localhost:4318/v1/traces
 spring:
   cloud:
     consul:
@@ -21,15 +11,11 @@ spring:
         health-check-path: /actuator/health
         health-check-interval: 10s
         instance-id: ${spring.application.name}:${random.value}
-  jpa:
-    hibernate:
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9000
+          public-key-location: classpath:keys/gym-crm-public.pem
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -41,9 +27,12 @@ spring:
         spring.json.trusted.packages: tech.provokedynamic.gymcrmcommon.event
         spring.json.value.default.type: tech.provokedynamic.gymcrmcommon.event.WorkloadEvent
         spring.json.use.type.headers: false
+  data:
+    mongodb:
+      auto-index-creation: true
 logging:
   pattern:
-    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+    correlation: "[${spring.application.name:},%X{transactionId:-}] "
   include-application-name: false
 ---
 spring:
@@ -54,6 +43,9 @@ spring:
     consul:
       host: localhost
       port: 8500
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/gym_crm_workload
 ---
 spring:
   config:
@@ -63,19 +55,13 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI}
+          public-key-location: file:${GYM_CRM_PUBLIC_KEY_PATH}
   cloud:
     consul:
       host: ${CONSUL_HOST:gym-crm-consul}
       port: ${CONSUL_PORT:8500}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-management:
-  tracing:
-    sampling:
-      probability: 0.1
-  opentelemetry:
-    tracing:
-      export:
-        otlp:
-          endpoint: ${OTLP_ENDPOINT}
+  data:
+    mongodb:
+      uri: ${MONGO_URI}

@@ -1,0 +1,68 @@
+# Activated with SPRING_PROFILES_ACTIVE=standalone
+# Purpose: prove the image/container works with every external
+# integration (Config Server, Consul, real Postgres) switched off.
+server:
+  port: 8081
+
+spring:
+  config:
+    import: ""          # do NOT reach out to gym-crm-config-server
+  cloud:
+    consul:
+      enabled: false     # no service discovery/registration attempted
+    discovery:
+      enabled: false
+
+  # in-memory DB instead of Postgres so the container is fully self-contained
+  datasource:
+    url: jdbc:h2:mem:gymcrm;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  flyway:
+    enabled: false        # let Hibernate build the schema from entities instead
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  # Kafka client creation is lazy - fine to leave pointing at localhost;
+  # publishing will just log a connection warning if nothing is listening.
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{transactionId:-}] "
+  include-application-name: false
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:4200
+
+gym-crm:
+  auth:
+    issuer: http://localhost:8081
+    access-token-ttl: PT30M
+    key-store:
+      location: classpath:keystore/dev-keystore.p12
+      password: ${KEYSTORE_PASSWORD:dev-keystore-pass}
+      alias: gym-crm-auth
+      key-password: ${KEYSTORE_KEY_PASSWORD:dev-keystore-pass}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,7 +1,6 @@
 package tech.provokedynamic.gymcrmworkload.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -11,10 +10,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import tech.provokedynamic.gymcrmworkload.dto.response.TrainerWorkloadResponse;
 import tech.provokedynamic.gymcrmworkload.mapper.WorkloadResponseMapper;
-import tech.provokedynamic.gymcrmworkload.model.TrainerWorkloadSummary;
 import tech.provokedynamic.gymcrmworkload.service.WorkloadService;
 
 @Slf4j
@@ -36,17 +37,15 @@ public class WorkloadController {
             @ApiResponse(responseCode = "404", description = "No summary exists for this trainer", content = @Content)
     })
     @GetMapping("/{username}")
-    public ResponseEntity<TrainerWorkloadResponse> getWorkload(
-            @Parameter(description = "Trainer username") @PathVariable String username) {
+    public ResponseEntity<TrainerWorkloadResponse> getWorkload(@PathVariable String username) {
         log.info("GET /api/trainers/workload/{} - fetching workload summary", username);
 
-        TrainerWorkloadSummary summary = workloadService.getSummary(username);
-        if (summary == null) {
+        var document = workloadService.getSummary(username);
+        if (document == null) {
             log.warn("GET /api/trainers/workload/{} - no summary found", username);
             return ResponseEntity.notFound().build();
         }
 
-        log.info("GET /api/trainers/workload/{} - summary returned", username);
-        return ResponseEntity.ok(responseMapper.toResponse(summary));
+        return ResponseEntity.ok(responseMapper.toResponse(document));
     }
 }
