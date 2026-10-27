@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tech.provokedynamic.gymcrm.annotation.Validate;
 import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 import tech.provokedynamic.gymcrm.dto.Request;
@@ -59,7 +57,7 @@ public class TrainingServiceImpl implements TrainingService {
 
         trainingRepository.save(training);
 
-        registerAfterCommitWorkloadNotification(trainer, request.trainingDate(), request.trainingDuration(),
+        publishAfterCommit(trainer, request.trainingDate(), request.trainingDuration(),
                 WorkloadEvent.ActionType.ADD);
 
         log.info("Added training '{}' for trainee '{}' with trainer '{}'",
@@ -81,14 +79,14 @@ public class TrainingServiceImpl implements TrainingService {
         trainingRepository.delete(training);
 
         var trainer = training.getTrainer();
-        registerAfterCommitWorkloadNotification(trainer, training.getTrainingDate(), training.getTrainingDuration(),
+        publishAfterCommit(trainer, training.getTrainingDate(), training.getTrainingDuration(),
                 WorkloadEvent.ActionType.DELETE);
 
         log.info("Cancelled training id={}, name='{}', trainer='{}'",
                 request.trainingId(), training.getTrainingName(), trainer.getUsername());
     }
 
-    private void registerAfterCommitWorkloadNotification(
+    private void publishAfterCommit(
             Trainer trainer, java.time.LocalDate trainingDate, int trainingDuration,
             WorkloadEvent.ActionType actionType) {
 
@@ -97,14 +95,6 @@ public class TrainingServiceImpl implements TrainingService {
                 trainer.isActive(), trainingDate, trainingDuration, actionType
         );
 
-        log.debug("Registering after-commit workload notification: trainer='{}', action={}",
-                trainer.getUsername(), actionType);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                workloadEventPublisher.publish(event);
-            }
-        });
+        workloadEventPublisher.publishAfterCommit(event);
     }
 }

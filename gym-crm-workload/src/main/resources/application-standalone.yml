@@ -1,0 +1,59 @@
+# Activated with SPRING_PROFILES_ACTIVE=standalone
+server:
+  port: 8082
+
+spring:
+  config:
+    import: ""
+  cloud:
+    consul:
+      enabled: false
+    discovery:
+      enabled: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:keys/gym-crm-public.pem
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: gym-crm-workload
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: tech.provokedynamic.gymcrmcommon.event
+        spring.json.value.default.type: tech.provokedynamic.gymcrmcommon.event.WorkloadEvent
+        spring.json.use.type.headers: false
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/gym_crm_workload
+      auto-index-creation: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{transactionId:-}] "
+  include-application-name: false
+  level:
+    org.apache.kafka: WARN
+    org.apache.kafka.clients.consumer: WARN
+    org.springframework.kafka: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mongodb:
+      enabled: false
+    kafka:
+      enabled: false
