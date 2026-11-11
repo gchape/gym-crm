@@ -1,0 +1,8 @@
+**/target
+.git
+.agents
+.codex
+.aws
+.idea
+.vscode
+**/*.log

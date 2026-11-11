@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
-# Run once from the repo root before your first `docker build`, unless
-# gym-crm/src/main/resources/keystore/dev-keystore.p12 already exists
-# (e.g. it's already used by the Cucumber test suite).
-#
-# gym-crm signs JWTs with this keystore's private key (see JwtConfig);
-# gym-crm-workload verifies them with the matching public key.
 set -euo pipefail
 
-KEYSTORE_DIR="src/main/resources/keystore"
+KEYSTORE_DIR="gym-crm-api/src/main/resources/keystore"
 KEYS_DIR="gym-crm-workload/src/main/resources/keys"
 ALIAS="gym-crm-auth"
 PASSWORD="dev-keystore-pass"

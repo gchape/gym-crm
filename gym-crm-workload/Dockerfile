@@ -1,21 +1,17 @@
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM maven:3.10.0-eclipse-temurin-25-noble@sha256:d4bb5796a17ab2422f609b764ba16ddcbd2e6ba5b639168eb9e99e6de8f1f431 AS build
 WORKDIR /workspace
+COPY . .
+RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B --no-transfer-progress -pl gym-crm-workload -am -Dmaven.test.skip=true package
 
-COPY gym-crm-common gym-crm-common
-RUN mvn -f gym-crm-common/pom.xml -q -Dmaven.test.skip=true install
-
-COPY gym-crm-workload gym-crm-workload
-RUN mvn -f gym-crm-workload/pom.xml -q -Dmaven.test.skip=true package && \
-    cp gym-crm-workload/target/*.jar /workspace/app.jar
-
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25.0.5_8-jre-noble@sha256:a98128a57de944a72bd31fbc79b898edd5a5864d3652071d5bbd2160ab7d7dce
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 gymcrm
 WORKDIR /app
-COPY --from=build /workspace/app.jar app.jar
-
-ENV SPRING_PROFILES_ACTIVE=standalone
+COPY --from=build /workspace/gym-crm-workload/target/gym-crm-workload-*.jar app.jar
+USER gymcrm
+ENV SPRING_PROFILES_ACTIVE=docker
 EXPOSE 8082
-
 HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=5 \
-  CMD wget -qO- http://localhost:8082/actuator/health | grep -q '"status":"UP"' || exit 1
-
+  CMD curl --fail --silent http://localhost:8082/actuator/health || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
