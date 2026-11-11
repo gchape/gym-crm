@@ -17,11 +17,14 @@ spring:
         jwt:
           public-key-location: classpath:keys/gym-crm-public.pem
   kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
     bootstrap-servers: localhost:9092
     consumer:
       group-id: gym-crm-workload
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: tech.provokedynamic.gymcrmcommon.event
@@ -43,9 +46,8 @@ spring:
     consul:
       host: localhost
       port: 8500
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/gym_crm_workload
+  mongodb:
+    uri: mongodb://localhost:27017/gym_crm_workload
 ---
 spring:
   config:
@@ -62,6 +64,5 @@ spring:
       port: ${CONSUL_PORT:8500}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
-  data:
-    mongodb:
-      uri: ${MONGO_URI}
+  mongodb:
+    uri: ${MONGO_URI}

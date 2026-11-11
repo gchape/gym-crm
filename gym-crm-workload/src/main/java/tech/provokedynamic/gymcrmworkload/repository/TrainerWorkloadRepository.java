@@ -14,7 +14,6 @@ public interface TrainerWorkloadRepository extends MongoRepository<TrainerWorklo
 
     boolean existsByTrainerUsername(String trainerUsername);
 
-    // Supports the required first/last name search, backed by the compound index.
     List<TrainerWorkloadDocument> findByTrainerFirstNameAndTrainerLastName(
             String trainerFirstName, String trainerLastName);
 }

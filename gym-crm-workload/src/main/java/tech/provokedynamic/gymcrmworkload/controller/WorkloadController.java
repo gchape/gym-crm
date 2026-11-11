@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tech.provokedynamic.gymcrmworkload.dto.response.TrainerWorkloadResponse;
 import tech.provokedynamic.gymcrmworkload.mapper.WorkloadResponseMapper;
-import tech.provokedynamic.gymcrmworkload.service.WorkloadService;
+import tech.provokedynamic.gymcrmworkload.service.TrainerWorkloadService;
 
 @Slf4j
 @RestController
@@ -26,7 +26,7 @@ import tech.provokedynamic.gymcrmworkload.service.WorkloadService;
 @Tag(name = "Workload", description = "Trainer workload aggregation endpoints")
 public class WorkloadController {
 
-    private final WorkloadService workloadService;
+    private final TrainerWorkloadService workloadService;
     private final WorkloadResponseMapper responseMapper;
 
     @Operation(summary = "Get aggregated workload summary for a trainer")
@@ -40,12 +40,9 @@ public class WorkloadController {
     public ResponseEntity<TrainerWorkloadResponse> getWorkload(@PathVariable String username) {
         log.info("GET /api/trainers/workload/{} - fetching workload summary", username);
 
-        var document = workloadService.getSummary(username);
-        if (document == null) {
-            log.warn("GET /api/trainers/workload/{} - no summary found", username);
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(responseMapper.toResponse(document));
+        return workloadService.findWorkload(username)
+                .map(responseMapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

@@ -8,9 +8,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
-import tech.provokedynamic.gymcrmworkload.document.MonthSummary;
+import tech.provokedynamic.gymcrmworkload.document.MonthlyWorkload;
 import tech.provokedynamic.gymcrmworkload.document.TrainerWorkloadDocument;
-import tech.provokedynamic.gymcrmworkload.document.YearSummary;
+import tech.provokedynamic.gymcrmworkload.document.YearlyWorkload;
 import tech.provokedynamic.gymcrmworkload.exception.InvalidWorkloadEventException;
 import tech.provokedynamic.gymcrmworkload.repository.TrainerWorkloadRepository;
 import tech.provokedynamic.gymcrmworkload.validation.WorkloadEventValidator;
@@ -25,19 +25,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("WorkloadServiceImpl")
-class WorkloadServiceImplTest {
+@DisplayName("TrainerWorkloadApplicationService")
+class TrainerWorkloadApplicationServiceTest {
 
     @Mock
     TrainerWorkloadRepository repository;
 
     WorkloadEventValidator validator = new WorkloadEventValidator();
 
-    WorkloadServiceImpl service;
+    TrainerWorkloadApplicationService service;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        service = new WorkloadServiceImpl(repository, validator);
+        service = new TrainerWorkloadApplicationService(repository, validator);
     }
 
     private WorkloadEvent addEvent(LocalDate date, int duration) {
@@ -46,7 +46,7 @@ class WorkloadServiceImplTest {
     }
 
     @Nested
-    @DisplayName("processWorkload() - new trainer")
+    @DisplayName("applyEvent() - new trainer")
     class NewTrainer {
 
         @Test
@@ -55,7 +55,7 @@ class WorkloadServiceImplTest {
             when(repository.findByTrainerUsername("jane.smith")).thenReturn(Optional.empty());
             when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            service.processWorkload(addEvent(LocalDate.of(2025, 6, 10), 60), "tx-1");
+            service.applyEvent(addEvent(LocalDate.of(2025, 6, 10), 60), "tx-1");
 
             var captor = ArgumentCaptor.forClass(TrainerWorkloadDocument.class);
             verify(repository).save(captor.capture());
@@ -67,20 +67,20 @@ class WorkloadServiceImplTest {
             assertThat(saved.getYears().getFirst().getYear()).isEqualTo(2025);
             assertThat(saved.getYears().getFirst().getMonths()).hasSize(1);
             assertThat(saved.getYears().getFirst().getMonths().getFirst().getMonth()).isEqualTo(6);
-            assertThat(saved.getYears().getFirst().getMonths().getFirst().getTrainingsSummaryDuration())
+            assertThat(saved.getYears().getFirst().getMonths().getFirst().getDurationMinutes())
                     .isEqualTo(60);
         }
     }
 
     @Nested
-    @DisplayName("processWorkload() - existing trainer")
+    @DisplayName("applyEvent() - existing trainer")
     class ExistingTrainer {
 
         private TrainerWorkloadDocument existingDocWithMonth(int year, int month, int duration) {
             var doc = new TrainerWorkloadDocument("jane.smith", "Jane", "Smith", true);
             doc.setYears(new java.util.ArrayList<>(List.of(
-                    new YearSummary(year, new java.util.ArrayList<>(List.of(
-                            new MonthSummary(month, duration)))))));
+                    new YearlyWorkload(year, new java.util.ArrayList<>(List.of(
+                            new MonthlyWorkload(month, duration)))))));
             return doc;
         }
 
@@ -91,11 +91,11 @@ class WorkloadServiceImplTest {
             when(repository.findByTrainerUsername("jane.smith")).thenReturn(Optional.of(existing));
             when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            service.processWorkload(addEvent(LocalDate.of(2025, 6, 15), 30), "tx-2");
+            service.applyEvent(addEvent(LocalDate.of(2025, 6, 15), 30), "tx-2");
 
             assertThat(existing.getYears()).hasSize(1);
             assertThat(existing.getYears().getFirst().getMonths()).hasSize(1);
-            assertThat(existing.getYears().getFirst().getMonths().getFirst().getTrainingsSummaryDuration())
+            assertThat(existing.getYears().getFirst().getMonths().getFirst().getDurationMinutes())
                     .isEqualTo(130);
         }
 
@@ -106,7 +106,7 @@ class WorkloadServiceImplTest {
             when(repository.findByTrainerUsername("jane.smith")).thenReturn(Optional.of(existing));
             when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            service.processWorkload(addEvent(LocalDate.of(2025, 7, 1), 45), "tx-3");
+            service.applyEvent(addEvent(LocalDate.of(2025, 7, 1), 45), "tx-3");
 
             assertThat(existing.getYears()).hasSize(1);
             assertThat(existing.getYears().getFirst().getMonths()).hasSize(2);
@@ -122,9 +122,9 @@ class WorkloadServiceImplTest {
             var deleteEvent = new WorkloadEvent("jane.smith", "Jane", "Smith", true,
                     LocalDate.of(2025, 6, 15), 50, WorkloadEvent.ActionType.DELETE);
 
-            service.processWorkload(deleteEvent, "tx-4");
+            service.applyEvent(deleteEvent, "tx-4");
 
-            assertThat(existing.getYears().getFirst().getMonths().getFirst().getTrainingsSummaryDuration())
+            assertThat(existing.getYears().getFirst().getMonths().getFirst().getDurationMinutes())
                     .isZero();
         }
     }
@@ -139,7 +139,7 @@ class WorkloadServiceImplTest {
             var event = new WorkloadEvent("", "Jane", "Smith", true,
                     LocalDate.now(), 30, WorkloadEvent.ActionType.ADD);
 
-            assertThatThrownBy(() -> service.processWorkload(event, "tx-5"))
+            assertThatThrownBy(() -> service.applyEvent(event, "tx-5"))
                     .isInstanceOf(InvalidWorkloadEventException.class);
 
             verifyNoInteractions(repository);
@@ -151,7 +151,7 @@ class WorkloadServiceImplTest {
             var event = new WorkloadEvent("jane.smith", "Jane", "Smith", true,
                     LocalDate.now(), 0, WorkloadEvent.ActionType.ADD);
 
-            assertThatThrownBy(() -> service.processWorkload(event, "tx-6"))
+            assertThatThrownBy(() -> service.applyEvent(event, "tx-6"))
                     .isInstanceOf(InvalidWorkloadEventException.class);
 
             verify(repository, never()).save(any());

@@ -1,4 +1,4 @@
-// tech/provokedynamic/gymcrmworkload/listener/WorkloadEventListener.java
+
 package tech.provokedynamic.gymcrmworkload.listener;
 
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadEvent;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadTopics;
-import tech.provokedynamic.gymcrmworkload.service.WorkloadService;
+import tech.provokedynamic.gymcrmworkload.service.TrainerWorkloadService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -23,7 +23,7 @@ public class WorkloadEventListener {
     private static final String TRANSACTION_ID_HEADER = "transactionId";
     private static final String MDC_KEY = "transactionId";
 
-    private final WorkloadService workloadService;
+    private final TrainerWorkloadService workloadService;
 
     @KafkaListener(topics = WorkloadTopics.TRAINER_WORKLOAD_EVENTS,
             groupId = "${spring.kafka.consumer.group-id}")
@@ -34,16 +34,16 @@ public class WorkloadEventListener {
         try {
             WorkloadEvent event = record.value();
 
-            // Transaction-level log: receipt of the message off the topic.
             log.info("[txId={}] Received workload event - key=[{}], trainer=[{}], action=[{}], partition=[{}], offset=[{}]",
-                    transactionId, record.key(), event.trainerUsername(), event.actionType(),
+                    transactionId, record.key(), event != null ? event.trainerUsername() : "unknown", event != null ? event.actionType() : null,
                     record.partition(), record.offset());
 
-            workloadService.processWorkload(event, transactionId);
+            workloadService.applyEvent(event, transactionId);
         } catch (Exception ex) {
             log.error("[txId={}] Failed to process workload event - trainer=[{}]: {}",
                     transactionId, record.value() != null ? record.value().trainerUsername() : "unknown",
                     ex.getMessage(), ex);
+            throw ex;
         } finally {
             MDC.remove(MDC_KEY);
         }

@@ -21,7 +21,7 @@ spring:
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
       properties:
         spring.json.add.type.headers: false
 logging:
@@ -39,7 +39,7 @@ spring:
     password: postgres
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
   cloud:
     consul:
       host: localhost

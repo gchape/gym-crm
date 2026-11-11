@@ -93,7 +93,7 @@ public class WorkloadSteps {
                     .filter(m -> m.getMonth() == month)
                     .findFirst()
                     .orElseThrow()
-                    .getTrainingsSummaryDuration();
+                    .getDurationMinutes();
             assertThat(actual).isEqualTo(minutes);
         });
     }

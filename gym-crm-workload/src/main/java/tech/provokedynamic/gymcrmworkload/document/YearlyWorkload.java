@@ -13,11 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "year")
-public class YearSummary {
+public class YearlyWorkload {
 
     @NotNull(message = "Year is required")
     private Integer year;
 
     @Valid
-    private List<MonthSummary> months = new ArrayList<>();
+    private List<MonthlyWorkload> months = new ArrayList<>();
 }
