@@ -14,14 +14,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.AnnotationPointcuts;
 import tech.provokedynamic.gymcrm.aspect.pointcuts.ServicePointcuts;
-import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.request.*;
 import tech.provokedynamic.gymcrm.repository.TrainerRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingRepository;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
 import tech.provokedynamic.gymcrm.service.TrainerService;
-import tech.provokedynamic.gymcrm.service.impl.TrainerServiceImpl;
-import tech.provokedynamic.gymcrm.util.DBCredentialGenerator;
-import tech.provokedynamic.gymcrm.validation.RequestValidator;
+import tech.provokedynamic.gymcrm.service.TrainerApplicationService;
+import tech.provokedynamic.gymcrm.util.DatabaseCredentialGenerator;
+import tech.provokedynamic.gymcrm.validation.BeanValidationRequestValidator;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -30,9 +30,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         RequestValidationAspectTest.AspectConfig.class,
         ServicePointcuts.class,
         AnnotationPointcuts.class,
-        RequestValidator.class,
+        BeanValidationRequestValidator.class,
         RequestValidationAspect.class,
-        TrainerServiceImpl.class
+        TrainerApplicationService.class
 })
 class RequestValidationAspectTest {
 
@@ -46,14 +46,14 @@ class RequestValidationAspectTest {
     @MockitoBean
     private TrainingTypeRepository trainingTypeRepository;
     @MockitoBean
-    private DBCredentialGenerator credentialGenerator;
+    private DatabaseCredentialGenerator credentialGenerator;
 
     @Test
     void validate_doesNotThrow_whenRequestIsValid() {
-        var request = new Request.ChangePassword(
+        var request = new ChangePasswordRequest(
                 "John.Doe",
                 "john.doe@O",
-                "john.doe@N"
+                "john.doe@New123"
         );
 
         assertThatThrownBy(() -> trainerService.changePassword(request))
@@ -62,10 +62,10 @@ class RequestValidationAspectTest {
 
     @Test
     void validate_throws_whenRequestHasBlankUsername() {
-        var request = new Request.ChangePassword(
+        var request = new ChangePasswordRequest(
                 "",
                 "john.doe@O",
-                "john.doe@N"
+                "john.doe@New123"
         );
 
         assertThatThrownBy(() -> trainerService.changePassword(request))
@@ -74,7 +74,7 @@ class RequestValidationAspectTest {
 
     @Test
     void validate_throws_whenRequestHasInvalidNewPassword() {
-        var request = new Request.ChangePassword(
+        var request = new ChangePasswordRequest(
                 "John.Doe",
                 "john.doe@O",
                 "short"

@@ -1,29 +1,30 @@
 package tech.provokedynamic.gymcrm.service;
 
 import jakarta.annotation.Nullable;
-import tech.provokedynamic.gymcrm.dto.Profile;
-import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.dto.Response;
-import tech.provokedynamic.gymcrm.dto.Summary;
+import tech.provokedynamic.gymcrm.dto.UserProfile;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
+import tech.provokedynamic.gymcrm.dto.TrainingSummary;
 
 import java.time.LocalDate;
 import java.util.List;
 
+/** Application boundary for trainer profiles and their session queries. */
 public interface TrainerService {
 
-    Response.CreatedUser create(Request.CreateTrainer request);
+    RegistrationCredentials create(RegisterTrainerRequest request);
 
-    Profile.Trainer getProfile(String username);
+    UserProfile.Trainer getProfile(String username);
 
-    void changePassword(Request.ChangePassword request);
+    void changePassword(ChangePasswordRequest request);
 
-    Profile.Trainer update(Request.UpdateTrainer request);
+    UserProfile.Trainer update(UpdateTrainerRequest request);
 
-    void activate(Request.ToggleActive request);
+    void activate(ChangeActiveStatusRequest request);
 
-    void deactivate(Request.ToggleActive request);
+    void deactivate(ChangeActiveStatusRequest request);
 
-    List<Summary.Training> getTrainings(
+    List<TrainingSummary> getTrainings(
             String username,
             @Nullable LocalDate from,
             @Nullable LocalDate to,

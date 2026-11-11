@@ -71,9 +71,9 @@ public class TraineeSteps {
         assertThat(json.get("username").asText()).startsWith(prefix);
     }
 
-    @And("the response contains a generated password of 10 characters")
-    public void theResponseContainsAGeneratedPasswordOfCharacters() throws Exception {
+    @And("the response contains a generated password of {int} characters")
+    public void theResponseContainsAGeneratedPasswordOfCharacters(int length) throws Exception {
         var json = TestJson.MAPPER.readTree(lastResult.getResponse().getContentAsString());
-        assertThat(json.get("password").asText()).hasSize(10);
+        assertThat(json.get("password").asText()).hasSize(length);
     }
 }

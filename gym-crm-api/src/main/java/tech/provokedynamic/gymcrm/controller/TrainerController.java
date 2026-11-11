@@ -14,8 +14,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 
 import java.time.LocalDate;
@@ -33,11 +33,11 @@ public class TrainerController {
     @Operation(summary = "Register a new trainer")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Trainer registered successfully",
-                    content = @Content(schema = @Schema(implementation = Response.CreatedUser.class))),
+                    content = @Content(schema = @Schema(implementation = RegistrationCredentials.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<Response.CreatedUser> register(@Valid @RequestBody Request.CreateTrainer body) {
+    public ResponseEntity<RegistrationCredentials> register(@Valid @RequestBody RegisterTrainerRequest body) {
         log.info("POST /api/trainers - registering trainer firstName={} lastName={}", body.firstName(), body.lastName());
 
         var credentials = trainerService.create(body);
@@ -48,42 +48,42 @@ public class TrainerController {
 
     @Operation(summary = "Get trainer profile by username")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profile found",
-                    content = @Content(schema = @Schema(implementation = Response.TrainerProfile.class))),
+            @ApiResponse(responseCode = "200", description = "UserProfile found",
+                    content = @Content(schema = @Schema(implementation = TrainerProfileResponse.class))),
             @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content)
     })
     @GetMapping("/{username}")
-    public ResponseEntity<Response.TrainerProfile> getProfile(@PathVariable String username) {
+    public ResponseEntity<TrainerProfileResponse> getProfile(@PathVariable String username) {
         log.info("GET /api/trainers/{} - fetching profile", username);
 
         var profile = trainerService.getProfile(username);
 
         log.info("GET /api/trainers/{} - profile returned", username);
-        return ResponseEntity.ok(Response.TrainerProfile.from(profile));
+        return ResponseEntity.ok(TrainerProfileResponse.from(profile));
     }
 
     @Operation(summary = "Update trainer profile")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Profile updated",
-                    content = @Content(schema = @Schema(implementation = Response.TrainerProfile.class))),
+            @ApiResponse(responseCode = "200", description = "UserProfile updated",
+                    content = @Content(schema = @Schema(implementation = TrainerProfileResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content),
             @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content)
     })
     @PutMapping("/{username}")
-    public ResponseEntity<Response.TrainerProfile> update(
+    public ResponseEntity<TrainerProfileResponse> update(
             @PathVariable String username,
-            @Valid @RequestBody Request.UpdateTrainer body) {
+            @Valid @RequestBody UpdateTrainerRequest body) {
         log.info("PUT /api/trainers/{} - updating profile", username);
 
-        var request = new Request.UpdateTrainer(
+        var request = new UpdateTrainerRequest(
                 username,
                 body.firstName(), body.lastName(),
                 body.specialization(), body.isActive());
         var profile = trainerService.update(request);
 
         log.info("PUT /api/trainers/{} - profile updated", username);
-        return ResponseEntity.ok(Response.TrainerProfile.from(profile));
+        return ResponseEntity.ok(TrainerProfileResponse.from(profile));
     }
 
     @Operation(summary = "Change trainer password")
@@ -95,10 +95,10 @@ public class TrainerController {
     @PutMapping("/{username}/password")
     public ResponseEntity<Void> changePassword(
             @PathVariable String username,
-            @Valid @RequestBody Request.ChangePassword body) {
+            @Valid @RequestBody ChangePasswordRequest body) {
         log.info("PUT /api/trainers/{}/password - changing password", username);
 
-        trainerService.changePassword(new Request.ChangePassword(username, body.password(), body.newPassword()));
+        trainerService.changePassword(new ChangePasswordRequest(username, body.password(), body.newPassword()));
 
         log.info("PUT /api/trainers/{}/password - password changed", username);
         return ResponseEntity.ok().build();
@@ -114,10 +114,10 @@ public class TrainerController {
     @PatchMapping("/{username}/active")
     public ResponseEntity<Void> setActive(
             @PathVariable String username,
-            @Valid @RequestBody Request.ToggleActive body) {
+            @Valid @RequestBody ChangeActiveStatusRequest body) {
         log.info("PATCH /api/trainers/{}/active - isActive={}", username, body.isActive());
 
-        var req = new Request.ToggleActive(username, body.isActive());
+        var req = new ChangeActiveStatusRequest(username, body.isActive());
         if (body.isActive()) {
             trainerService.activate(req);
         } else {
@@ -134,7 +134,7 @@ public class TrainerController {
             @ApiResponse(responseCode = "404", description = "Trainer not found", content = @Content)
     })
     @GetMapping("/{username}/trainings")
-    public ResponseEntity<List<Response.TrainingSummary>> getTrainings(
+    public ResponseEntity<List<TrainingSummaryResponse>> getTrainings(
             @PathVariable String username,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Nullable LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Nullable LocalDate to,
@@ -142,7 +142,7 @@ public class TrainerController {
         log.info("GET /api/trainers/{}/trainings", username);
 
         var trainings = trainerService.getTrainings(username, from, to, traineeUsername);
-        var response = trainings.stream().map(Response.TrainingSummary::fromTrainer).toList();
+        var response = trainings.stream().map(TrainingSummaryResponse::fromTrainer).toList();
 
         log.info("GET /api/trainers/{}/trainings - {} results", username, response.size());
         return ResponseEntity.ok(response);

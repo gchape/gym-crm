@@ -73,4 +73,24 @@ class TrainingRepositoryTest extends BaseRepositoryTest {
 
         assertThat(trainingRepository.findAll()).hasSize(3);
     }
+
+    @Test
+    void searchIsScopedFilteredAndDeterministicallyPaginated() {
+        var date = LocalDate.of(2027, 1, 15);
+        for (var name : java.util.List.of("First", "Second", "Third")) {
+            trainingRepository.save(Training.builder().trainee(trainee).trainer(trainer).trainingType(yoga)
+                    .trainingName(name).trainingDate(date).trainingDuration(45).build());
+        }
+        em.flush();
+        em.clear();
+        var search = new tech.provokedynamic.gymcrm.dto.TrainingSearch(date, date, null, "bob.jones", "YOGA", 1, 1);
+        var page = trainingRepository.findAll(TrainingSpecifications.visibleTo("alice.smith", search), search.pageable());
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getContent()).extracting(Training::getTrainingName).containsExactly("Second");
+        assertThat(trainingRepository.findAll(TrainingSpecifications.visibleTo("stranger", search), search.pageable()))
+                .isEmpty();
+        var outsideRange = new tech.provokedynamic.gymcrm.dto.TrainingSearch(date.plusDays(1), null, null, null, null, 0, 20);
+        assertThat(trainingRepository.findAll(TrainingSpecifications.visibleTo("bob.jones", outsideRange), outsideRange.pageable()))
+                .isEmpty();
+    }
 }

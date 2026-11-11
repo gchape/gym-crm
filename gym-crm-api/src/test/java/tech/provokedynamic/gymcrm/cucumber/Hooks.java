@@ -13,9 +13,7 @@ public class Hooks {
     @Before
     @Transactional
     public void resetState() {
-        // Physically purge rather than using the soft-delete-aware
-        // repository deleteAll(), which only flips is_active and leaves
-        // the username "taken" for DBCredentialGenerator across scenarios.
+
         em.createNativeQuery("DELETE FROM training").executeUpdate();
         em.createNativeQuery("DELETE FROM trainee_trainer").executeUpdate();
         em.createNativeQuery("DELETE FROM trainer").executeUpdate();

@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
 import tech.provokedynamic.gymcrm.service.LoginService;
 
 @Slf4j
@@ -30,17 +30,17 @@ public class AuthController {
     @Operation(summary = "Log in with username and password, receive a JWT access token")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login successful",
-                    content = @Content(schema = @Schema(implementation = Response.AccessToken.class))),
+                    content = @Content(schema = @Schema(implementation = AccessTokenResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
             @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
     })
     @PostMapping("/login")
-    public ResponseEntity<Response.AccessToken> login(@Valid @RequestBody Request.Login body) {
+    public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest body) {
         log.info("POST /api/auth/login - username={}", body.username());
 
         var token = loginService.login(body.username(), body.password());
 
         log.info("POST /api/auth/login - login succeeded for username={}", body.username());
-        return ResponseEntity.ok(new Response.AccessToken(token));
+        return ResponseEntity.ok(new AccessTokenResponse(token));
     }
 }

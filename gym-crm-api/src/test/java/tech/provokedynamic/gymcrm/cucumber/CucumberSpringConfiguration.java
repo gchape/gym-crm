@@ -17,14 +17,10 @@ import tech.provokedynamic.gymcrm.GymCrmApplication;
 import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 
 /**
- * One real Postgres (via Testcontainers) backs every scenario in this
- * module's Cucumber suite. Config-server / service-discovery lookups are
- * disabled so the context boots standalone. JWTs are now issued/validated
- * with gym-crm's own keystore (see JwtConfig) — no more separate
- * authorization-server issuer to disable or stub out. Kafka publishing is
- * stubbed out per-step-class with a Mockito bean (see {@link TrainingSteps})
- * because verifying the workload event itself is the job of the dedicated
- * integration-test module, not this component suite.
+ * PostgreSQL-backed API scenarios with workload publishing mocked.
+ * HTTP authorization uses pre-authenticated test JWTs; the separate H2 workflow
+ * tests exercise real login and token decoding. Workload Kafka integration is
+ * verified by the workload module's Failsafe suite.
  */
 @CucumberContextConfiguration
 @SpringBootTest(
@@ -35,7 +31,8 @@ import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
                 "spring.cloud.discovery.enabled=false",
                 "spring.cloud.consul.enabled=false",
                 "spring.cloud.consul.discovery.enabled=false",
-                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "spring.jpa.hibernate.ddl-auto=validate",
+                "app.workload.events-enabled=false",
                 "app.cors.allowed-origins=http://localhost:3000",
                 "gym-crm.auth.issuer=http://localhost:8081",
                 "gym-crm.auth.access-token-ttl=PT30M",
@@ -52,7 +49,7 @@ import tech.provokedynamic.gymcrm.client.WorkloadEventPublisher;
 public class CucumberSpringConfiguration {
 
     static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer(DockerImageName.parse("postgres:18.4"));
+            new PostgreSQLContainer(DockerImageName.parse("postgres:18.6-alpine"));
 
     static {
         POSTGRES.start();

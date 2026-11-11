@@ -6,7 +6,7 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
-import tech.provokedynamic.gymcrm.dto.Summary;
+import tech.provokedynamic.gymcrm.dto.TrainingSummary;
 import tech.provokedynamic.gymcrm.entity.*;
 import tech.provokedynamic.gymcrm.repository.TrainerRepositoryCustom;
 
@@ -21,14 +21,14 @@ public class TrainerRepositoryCustomImpl implements TrainerRepositoryCustom {
     private final EntityManager em;
 
     @Override
-    public List<Summary.Training> findTrainingsByUsername(
+    public List<TrainingSummary> findTrainingsByUsername(
             String username,
             @Nullable LocalDate from,
             @Nullable LocalDate to,
             @Nullable String trainee
     ) {
         var cb = em.getCriteriaBuilder();
-        var cq = cb.createQuery(Summary.Training.class);
+        var cq = cb.createQuery(TrainingSummary.class);
         var root = cq.from(Training.class);
 
         Join<Training, Trainer> trainerJoin = root.join(Training_.trainer);
@@ -36,7 +36,7 @@ public class TrainerRepositoryCustomImpl implements TrainerRepositoryCustom {
         Join<Training, TrainingType> typeJoin = root.join(Training_.trainingType);
 
         cq.select(cb.construct(
-                Summary.Training.class,
+                TrainingSummary.class,
                 root.get(Training_.trainingName),
                 root.get(Training_.trainingDate),
                 typeJoin.get(TrainingType_.trainingTypeName),

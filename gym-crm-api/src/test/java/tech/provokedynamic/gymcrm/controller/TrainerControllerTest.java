@@ -8,10 +8,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tech.provokedynamic.gymcrm.dto.Profile;
-import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.dto.Response;
-import tech.provokedynamic.gymcrm.dto.Summary;
+import tech.provokedynamic.gymcrm.dto.UserProfile;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
+import tech.provokedynamic.gymcrm.dto.TrainingSummary;
 import tech.provokedynamic.gymcrm.exception.*;
 import tech.provokedynamic.gymcrm.service.TrainerService;
 import tech.provokedynamic.gymcrm.testsupport.TestJson;
@@ -41,26 +41,24 @@ class TrainerControllerTest {
                 .build();
     }
 
-    private Profile.Trainer sampleTrainerProfile() {
-        return new Profile.Trainer(
+    private UserProfile.Trainer sampleTrainerProfile() {
+        return new UserProfile.Trainer(
                 "Jane", "Smith", "jane.smith", "Yoga", true,
-                List.of(new Profile.Trainee("John", "Doe", "john.doe",
+                List.of(new UserProfile.Trainee("John", "Doe", "john.doe",
                         LocalDate.of(1990, 1, 1), null, true, List.of()))
         );
     }
 
-    private Summary.Training sampleTraining() {
-        return new Summary.Training(
+    private TrainingSummary sampleTraining() {
+        return new TrainingSummary(
                 "Morning Yoga", LocalDate.now(), "Yoga", 60, "jane.smith", "john.doe"
         );
     }
 
-    // ─── POST /api/trainers ───────────────────────────────────────────────────
-
     @Test
     void register_validBody_returns201WithCredentials() throws Exception {
-        var body = new Request.CreateTrainer("Jane", "Smith", "Yoga");
-        var credentials = new Response.CreatedUser("jane.smith", "pass123456");
+        var body = new RegisterTrainerRequest("Jane", "Smith", "Yoga");
+        var credentials = new RegistrationCredentials("jane.smith", "pass123456");
         when(trainerService.create(any())).thenReturn(credentials);
 
         mockMvc.perform(post("/api/trainers")
@@ -73,7 +71,7 @@ class TrainerControllerTest {
 
     @Test
     void register_blankSpecialization_returns400() throws Exception {
-        var body = new Request.CreateTrainer("Jane", "Smith", "");
+        var body = new RegisterTrainerRequest("Jane", "Smith", "");
 
         mockMvc.perform(post("/api/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,15 +81,13 @@ class TrainerControllerTest {
 
     @Test
     void register_tooShortFirstName_returns400() throws Exception {
-        var body = new Request.CreateTrainer("J", "Smith", "Yoga");
+        var body = new RegisterTrainerRequest("J", "Smith", "Yoga");
 
         mockMvc.perform(post("/api/trainers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isBadRequest());
     }
-
-    // ─── GET /api/trainers/{username} ─────────────────────────────────────────
 
     @Test
     void getProfile_existingTrainer_returns200() throws Exception {
@@ -112,11 +108,9 @@ class TrainerControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ─── PUT /api/trainers/{username} ─────────────────────────────────────────
-
     @Test
     void update_validBody_returns200WithProfile() throws Exception {
-        var body = new Request.UpdateTrainer("jane.smith", "Jane", "Smith", "Yoga", true);
+        var body = new UpdateTrainerRequest("jane.smith", "Jane", "Smith", "Yoga", true);
         when(trainerService.update(any())).thenReturn(sampleTrainerProfile());
 
         mockMvc.perform(put("/api/trainers/jane.smith")
@@ -128,7 +122,7 @@ class TrainerControllerTest {
 
     @Test
     void update_unknownTrainer_returns404() throws Exception {
-        var body = new Request.UpdateTrainer("ghost", "Ghost", "User", "Yoga", true);
+        var body = new UpdateTrainerRequest("ghost", "Ghost", "User", "Yoga", true);
         when(trainerService.update(any())).thenThrow(new UserDoesNotExistException("Not found"));
 
         mockMvc.perform(put("/api/trainers/ghost")
@@ -149,11 +143,9 @@ class TrainerControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ─── PUT /api/trainers/{username}/password ─────────────────────────────────
-
     @Test
     void changePassword_validBody_returns200() throws Exception {
-        var body = new Request.ChangePassword("jane.smith", "oldpassword", "newpass123");
+        var body = new ChangePasswordRequest("jane.smith", "oldpassword", "newpassword123");
         doNothing().when(trainerService).changePassword(any());
 
         mockMvc.perform(put("/api/trainers/jane.smith/password")
@@ -164,7 +156,7 @@ class TrainerControllerTest {
 
     @Test
     void changePassword_newPasswordNot10Chars_returns400() throws Exception {
-        var body = new Request.ChangePassword("jane.smith", "oldpassword", "tooshort");
+        var body = new ChangePasswordRequest("jane.smith", "oldpassword", "tooshort");
 
         mockMvc.perform(put("/api/trainers/jane.smith/password")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,7 +166,7 @@ class TrainerControllerTest {
 
     @Test
     void changePassword_wrongCurrentPassword_returns401() throws Exception {
-        var body = new Request.ChangePassword("jane.smith", "wrongpass", "newpass123");
+        var body = new ChangePasswordRequest("jane.smith", "wrongpass", "newpassword123");
         doThrow(new AuthenticationException("Bad credentials"))
                 .when(trainerService).changePassword(any());
 
@@ -184,11 +176,9 @@ class TrainerControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ─── PATCH /api/trainers/{username}/active ─────────────────────────────────
-
     @Test
     void setActive_activate_callsActivate() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", true);
+        var body = new ChangeActiveStatusRequest("jane.smith", true);
         doNothing().when(trainerService).activate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -202,7 +192,7 @@ class TrainerControllerTest {
 
     @Test
     void setActive_deactivate_callsDeactivate() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", false);
+        var body = new ChangeActiveStatusRequest("jane.smith", false);
         doNothing().when(trainerService).deactivate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -216,7 +206,7 @@ class TrainerControllerTest {
 
     @Test
     void setActive_alreadyActivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", true);
+        var body = new ChangeActiveStatusRequest("jane.smith", true);
         doThrow(new AlreadyActivatedException("Already active")).when(trainerService).activate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -227,7 +217,7 @@ class TrainerControllerTest {
 
     @Test
     void setActive_alreadyDeactivated_returns409() throws Exception {
-        var body = new Request.ToggleActive("jane.smith", false);
+        var body = new ChangeActiveStatusRequest("jane.smith", false);
         doThrow(new AlreadyDeactivatedException("Already inactive")).when(trainerService).deactivate(any());
 
         mockMvc.perform(patch("/api/trainers/jane.smith/active")
@@ -235,8 +225,6 @@ class TrainerControllerTest {
                         .content(TestJson.MAPPER.writeValueAsString(body)))
                 .andExpect(status().isConflict());
     }
-
-    // ─── GET /api/trainers/{username}/trainings ────────────────────────────────
 
     @Test
     void getTrainings_noFilters_returnsAll() throws Exception {

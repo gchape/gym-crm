@@ -1,7 +1,12 @@
 spring:
+  jpa:
+    open-in-view: false
+  threads:
+    virtual:
+      enabled: true
   application:
     name: gym-crm
   profiles:
-    active: dev
+    default: standalone
   config:
     import: "optional:configserver:http://localhost:8071"

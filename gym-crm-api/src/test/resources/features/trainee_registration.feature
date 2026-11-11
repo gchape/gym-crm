@@ -8,7 +8,7 @@ Feature: Trainee registration
     When I register a trainee with first name "Emma", last name "Watson", date of birth "1995-05-20" and no address
     Then the registration response status is 201
     And the response contains a generated username starting with "Emma.Watson"
-    And the response contains a generated password of 10 characters
+    And the response contains a generated password of 16 characters
 
   Scenario: Successful registration without optional fields
     Given no trainee is registered with the name "Liam" "Brown"

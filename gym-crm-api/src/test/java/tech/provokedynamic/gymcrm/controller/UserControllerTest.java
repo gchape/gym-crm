@@ -9,13 +9,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.request.*;
 import tech.provokedynamic.gymcrm.entity.TrainingType;
 import tech.provokedynamic.gymcrm.exception.AuthenticationException;
 import tech.provokedynamic.gymcrm.exception.GlobalExceptionHandler;
 import tech.provokedynamic.gymcrm.exception.UserDoesNotExistException;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
-import tech.provokedynamic.gymcrm.service.UserService;
+import tech.provokedynamic.gymcrm.service.PasswordService;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerTest {
 
     @Mock
-    UserService userService;
+    PasswordService userService;
     @Mock
     TrainingTypeRepository trainingTypeRepository;
 
@@ -46,11 +46,9 @@ class UserControllerTest {
         mapper = new ObjectMapper();
     }
 
-    // ─── PUT /api/password ────────────────────────────────────────────────────
-
     @Test
     void changePassword_validBody_returns200() throws Exception {
-        var body = new Request.ChangePassword("john.doe", "oldpassword", "newpass123");
+        var body = new ChangePasswordRequest("john.doe", "oldpassword", "newpassword123");
         doNothing().when(userService).updatePassword(any());
 
         mockMvc.perform(put("/api/password")
@@ -61,7 +59,7 @@ class UserControllerTest {
 
     @Test
     void changePassword_wrongCurrentPassword_returns401() throws Exception {
-        var body = new Request.ChangePassword("john.doe", "wrongpass", "newpass123");
+        var body = new ChangePasswordRequest("john.doe", "wrongpass", "newpassword123");
         doThrow(new AuthenticationException("Bad credentials"))
                 .when(userService).updatePassword(any());
 
@@ -73,7 +71,7 @@ class UserControllerTest {
 
     @Test
     void changePassword_userNotFound_returns404() throws Exception {
-        var body = new Request.ChangePassword("ghost", "oldpassword", "newpass123");
+        var body = new ChangePasswordRequest("ghost", "oldpassword", "newpassword123");
         doThrow(new UserDoesNotExistException("Not found"))
                 .when(userService).updatePassword(any());
 
@@ -85,7 +83,7 @@ class UserControllerTest {
 
     @Test
     void changePassword_newPasswordTooShort_returns400() throws Exception {
-        var body = new Request.ChangePassword("john.doe", "oldpassword", "short");
+        var body = new ChangePasswordRequest("john.doe", "oldpassword", "short");
 
         mockMvc.perform(put("/api/password")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +94,7 @@ class UserControllerTest {
     @Test
     void changePassword_blankUsername_returns400() throws Exception {
         String rawBody = """
-                {"username":"","password":"oldpassword","newPassword":"newpass123"}
+                {"username":"","password":"oldpassword","newPassword":"newpassword123"}
                 """;
 
         mockMvc.perform(put("/api/password")
@@ -104,8 +102,6 @@ class UserControllerTest {
                         .content(rawBody))
                 .andExpect(status().isBadRequest());
     }
-
-    // ─── GET /api/training-types ──────────────────────────────────────────────
 
     @Test
     void getTrainingTypes_returnsAll() throws Exception {

@@ -6,7 +6,7 @@ import org.aspectj.lang.annotation.Pointcut;
 @Aspect
 public final class AnnotationPointcuts {
 
-    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotation.Validate)")
+    @Pointcut("@annotation(tech.provokedynamic.gymcrm.annotation.ValidateRequest)")
     public void validateAnnotated() {
     }
 }

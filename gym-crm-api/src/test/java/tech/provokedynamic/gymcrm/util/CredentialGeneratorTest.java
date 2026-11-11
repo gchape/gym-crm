@@ -17,13 +17,13 @@ class CredentialGeneratorTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private DBCredentialGenerator credentialGenerator;
+    private DatabaseCredentialGenerator credentialGenerator;
 
     @Test
-    void generatePassword_returnsExactlyTenCharacters() {
+    void generatePassword_returnsSixteenCharacters() {
         var password = credentialGenerator.generatePassword();
 
-        assertThat(password).hasSize(10);
+        assertThat(password).hasSize(16);
     }
 
     @Test
