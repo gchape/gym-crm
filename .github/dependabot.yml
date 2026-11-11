@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      spring-platform:
+        patterns:
+          - 'org.springframework*'
+          - 'org.springdoc*'
+      cucumber:
+        patterns:
+          - 'io.cucumber*'
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /gym-crm-workload
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

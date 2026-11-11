@@ -1,30 +1,17 @@
-# Build context MUST be the repo root (contains gym-crm-common/ and pom.xml)
-#   docker build -f Dockerfile -t gym-crm:local .
-
-FROM maven:3.9-eclipse-temurin-25 AS build
+FROM maven:3.10.0-eclipse-temurin-25-noble@sha256:d4bb5796a17ab2422f609b764ba16ddcbd2e6ba5b639168eb9e99e6de8f1f431 AS build
 WORKDIR /workspace
+COPY . .
+RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B --no-transfer-progress -pl gym-crm-api -am -Dmaven.test.skip=true package
 
-# gym-crm-common is a local dependency - install it first.
-# -Dmaven.test.skip=true (not just -DskipTests) so test sources don't even
-# need to compile inside the image - keeps the build image lean and fast.
-COPY gym-crm-common gym-crm-common
-RUN mvn -f gym-crm-common/pom.xml -q -Dmaven.test.skip=true install
-
-COPY pom.xml .
-COPY src src
-RUN mvn -q -Dmaven.test.skip=true package && \
-    cp target/*.jar /workspace/app.jar
-
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25.0.5_8-jre-noble@sha256:a98128a57de944a72bd31fbc79b898edd5a5864d3652071d5bbd2160ab7d7dce
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 gymcrm
 WORKDIR /app
-COPY --from=build /workspace/app.jar app.jar
-
-# Default to the infra-free "standalone" profile. Override at `docker run`
-# time (-e SPRING_PROFILES_ACTIVE=docker) for the fully-wired setup.
+COPY --from=build /workspace/gym-crm-api/target/gym-crm-api-*.jar app.jar
+USER gymcrm
 ENV SPRING_PROFILES_ACTIVE=standalone
 EXPOSE 8081
-
 HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=5 \
-  CMD wget -qO- http://localhost:8081/actuator/health | grep -q '"status":"UP"' || exit 1
-
+  CMD curl --fail --silent http://localhost:8081/actuator/health || exit 1
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

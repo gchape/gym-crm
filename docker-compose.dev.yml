@@ -1,6 +1,6 @@
 services:
   consul:
-    image: hashicorp/consul:2.0.2
+    image: hashicorp/consul:2.1.0@sha256:259fd02f2544fe1aa03fa49efd3b105c8dd67106d710a72f5e898110266356f7
     container_name: gym-crm-consul
     command: agent -dev -client=0.0.0.0 -ui
     ports:
@@ -13,7 +13,7 @@ services:
       retries: 5
 
   kafka:
-    image: apache/kafka:4.3.1
+    image: apache/kafka:4.4.0@sha256:833b867a9585a141da455dc2b57431c65cbccb27f11c91f694444cca9f777e0f
     container_name: gym-crm-kafka
     ports:
       - "9092:9092"
@@ -35,7 +35,7 @@ services:
       retries: 5
 
   postgres:
-    image: postgres:18.4-alpine
+    image: postgres:18.6-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
     container_name: gym-crm-postgres
     ports:
       - "5432:5432"
@@ -52,7 +52,7 @@ services:
       retries: 5
 
   mongo:
-    image: mongo:8.0
+    image: mongo:9.0.4@sha256:452bdaf2127b8ff851e31410a267809b9829eded219979f2210e7c7efb85a058
     container_name: gym-crm-mongo
     ports:
       - "27017:27017"
