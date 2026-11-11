@@ -128,4 +128,23 @@ public class CrossServiceSteps {
         Thread.sleep(Duration.ofSeconds(seconds).toMillis());
         assertThat(workloadRepository.existsByTrainerUsername(username)).isFalse();
     }
+
+    @Then("the dead-letter topic contains the rejected event for trainer {string}")
+    public void deadLetterContainsRejectedEvent(String username) {
+        var config = Map.<String, Object>of(
+                "bootstrap.servers", IntegrationCucumberSpringConfiguration.KAFKA.getBootstrapServers(),
+                "group.id", "dlt-check-" + java.util.UUID.randomUUID(),
+                "auto.offset.reset", "earliest",
+                "enable.auto.commit", false,
+                "key.deserializer", org.apache.kafka.common.serialization.StringDeserializer.class,
+                "value.deserializer", org.apache.kafka.common.serialization.StringDeserializer.class);
+        try (var consumer = new org.apache.kafka.clients.consumer.KafkaConsumer<String, String>(config)) {
+            consumer.subscribe(java.util.List.of(WorkloadTopics.TRAINER_WORKLOAD_DEAD_LETTER));
+            Awaitility.await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+                var records = consumer.poll(Duration.ofMillis(500));
+                assertThat(java.util.stream.StreamSupport.stream(records.spliterator(), false)
+                        .anyMatch(record -> username.equals(record.key()) && record.value().contains(username))).isTrue();
+            });
+        }
+    }
 }

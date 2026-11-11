@@ -18,7 +18,7 @@ public class WorkloadResponseMapper {
                         y.getYear(),
                         y.getMonths().stream()
                                 .sorted(Comparator.comparingInt(m -> m.getMonth()))
-                                .map(m -> new MonthSummaryResponse(m.getMonth(), m.getTrainingsSummaryDuration()))
+                                .map(m -> new MonthSummaryResponse(m.getMonth(), m.getDurationMinutes()))
                                 .toList()))
                 .toList();
 

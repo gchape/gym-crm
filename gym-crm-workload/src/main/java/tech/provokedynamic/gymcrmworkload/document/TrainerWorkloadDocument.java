@@ -28,7 +28,7 @@ import java.util.List;
 @NoArgsConstructor
 @Document(collection = "trainer_workload")
 @CompoundIndexes({
-        // Supports the "search trainers by first & last name" requirement.
+
         @CompoundIndex(name = "trainer_name_idx", def = "{'trainerFirstName': 1, 'trainerLastName': 1}")
 })
 public class TrainerWorkloadDocument {
@@ -55,7 +55,7 @@ public class TrainerWorkloadDocument {
 
     @Valid
     @Field("years")
-    private List<YearSummary> years = new ArrayList<>();
+    private List<YearlyWorkload> years = new ArrayList<>();
 
     @Version
     private Long version;
@@ -66,5 +66,28 @@ public class TrainerWorkloadDocument {
         this.trainerFirstName = trainerFirstName;
         this.trainerLastName = trainerLastName;
         this.trainerStatus = trainerStatus;
+    }
+
+    /** Updates trainer metadata and delegates a session change to its calendar month. */
+    public void applyEvent(tech.provokedynamic.gymcrmcommon.event.WorkloadEvent event) {
+        if (!trainerUsername.equals(event.trainerUsername())) {
+            throw new IllegalArgumentException("A workload event must belong to this trainer");
+        }
+        trainerFirstName = event.trainerFirstName();
+        trainerLastName = event.trainerLastName();
+        trainerStatus = event.isActive();
+        int year = event.trainingDate().getYear();
+        int month = event.trainingDate().getMonthValue();
+        var yearly = years.stream().filter(value -> value.getYear() == year).findFirst().orElseGet(() -> {
+            var created = new YearlyWorkload(year, new ArrayList<>());
+            years.add(created);
+            return created;
+        });
+        var monthly = yearly.getMonths().stream().filter(value -> value.getMonth() == month).findFirst().orElseGet(() -> {
+            var created = new MonthlyWorkload(month, 0);
+            yearly.getMonths().add(created);
+            return created;
+        });
+        monthly.applyChange(event.actionType(), event.trainingDuration());
     }
 }

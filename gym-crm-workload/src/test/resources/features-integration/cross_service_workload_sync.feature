@@ -28,3 +28,5 @@ Feature: gym-crm to gym-crm-workload workload synchronization
     And gym-crm publishes a workload ADD event with transaction id "tx-3002" for trainer "valid.trainer.two" ("Val" "Idsson", active) on "2025-12-01" for 25 minutes
     Then within 10 seconds gym-crm-workload's API reports 25 minutes for trainer "valid.trainer.two" in 2025-12
     And gym-crm-workload still has no workload summary for trainer "invalid.trainer.two" after 5 seconds
+
+    And the dead-letter topic contains the rejected event for trainer "invalid.trainer.two"

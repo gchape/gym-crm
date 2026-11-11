@@ -19,7 +19,7 @@ import tech.provokedynamic.gymcrmworkload.GymCrmWorkloadApplication;
                 "spring.security.oauth2.resourceserver.jwt.public-key-location=classpath:keys/gym-crm-public.pem",
                 "spring.kafka.consumer.group-id=gym-crm-workload-integration-test",
                 "spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer",
-                "spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer",
+                "spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JacksonJsonDeserializer",
                 "spring.kafka.consumer.properties.spring.json.trusted.packages=tech.provokedynamic.gymcrmcommon.event",
                 "spring.kafka.consumer.properties.spring.json.value.default.type=tech.provokedynamic.gymcrmcommon.event.WorkloadEvent",
                 "spring.kafka.consumer.properties.spring.json.use.type.headers=false",
@@ -32,9 +32,9 @@ public class IntegrationCucumberSpringConfiguration {
 
     @Container
     @ServiceConnection
-    static final MongoDBContainer MONGO = new MongoDBContainer("mongo:8.4");
+    static final MongoDBContainer MONGO = new MongoDBContainer("mongo:9.0.4");
 
     @Container
     @ServiceConnection
-    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("apache/kafka:4.3.1"));
+    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("apache/kafka:4.4.0"));
 }
