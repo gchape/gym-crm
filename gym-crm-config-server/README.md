@@ -1,77 +1,24 @@
-# gym-crm-config-server
+# Configuration server
 
-Spring Cloud Config Server — the single source of configuration for every other service in the
-system.
+Optional Spring Cloud Config Server using the native classpath backend. Spring Boot 4.1.2, Spring Cloud 2025.1.4, Java 25; port **8071**.
 
-Port: **8071**
+Serves configuration from `src/main/resources/config/gym-crm.yaml` and `gym-crm-workload.yaml`. Each includes shared settings and `dev`/`prod` overrides. The API issues JWTs itself; there is no separate authorization-server module.
 
-## Responsibilities
-
-Serves YAML configuration files from its own classpath (`native` profile — no separate Git repo) to
-every other module at startup, via `spring.config.import: configserver:http://localhost:8071` in
-each consuming service's `application.yaml`.
-
-This must be **the first service started** in any environment — every other module fails to start
-without it (or falls back to its own bare-bones `application.yaml` defaults, which is intentionally
-minimal).
-
-## Tech stack
-
-- Spring Boot 4.1, Java 25
-- `spring-cloud-config-server` (native backend)
-
-## Layout
-
-```
-src/main/resources/config/
-├── gym-crm.yaml                        → gym-crm (core service)
-├── gym-crm-authorization-server.yaml   → gym-crm-authorization-server
-└── gym-crm-workload.yaml               → gym-crm-workload
-```
-
-Each file's name must exactly match the consuming service's `spring.application.name`. Each file uses
-Spring's multi-document YAML format (`---` separators) with `spring.config.activate.on-profile` to
-provide `dev` and `prod` variants — the config server just serves the whole file; profile resolution
-happens client-side based on the requesting service's active profile.
-
-## Configuration served (summary)
-
-| File                                | Key settings                                                                                    |
-|-------------------------------------|-------------------------------------------------------------------------------------------------|
-| `gym-crm.yaml`                      | Server port (8081), Postgres datasource, JWT issuer-uri, Kafka producer, CORS, Consul discovery |
-| `gym-crm-authorization-server.yaml` | Server port (9000), Postgres datasource, OAuth2 issuer                                          |
-| `gym-crm-workload.yaml`             | Server port (8082), JWT issuer-uri, Kafka consumer, Consul discovery                            |
-
-See each service's own README for the full property list and environment variables used in `prod`.
-
-## Running
+The standalone API and full Docker stack disable Config Server and Consul. For IDE development with the `dev` profile:
 
 ```bash
-mvn spring-boot:run
+# From the repository root:
+./mvnw -DskipTests package
+java -jar gym-crm-config-server/target/gym-crm-config-server-1.0.0-SNAPSHOT.jar
 ```
 
-No external dependencies (no database, no Kafka) — this service only serves static config from its
-own classpath, so it's always the fastest to start and should always be started first.
-
-## Verifying config is being served correctly
+Inspect resolved configuration:
 
 ```bash
 curl http://localhost:8071/gym-crm/dev
-curl http://localhost:8071/gym-crm-workload/prod
+curl http://localhost:8071/gym-crm-workload/dev
 ```
 
-Returns the resolved property source for that application/profile combination as JSON — useful for
-confirming a config change actually took effect before restarting a downstream service.
+Clients default to an optional import from `http://localhost:8071`. If using centralized `dev`/`prod` configuration, start this server before the clients. Production values come from environment placeholders in the configuration documents; do not commit deployment secrets.
 
-## Adding a new service
-
-1. Create `src/main/resources/config/<spring.application.name>.yaml`.
-2. Add `dev` and `prod` profile documents as needed.
-3. In the new service's own `application.yaml`, set `spring.application.name` to match and add
-   `spring.config.import: "configserver:http://localhost:8071"`.
-
-## Running tests
-
-```bash
-mvn test
-```
+See the [repository README](../README.md) for the full build, tests, and local infrastructure commands.
