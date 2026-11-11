@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import tech.provokedynamic.gymcrm.dto.Request;
-import tech.provokedynamic.gymcrm.dto.Response;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
 import tech.provokedynamic.gymcrm.repository.TrainingTypeRepository;
-import tech.provokedynamic.gymcrm.service.UserService;
+import tech.provokedynamic.gymcrm.service.PasswordService;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ import java.util.List;
 @Tag(name = "User", description = "Shared user endpoints")
 public class UserController {
 
-    private final UserService userService;
+    private final PasswordService userService;
     private final TrainingTypeRepository trainingTypeRepository;
 
     @Operation(summary = "Change login password")
@@ -36,7 +36,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @PutMapping("/api/password")
-    public ResponseEntity<Void> changePassword(@Valid @RequestBody Request.ChangePassword body) {
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest body) {
         log.info("PUT /api/password - changing password username={}", body.username());
 
         userService.updatePassword(body);
@@ -50,12 +50,12 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Training types returned")
     })
     @GetMapping("/api/training-types")
-    public ResponseEntity<List<Response.TrainingType>> getTrainingTypes() {
+    public ResponseEntity<List<TrainingTypeResponse>> getTrainingTypes() {
         log.info("GET /api/training-types");
 
         var types = trainingTypeRepository.findAll()
                 .stream()
-                .map(t -> new Response.TrainingType(t.getId(), t.getTrainingTypeName()))
+                .map(t -> new TrainingTypeResponse(t.getId(), t.getTrainingTypeName()))
                 .toList();
 
         log.info("GET /api/training-types - {} types returned", types.size());

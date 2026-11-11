@@ -20,11 +20,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 /**
- * gym-crm now issues and validates its own JWTs directly instead of
- * delegating to a separate OAuth2 authorization server. The keypair that
- * used to live in gym-crm-authorization-server's keystore moves here
- * unchanged — only the issuing mechanism changes (a plain login endpoint
- * instead of an OAuth2 grant).
+ * Loads the configured RSA keypair and creates the API's token signer and issuer-validating decoder.
+ * Development uses the bundled keystore; production supplies an external key location.
  */
 @Configuration
 @EnableConfigurationProperties(AuthProperties.class)
@@ -62,6 +59,9 @@ public class JwtConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(KeyPair keyPair) {
-        return NimbusJwtDecoder.withPublicKey((RSAPublicKey) keyPair.getPublic()).build();
+        var decoder = NimbusJwtDecoder.withPublicKey((RSAPublicKey) keyPair.getPublic()).build();
+        decoder.setJwtValidator(org.springframework.security.oauth2.jwt.JwtValidators
+                .createDefaultWithIssuer(properties.issuer()));
+        return decoder;
     }
 }

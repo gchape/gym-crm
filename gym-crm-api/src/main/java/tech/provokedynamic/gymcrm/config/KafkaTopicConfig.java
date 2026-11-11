@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 import tech.provokedynamic.gymcrmcommon.event.WorkloadTopics;
 
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.workload.events-enabled", havingValue = "true", matchIfMissing = true)
 @Configuration(proxyBeanMethods = false)
 public class KafkaTopicConfig {
 

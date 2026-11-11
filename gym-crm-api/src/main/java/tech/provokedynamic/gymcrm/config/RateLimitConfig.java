@@ -5,20 +5,21 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/** Registers the per-IP login request budget; app.auth.login-rate-limit configures requests per minute. */
 @Configuration
 public class RateLimitConfig {
 
     @Bean
-    public FilterRegistrationBean<RateLimitFilter> loginRateLimitFilter() {
+    public FilterRegistrationBean<RateLimitFilter> loginRateLimitFilter(
+            @org.springframework.beans.factory.annotation.Value("${app.auth.login-rate-limit:10}") int requestsPerMinute) {
         var filter = new RateLimitFilter();
 
-        // Number of requests allowed per bucket duration, per IP
-        filter.setBucketRequests(10);
-        // Duration of each bucket, in seconds
+        filter.setBucketRequests(requestsPerMinute);
+
         filter.setBucketDuration(60);
-        // Enforce limit — set false to only log without blocking
+
         filter.setEnforce(true);
-        // HTTP status returned when the limit is exceeded
+
         filter.setStatusCode(429);
 
         var registration = new FilterRegistrationBean<>(filter);

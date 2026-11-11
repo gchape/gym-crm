@@ -23,9 +23,13 @@ public class WorkloadEventPublisher {
 
     public static final String TRANSACTION_ID_HEADER = "transactionId";
 
+    @org.springframework.beans.factory.annotation.Value("${app.workload.events-enabled:true}")
+    private boolean eventsEnabled = true;
+
     private final KafkaTemplate<String, WorkloadEvent> kafkaTemplate;
 
     public void publish(WorkloadEvent event) {
+        if (!eventsEnabled) return;
         String transactionId = resolveTransactionId();
 
         var message = MessageBuilder.withPayload(event)
@@ -49,11 +53,9 @@ public class WorkloadEventPublisher {
     }
 
     /**
-     * Registers a single event to be published only after the current
-     * transaction commits. No-op (with a debug log) if there's no active
-     * transaction synchronization — e.g. a plain Mockito unit test calling
-     * the owning service method directly, outside a Spring transaction proxy.
-     * Publishing before commit would leak an uncommitted change's workload.
+     * Defers sending until the current transaction commits. No synchronization means no send.
+     * This prevents rollback notifications, but does not close the post-commit crash window;
+     * durable delivery requires an outbox. See docs/architecture.md.
      */
     public void publishAfterCommit(WorkloadEvent event) {
         publishAfterCommit(List.of(event));

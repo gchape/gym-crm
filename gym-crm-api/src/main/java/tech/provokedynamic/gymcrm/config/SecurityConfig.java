@@ -60,8 +60,8 @@ public class SecurityConfig {
         var config = new CorsConfiguration();
         config.setAllowedOrigins(corsProperties.allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        config.setExposedHeaders(List.of());
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Transaction-Id"));
+        config.setExposedHeaders(List.of("Location", "X-Transaction-Id"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

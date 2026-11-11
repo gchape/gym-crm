@@ -20,11 +20,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
-/**
- * Kafka publishing is stubbed out here — this suite verifies gym-crm's own
- * REST/JPA behavior in isolation. The cross-service effect of these events
- * on gym-crm-workload is covered by the gym-crm-integration-tests module.
- */
+/** API/JPA training scenarios; Kafka delivery is covered by the workload integration suite. */
 public class TrainingSteps {
 
     @Autowired
@@ -86,7 +82,7 @@ public class TrainingSteps {
         scheduleTraining(traineeUsername, trainerUsername, name, date, duration, true);
         lastTrainingId = trainingRepository.findAllByTraineeUsernameWithTrainer(traineeUsername).stream()
                 .filter(t -> t.getTrainingName().equals(name))
-                .reduce((first, second) -> second) // keep the most recently added match
+                .reduce((first, second) -> second)
                 .orElseThrow()
                 .getId();
     }
@@ -111,7 +107,8 @@ public class TrainingSteps {
                 .content(TestJson.MAPPER.writeValueAsString(body));
 
         if (authenticated) {
-            request = request.with(TestJwtSupport.trainerToken("ROLE_TRAINER"));
+            request = request.with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt()
+                    .jwt(jwt -> jwt.subject(trainerUsername)).authorities(() -> "ROLE_TRAINER"));
         }
 
         lastResult = mockMvc.perform(request).andReturn();
@@ -119,17 +116,18 @@ public class TrainingSteps {
 
     @When("trainer {string} cancels that training")
     public void trainerCancelsThatTraining(String trainerUsername) throws Exception {
-        cancelTraining(lastTrainingId);
+        cancelTraining(lastTrainingId, trainerUsername);
     }
 
     @When("trainer {string} cancels training id {long}")
     public void trainerCancelsTrainingId(String trainerUsername, long id) throws Exception {
-        cancelTraining(id);
+        cancelTraining(id, trainerUsername);
     }
 
-    private void cancelTraining(long id) throws Exception {
+    private void cancelTraining(long id, String trainerUsername) throws Exception {
         lastResult = mockMvc.perform(delete("/api/trainings/{id}", id)
-                        .with(TestJwtSupport.trainerToken("ROLE_TRAINER")))
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt()
+                                .jwt(jwt -> jwt.subject(trainerUsername)).authorities(() -> "ROLE_TRAINER")))
                 .andReturn();
     }
 

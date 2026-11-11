@@ -1,56 +1,62 @@
 package tech.provokedynamic.gymcrm.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import tech.provokedynamic.gymcrm.dto.Request;
+import tech.provokedynamic.gymcrm.dto.*;
+import tech.provokedynamic.gymcrm.dto.request.*;
+import tech.provokedynamic.gymcrm.dto.response.*;
 import tech.provokedynamic.gymcrm.service.TrainingService;
+import java.net.URI;
+import java.security.Principal;
+import java.time.LocalDate;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/trainings")
 @RequiredArgsConstructor
 @Tag(name = "Training", description = "Training management endpoints")
 public class TrainingController {
-
     private final TrainingService trainingService;
 
-    @Operation(summary = "Add a new training session")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Training added"),
-            @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "401", description = "Authentication failed"),
-            @ApiResponse(responseCode = "404", description = "Trainee or trainer not found")
-    })
+    @Operation(summary = "Schedule a training as the assigned trainer")
     @PostMapping
-    public ResponseEntity<Void> add(@Valid @RequestBody Request.AddTraining body) {
-        log.info("POST /api/trainings - trainee={} trainer={} name={} date={} duration={}min",
-                body.traineeUsername(), body.trainerUsername(), body.trainingName(),
-                body.trainingDate(), body.trainingDuration());
-
-        trainingService.add(body);
-
-        log.info("POST /api/trainings - added successfully for trainee={} trainer={}",
-                body.traineeUsername(), body.trainerUsername());
-        return ResponseEntity.ok().build();
+    @PreAuthorize("#body.trainerUsername() == authentication.name")
+    public ResponseEntity<TrainingDetails> add(@Valid @RequestBody ScheduleTrainingRequest body) {
+        var training = trainingService.scheduleTraining(body);
+        return ResponseEntity.created(URI.create("/api/trainings/" + training.id())).body(training);
     }
 
-    @Operation(summary = "Cancel a training session")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Training cancelled"),
-            @ApiResponse(responseCode = "404", description = "Training not found")
-    })
+    @Operation(summary = "Get a training you participate in")
+    @GetMapping("/{id}")
+    public TrainingDetails get(@PathVariable @Positive long id, Principal principal) {
+        return trainingService.getTraining(id, principal.getName());
+    }
+
+    @Operation(summary = "Search your trainings, newest first; page size is limited to 100")
+    @GetMapping
+    public PageResponse<TrainingDetails> search(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String traineeUsername,
+            @RequestParam(required = false) String trainerUsername,
+            @RequestParam(required = false) String trainingType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Principal principal) {
+        return trainingService.searchTrainings(principal.getName(),
+                new TrainingSearch(from, to, traineeUsername, trainerUsername, trainingType, page, size));
+    }
+
+    @Operation(summary = "Cancel a training as its assigned trainer")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancel(@PathVariable Long id) {
-        log.info("DELETE /api/trainings/{} - cancelling training", id);
-        trainingService.cancel(new Request.CancelTraining(id));
-        log.info("DELETE /api/trainings/{} - cancelled successfully", id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> cancel(@PathVariable @Positive Long id, Principal principal) {
+        trainingService.cancelTraining(new CancelTrainingRequest(id), principal.getName());
+        return ResponseEntity.noContent().build();
     }
 }
