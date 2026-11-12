@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -157,11 +156,11 @@ public class TraineeController {
     public ResponseEntity<List<TrainingSummaryResponse>> getTrainings(
             @PathVariable String username,
             @Parameter(description = "Filter from date (yyyy-MM-dd)")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Nullable LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @Parameter(description = "Filter to date (yyyy-MM-dd)")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Nullable LocalDate to,
-            @RequestParam(required = false) @Nullable String trainerUsername,
-            @RequestParam(required = false) @Nullable String trainingType) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String trainerUsername,
+            @RequestParam(required = false) String trainingType) {
         log.info("GET /api/trainees/{}/trainings", username);
 
         var trainings = traineeService.getTrainings(username, from, to, trainerUsername, trainingType);
