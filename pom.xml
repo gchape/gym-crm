@@ -24,7 +24,7 @@
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.4</spring-cloud.version>
         <springdoc.version>3.2.0</springdoc.version>
-        <cucumber.version>8.0.4</cucumber.version>
+        <cucumber.version>8.1.0</cucumber.version>
     </properties>
     <dependencyManagement>
         <dependencies>
